@@ -1,0 +1,288 @@
+"use client";
+
+import { useState } from "react";
+import { useCartStore } from "@/lib/store";
+import { toast } from "react-hot-toast";
+import { Heart, Share2, Plus, Minus, ShoppingBag } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+// Color mapping (reused from ColorFilter)
+const COLOR_MAP: Record<string, string> = {
+    "Beige": "bg-[#F5F5DC]",
+    "Black": "bg-black",
+    "Blue": "bg-blue-600",
+    "Brown": "bg-[#8B4513]",
+    "Green": "bg-green-600",
+    "Orange": "bg-orange-500",
+    "Pink": "bg-pink-400",
+    "Red": "bg-red-600",
+    "White": "bg-white border border-stone-200",
+    "Yellow": "bg-yellow-400",
+    "Maroon": "bg-[#800000]",
+    "Gold": "bg-[#FFD700]",
+    "Cream": "bg-[#FFFDD0]",
+    "Navy": "bg-[#000080]",
+    "Silver": "bg-[#C0C0C0]",
+    "Purple": "bg-purple-600"
+};
+
+
+
+interface ProductDetailsProps {
+    product: any; // Using any for flexibility with Prisma includes, ideally define strict type
+    initialIsWishlisted?: boolean;
+}
+
+export function ProductDetails({ product, initialIsWishlisted = false }: ProductDetailsProps) {
+    const { addItem, openCart } = useCartStore();
+
+    // State
+    const [selectedColor, setSelectedColor] = useState<string>(product.colors?.[0] || "");
+    const [loading, setLoading] = useState(false);
+    const [isWishlisted, setIsWishlisted] = useState(initialIsWishlisted);
+    const [deliveryMethod, setDeliveryMethod] = useState<"home" | "store">("home");
+
+    // Accordion State
+    const [openSection, setOpenSection] = useState<string | null>("details");
+
+    const toggleSection = (section: string) => {
+        setOpenSection(openSection === section ? null : section);
+    };
+
+    const handleAddToCart = () => {
+        if (product.colors && product.colors.length > 0 && !selectedColor) {
+            toast.error("Please select a color");
+            return;
+        }
+
+        setLoading(true);
+        addItem({
+            id: product.id,
+            name: product.name,
+            price: Number(product.price),
+            image: product.images?.[0]?.url || "/images/placeholder.jpg",
+            quantity: 1,
+            color: selectedColor || "Default"
+        });
+        setLoading(false);
+        toast.success("Added to Bag!");
+        openCart();
+    };
+
+    const toggleWishlist = async () => {
+        // Optimistic UI update
+        setIsWishlisted(!isWishlisted);
+        try {
+            await fetch(`/api/wishlist/toggle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productId: product.id })
+            });
+        } catch (error) {
+            setIsWishlisted(!isWishlisted); // Revert on error
+            toast.error("Failed to update wishlist");
+        }
+    };
+
+
+
+    return (
+        <div className="space-y-8 sticky top-24">
+            {/* Header */}
+            <div className="space-y-4">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <p className="text-xs font-medium uppercase tracking-widest text-[#1C1917] mb-2">
+                            {product.category?.name || "Collection"}
+                        </p>
+                        <h1 className="text-3xl lg:text-4xl font-serif text-[#1C1917] leading-tight">
+                            {product.name}
+                        </h1>
+                    </div>
+                    <button className="text-stone-500 hover:text-stone-900">
+                        <Share2 className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <div>
+                    <p className="text-2xl font-serif text-[#1C1917]">
+                        ₹{Number(product.finalPrice || product.price).toLocaleString()}
+                    </p>
+                    <p className="text-[10px] text-stone-500 mt-1 uppercase tracking-wide">
+                        MRP Inclusive of all taxes
+                    </p>
+                </div>
+            </div>
+
+            {/* Description */}
+            <div className="prose prose-stone text-sm text-stone-600 leading-relaxed">
+                <p>{product.description}</p>
+            </div>
+
+            {/* Color Selector */}
+            {product.colors && product.colors.length > 0 && (
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-[#1C1917]">Colour: <span className="font-medium">{selectedColor}</span></span>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                        {product.colors.map((color: string) => (
+                            <button
+                                key={color}
+                                onClick={() => setSelectedColor(color)}
+                                className={cn(
+                                    "w-8 h-8 rounded-full border relative transition-all",
+                                    selectedColor === color ? "ring-1 ring-offset-2 ring-[#1C1917] scale-110" : "hover:scale-110 border-stone-200",
+                                    COLOR_MAP[color] || "bg-stone-200"
+                                )}
+                                title={color}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+
+
+
+            {/* Delivery Method */}
+            <div className="space-y-3 pt-2">
+                <span className="text-sm text-[#1C1917]">Delivery Method:</span>
+                <div className="flex gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center", deliveryMethod === 'home' ? "border-[#1C1917]" : "border-stone-300")}>
+                            {deliveryMethod === 'home' && <div className="w-2 h-2 rounded-full bg-[#1C1917]" />}
+                        </div>
+                        <input type="radio" className="hidden" checked={deliveryMethod === 'home'} onChange={() => setDeliveryMethod('home')} />
+                        <span className="text-sm text-stone-600">Home Delivery</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center", deliveryMethod === 'store' ? "border-[#1C1917]" : "border-stone-300")}>
+                            {deliveryMethod === 'store' && <div className="w-2 h-2 rounded-full bg-[#1C1917]" />}
+                        </div>
+                        <input type="radio" className="hidden" checked={deliveryMethod === 'store'} onChange={() => setDeliveryMethod('store')} />
+                        <span className="text-sm text-stone-600">Store Pick-up</span>
+                    </label>
+                </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-4 pt-4">
+                <Button
+                    onClick={handleAddToCart}
+                    disabled={loading || product.stock === 0}
+                    className={cn(
+                        "flex-1 h-12 uppercase tracking-widest text-xs font-medium rounded-none",
+                        product.stock === 0
+                            ? "bg-stone-200 text-stone-400 cursor-not-allowed hover:bg-stone-200"
+                            : "bg-[#545454] hover:bg-[#333333] text-white"
+                    )}
+                >
+                    {loading ? "Adding..." : (product.stock === 0 ? "Out of Stock" : "Add To Cart")}
+                </Button>
+                <button
+                    onClick={toggleWishlist}
+                    className="h-12 w-12 flex items-center justify-center border border-stone-200 hover:border-[#1C1917] transition-colors"
+                >
+                    <Heart className={cn("w-5 h-5", isWishlisted ? "fill-[#1C1917] text-[#1C1917]" : "text-[#1C1917]")} />
+                </button>
+            </div>
+
+            <p className="text-xs text-stone-500 leading-relaxed">
+                This is a made to order style and we will take 7-10 business days for production and dispatch orders within India and internationally.
+            </p>
+
+            {/* Accordions */}
+            <div className="border-t border-stone-200 mt-8">
+                <AccordionItem
+                    title="Product Details"
+                    isOpen={openSection === 'details'}
+                    onClick={() => toggleSection('details')}
+                >
+                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm text-stone-600">
+                        {product.fabricType && (
+                            <>
+                                <span className="font-medium text-[#1C1917]">Fabric:</span>
+                                <span>{product.fabricType}</span>
+                            </>
+                        )}
+                        {product.weaveType && (
+                            <>
+                                <span className="font-medium text-[#1C1917]">Weave:</span>
+                                <span>{product.weaveType}</span>
+                            </>
+                        )}
+                        {product.sareeLength && (
+                            <>
+                                <span className="font-medium text-[#1C1917]">Saree Length:</span>
+                                <span>{product.sareeLength}</span>
+                            </>
+                        )}
+                        {product.blouseLength && (
+                            <>
+                                <span className="font-medium text-[#1C1917]">Blouse Length:</span>
+                                <span>{product.blouseLength}</span>
+                            </>
+                        )}
+                        <span className="font-medium text-[#1C1917]">SKU:</span>
+                        <span>{product.sku || product.id.slice(0, 8).toUpperCase()}</span>
+                    </div>
+                </AccordionItem>
+
+                <AccordionItem
+                    title="Contact Our Stylist"
+                    isOpen={openSection === 'stylist'}
+                    onClick={() => toggleSection('stylist')}
+                >
+                    <p className="text-sm text-stone-600">
+                        Need help with styling or customization? Contact our styling team at <a href="mailto:stylist@example.com" className="underline">stylist@example.com</a> or call us at +91 91234 56789.
+                    </p>
+                </AccordionItem>
+
+                <AccordionItem
+                    title="Delivery & Returns"
+                    isOpen={openSection === 'delivery'}
+                    onClick={() => toggleSection('delivery')}
+                >
+                    <p className="text-sm text-stone-600">
+                        We offer free shipping on all orders above ₹5,000 within India. International shipping is calculated at checkout. Returns are accepted within 7 days of delivery for store credit only.
+                    </p>
+                </AccordionItem>
+
+                <AccordionItem
+                    title="Disclaimer"
+                    isOpen={openSection === 'disclaimer'}
+                    onClick={() => toggleSection('disclaimer')}
+                >
+                    <p className="text-sm text-stone-600">
+                        The colors you see on your screen may slightly vary from the actual product due to different screen calibrations. Handwoven fabrics may have slight irregularities which are natural.
+                    </p>
+                </AccordionItem>
+            </div>
+        </div>
+    );
+}
+
+function AccordionItem({ title, isOpen, onClick, children }: { title: string, isOpen: boolean, onClick: () => void, children: React.ReactNode }) {
+    return (
+        <div className="border-b border-stone-200">
+            <button
+                onClick={onClick}
+                className="w-full py-4 flex items-center justify-between text-left group"
+            >
+                <span className="text-xs font-medium uppercase tracking-widest text-[#1C1917] group-hover:text-stone-600 transition-colors">
+                    {title}
+                </span>
+                {isOpen ? <Minus className="w-4 h-4 text-[#1C1917]" /> : <Plus className="w-4 h-4 text-[#1C1917]" />}
+            </button>
+            <div
+                className={cn(
+                    "overflow-hidden transition-all duration-300 ease-in-out",
+                    isOpen ? "max-h-[500px] opacity-100 pb-4" : "max-h-0 opacity-0"
+                )}
+            >
+                {children}
+            </div>
+        </div>
+    );
+}

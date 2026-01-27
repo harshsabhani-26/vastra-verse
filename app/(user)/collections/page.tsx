@@ -1,0 +1,79 @@
+import { ProductCard } from "@/components/product/ProductCard";
+import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
+
+export const metadata = {
+    title: "Collections | Vayana Heritage",
+    description: "Explore our exclusive collections of heritage weaves and contemporary designs.",
+};
+
+async function getProducts() {
+    try {
+        const products = await prisma.product.findMany({
+            orderBy: {
+                createdAt: 'desc',
+            },
+            include: {
+                category: true,
+                images: {
+                    orderBy: { position: 'asc' }
+                }
+            }
+        });
+        return products;
+    } catch (error) {
+        console.error("Error fetching products:", error);
+        return [];
+    }
+}
+
+export default async function CollectionsPage() {
+    const products = await getProducts();
+    const session = await auth();
+
+    let wishlistedProductIds = new Set<string>();
+    if (session?.user?.id) {
+        const wishlistItems = await prisma.wishlist.findMany({
+            where: { userId: session.user.id },
+            select: { productId: true }
+        });
+        wishlistedProductIds = new Set(wishlistItems.map(item => item.productId));
+    }
+
+    return (
+        <div className="bg-[#FAF9F6] min-h-screen pb-20">
+            {/* Header / Hero */}
+            <div className="bg-primary pt-32 pb-16 px-4 text-center">
+                <h1 className="text-4xl md:text-5xl font-serif text-white mb-4 tracking-wide">
+                    Our Collections
+                </h1>
+                <p className="text-white/80 max-w-2xl mx-auto font-light text-lg">
+                    Discover our carefully curated ranges of heritage weaves and contemporary designs.
+                </p>
+            </div>
+
+            <div className="container mx-auto px-4 md:px-8 -mt-8">
+                {products.length === 0 ? (
+                    <div className="bg-white p-12 text-center shadow-sm">
+                        <p className="text-stone-500 text-lg">No products found.</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12 bg-white p-8 shadow-sm">
+                        {products.map((product) => (
+                            <ProductCard
+                                key={product.id}
+                                id={product.id}
+                                name={product.name}
+                                price={parseFloat(product.price.toString())}
+                                image={product.images[0]?.url || "/images/placeholder.jpg"}
+                                category={product.category.name}
+                                isNew={new Date().getTime() - new Date(product.createdAt).getTime() < 30 * 24 * 60 * 60 * 1000}
+                                isWishlisted={wishlistedProductIds.has(product.id)}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
