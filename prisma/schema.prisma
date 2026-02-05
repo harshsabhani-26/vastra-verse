@@ -3,65 +3,53 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id            String          @id @default(cuid())
-  name          String?
-  email         String          @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  // Optional for WebAuthn support
-  // Authenticator Authenticator[]
- 
-  // Custom fields
-  password      String?
-  phone         String?
-  phoneVerified Boolean         @default(false)
-  newsletter    Boolean         @default(false)
-  role          Role            @default(USER)
-  
-  // Customer Management Fields
-  isVIP         Boolean         @default(false)
-  isBlocked     Boolean         @default(false)
-  blockedReason String?
-  blockedAt     DateTime?
-  
-  // Security Fields
-  twoFactorEnabled      Boolean   @default(false)
-  twoFactorSecret       String?   // Encrypted TOTP secret
-  failedLoginAttempts   Int       @default(0)
-  lockedUntil           DateTime? // Account lockout timestamp
-  lastLoginAt           DateTime?
-  lastLoginIP           String?
-  passwordChangedAt     DateTime?
-  
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  
-  orders        Order[]
-  addresses     Address[]
-  wishlist      Wishlist[]
-  customerNotes CustomerNote[]
-  couponUsages  CouponUsage[]
-  activityLogs  ActivityLog[]
-  notifications Notification[]
+  id                      String                   @id @default(cuid())
+  name                    String?
+  email                   String                   @unique
+  emailVerified           DateTime?
+  image                   String?
+  password                String?
+  phone                   String?
+  newsletter              Boolean                  @default(false)
+  role                    Role                     @default(USER)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  blockedAt               DateTime?
+  blockedReason           String?
+  failedLoginAttempts     Int                      @default(0)
+  fcmToken                String?
+  isBlocked               Boolean                  @default(false)
+  isVIP                   Boolean                  @default(false)
+  lastLoginAt             DateTime?
+  lastLoginIP             String?
+  lockedUntil             DateTime?
+  passwordChangedAt       DateTime?
+  phoneVerified           Boolean                  @default(false)
+  twoFactorEnabled        Boolean                  @default(false)
+  twoFactorSecret         String?
+  whatsappOptIn           Boolean                  @default(false)
+  accounts                Account[]
+  activityLogs            ActivityLog[]
+  addresses               Address[]
+  couponUsages            CouponUsage[]
+  customerNotes           CustomerNote[]
+  notifications           Notification[]
   notificationPreferences NotificationPreferences?
-  
-  // Notification Delivery Fields
-  fcmToken      String?  // For push notifications
-  whatsappOptIn Boolean  @default(false)
-  
-  // Performance Indexes
-  @@index([role])                    // For admin vs customer filtering
-  @@index([createdAt])               // For customer acquisition reports
-  @@index([email])                   // Speeds up email lookups in joins
-  @@index([isVIP])                   // For VIP customer filtering
-  @@index([role, createdAt])         // For user management queries
+  orders                  Order[]
+  sessions                Session[]
+  wishlist                Wishlist[]
+
+  @@index([role])
+  @@index([createdAt])
+  @@index([email])
+  @@index([isVIP])
+  @@index([role, createdAt])
 }
 
 model Account {
@@ -76,47 +64,42 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
- 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
- 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@id([provider, providerAccountId])
 }
 
 model Session {
-  sessionToken    String   @unique
-  userId          String
-  expires         DateTime
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Session tracking fields
-  ipAddress       String?
-  userAgent       String?
-  lastActivityAt  DateTime @default(now())
- 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  sessionToken   String   @unique
+  userId         String
+  expires        DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  lastActivityAt DateTime @default(now())
+  userAgent      String?
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
   identifier String
   token      String
   expires    DateTime
- 
+
   @@id([identifier, token])
 }
 
 model EmailVerification {
   id        String   @id @default(cuid())
   email     String?
-  phone     String?
   otp       String
-  type      String   // "register", "login", "forgot-password"
-  verified  Boolean  @default(false)
+  type      String
   expiresAt DateTime
+  verified  Boolean  @default(false)
   createdAt DateTime @default(now())
+  phone     String?
 
   @@index([email, otp])
   @@index([phone, otp])
@@ -125,174 +108,154 @@ model EmailVerification {
 }
 
 model Address {
-  id          String   @id @default(cuid())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  title       String
-  firstName   String
-  lastName    String
-  address1    String
-  address2    String?
-  country     String
-  state       String
-  city        String
-  zipCode     String
-  phone       String
-  type        String   @default("Shipping") // Shipping or Billing
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  firstName String
+  lastName  String
+  address1  String
+  address2  String?
+  country   String
+  state     String
+  city      String
+  zipCode   String
+  phone     String
+  type      String   @default("Shipping")
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Wishlist {
   id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId String
   createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
 }
 
 model Product {
-  id                 String      @id @default(cuid())
-  name               String
-  description        String
-  price              Decimal
-  images             ProductImage[]
-  category           Category    @relation(fields: [categoryId], references: [id])
-  categoryId         String
-  stock              Int         @default(0)
-  isFeatured         Boolean     @default(false)
-  isNewArrival       Boolean     @default(false)
-  isBestSeller       Boolean     @default(false)
-  
-  // Basic Info Extensions
-  sku                String?     @unique
-  discount           Decimal?    @default(0)
-  discountType       String?     // "PERCENTAGE" or "FIXED"
-  finalPrice         Decimal?
-  lowStockThreshold  Int?        @default(10)
-  status             String      @default("DRAFT") // "DRAFT" or "PUBLISHED"
-  shortDescription   String?
-  
-  // Saree-Specific Fields
-  fabricType         String?
-  weaveType          String?
-  borderDescription  String?
-  palluDescription   String?
-  hasBlousePiece     Boolean     @default(true)
-  blouseFabric       String?
-  sareeLength        String?     @default("5.5 meters")
-  blouseLength       String?     @default("0.8 meters")
-  colors             String[]    // Array of color names
-  occasions          String[]    // Array: Wedding, Festive, Party, Daily wear
-  careInstructions   String?
-  
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-  orderItems         OrderItem[]
-  wishlistItems      Wishlist[]
-  
-  // Performance Indexes
+  id                String         @id @default(cuid())
+  name              String
+  description       String
+  price             Decimal
+  categoryId        String
+  stock             Int            @default(0)
+  isFeatured        Boolean        @default(false)
+  sku               String?        @unique
+  discount          Decimal?       @default(0)
+  discountType      String?
+  finalPrice        Decimal?
+  lowStockThreshold Int?           @default(10)
+  status            String         @default("DRAFT")
+  shortDescription  String?
+  fabricType        String?
+  weaveType         String?
+  borderDescription String?
+  palluDescription  String?
+  hasBlousePiece    Boolean        @default(true)
+  blouseFabric      String?
+  sareeLength       String?        @default("5.5 meters")
+  blouseLength      String?        @default("0.8 meters")
+  occasions         String[]
+  careInstructions  String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  isBestSeller      Boolean        @default(false)
+  isNewArrival      Boolean        @default(false)
+  colors            String[]
+  orderItems        OrderItem[]
+  category          Category       @relation(fields: [categoryId], references: [id])
+  images            ProductImage[]
+  wishlistItems     Wishlist[]
+
   @@index([categoryId])
   @@index([status])
   @@index([createdAt])
-  @@index([isBestSeller, status])  // For bestsellers homepage query
-  @@index([isNewArrival, status])  // For new arrivals listing
-  @@index([isFeatured, status])    // For featured products
-  @@index([price])                 // For price sorting in shop
-  @@index([status, createdAt])     // For admin product listing with filters
-  @@index([categoryId, status])    // For category page filtering
+  @@index([isBestSeller, status])
+  @@index([isNewArrival, status])
+  @@index([isFeatured, status])
+  @@index([price])
+  @@index([status, createdAt])
+  @@index([categoryId, status])
 }
 
 model Category {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  slug        String    @unique
-  description String?
-  image       String?   // Featured image
-  icon        String?   // Icon for category
-  isFeatured  Boolean   @default(false)  // Show on homepage
-  isActive    Boolean   @default(true)   // Active/Inactive status
-  displayOrder Int      @default(0)      // For sorting/reordering
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  products    Product[]
+  id           String    @id @default(cuid())
+  name         String    @unique
+  description  String?
+  image        String?
+  createdAt    DateTime  @default(now())
+  displayOrder Int       @default(0)
+  icon         String?
+  isActive     Boolean   @default(true)
+  isFeatured   Boolean   @default(false)
+  slug         String    @unique
+  updatedAt    DateTime  @updatedAt
+  products     Product[]
 }
 
 model Order {
-  id                 String        @id @default(cuid())
-  user               User          @relation(fields: [userId], references: [id])
+  id                 String            @id @default(cuid())
   userId             String
-  status             OrderStatus   @default(PENDING)
-  paymentStatus      PaymentStatus @default(PENDING)
-  paymentMethod      String?
+  status             OrderStatus       @default(PENDING)
   total              Decimal
-  items              OrderItem[]
-  
-  // Customer & Shipping Info (for quick access)
-  customerName       String?
-  customerPhone      String?
-  shippingAddress    String?
-  shippingState      String?       // For GST calculation
-  trackingNumber     String?
-  courierName        String?
-  
-  // Financial Breakdown
-  subtotal           Decimal?
-  cgst               Decimal?      @default(0)
-  sgst               Decimal?      @default(0)
-  igst               Decimal?      @default(0)
-  gstRate            Decimal?      @default(18)
-  shippingCharges    Decimal?      @default(0)
-  discount           Decimal?      @default(0)
-  // total = subtotal + cgst + sgst + igst + shippingCharges - discount
-  
-  // Cancellation & Refund
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
   cancellationReason String?
   cancelledAt        DateTime?
-  refundStatus       OrderRefundStatus @default(NONE)
-  
-  // Gift Wrap
-  giftWrapEnabled    Boolean       @default(false)
-  giftWrapCharge     Decimal?      @default(0)
+  cgst               Decimal?          @default(0)
+  courierName        String?
+  customerName       String?
+  customerPhone      String?
+  discount           Decimal?          @default(0)
+  giftWrapCharge     Decimal?          @default(0)
+  giftWrapEnabled    Boolean           @default(false)
   giftWrapMessage    String?
-  
-  // Relations
+  gstRate            Decimal?          @default(18)
+  igst               Decimal?          @default(0)
+  paymentMethod      String?
+  paymentStatus      PaymentStatus     @default(PENDING)
+  refundStatus       OrderRefundStatus @default(NONE)
+  sgst               Decimal?          @default(0)
+  shippingAddress    String?
+  shippingCharges    Decimal?          @default(0)
+  shippingState      String?
+  subtotal           Decimal?
+  trackingNumber     String?
+  couponUsages       CouponUsage[]
+  user               User              @relation(fields: [userId], references: [id])
+  items              OrderItem[]
   notes              OrderNote[]
   timeline           OrderTimeline[]
   payments           Payment[]
   refunds            Refund[]
-  couponUsages       CouponUsage[]
-  
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  
-  // Performance Indexes
+
   @@index([createdAt])
   @@index([shippingState])
-  @@index([status, createdAt])         // For admin order filtering
-  @@index([userId, createdAt])         // For customer order history
-  @@index([paymentStatus])             // For payment filtering
-  @@index([status, paymentStatus])     // For combined order status queries
-  @@index([userId, status])            // For user orders with status filter
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+  @@index([paymentStatus])
+  @@index([status, paymentStatus])
+  @@index([userId, status])
 }
 
 model OrderItem {
   id        String  @id @default(cuid())
-  order     Order   @relation(fields: [orderId], references: [id])
   orderId   String
-  product   Product @relation(fields: [productId], references: [id])
   productId String
   quantity  Int
   price     Decimal
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
 }
 
 model ProductImage {
   id        String    @id @default(cuid())
-  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId String
   url       String
   type      ImageType @default(MAIN)
@@ -303,8 +266,496 @@ model ProductImage {
   fileSize  Int?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
+}
+
+model OrderNote {
+  id        String   @id @default(cuid())
+  orderId   String
+  content   String
+  createdBy String
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model OrderTimeline {
+  id        String   @id @default(cuid())
+  orderId   String
+  event     String
+  details   String?
+  createdBy String?
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model CustomerNote {
+  id        String   @id @default(cuid())
+  userId    String
+  content   String
+  createdBy String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Payment {
+  id               String            @id @default(cuid())
+  orderId          String
+  amount           Decimal
+  currency         String            @default("INR")
+  status           PaymentStatusEnum @default(PENDING)
+  method           PaymentMethodEnum
+  gatewayProvider  String?
+  gatewayOrderId   String?           @unique
+  gatewayPaymentId String?           @unique
+  gatewaySignature String?
+  failureReason    String?
+  failureCode      String?
+  retryCount       Int               @default(0)
+  subtotal         Decimal?
+  cgst             Decimal?          @default(0)
+  sgst             Decimal?          @default(0)
+  igst             Decimal?          @default(0)
+  gstRate          Decimal?          @default(18)
+  metadata         Json?
+  verifiedAt       DateTime?
+  verifiedBy       String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  order            Order             @relation(fields: [orderId], references: [id])
+  refunds          Refund[]
+
+  @@index([orderId])
+  @@index([status])
+  @@index([method])
+  @@index([gatewayOrderId])
+}
+
+model Refund {
+  id              String           @id @default(cuid())
+  paymentId       String
+  orderId         String
+  amount          Decimal
+  reason          String
+  status          RefundStatusEnum @default(PENDING)
+  gatewayRefundId String?          @unique
+  gatewayStatus   String?
+  requestedBy     String
+  requestedAt     DateTime         @default(now())
+  approvedBy      String?
+  approvedAt      DateTime?
+  approvalNotes   String?
+  processedBy     String?
+  processedAt     DateTime?
+  processingNotes String?
+  rejectedBy      String?
+  rejectedAt      DateTime?
+  rejectionReason String?
+  metadata        Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  order           Order            @relation(fields: [orderId], references: [id])
+  payment         Payment          @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+  @@index([orderId])
+  @@index([status])
+}
+
+model PaymentGatewaySettings {
+  id            String   @id @default(cuid())
+  provider      String   @unique
+  isEnabled     Boolean  @default(false)
+  isTestMode    Boolean  @default(true)
+  apiKey        String?
+  apiSecret     String?
+  merchantId    String?
+  webhookSecret String?
+  webhookUrl    String?
+  settings      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ShippingZone {
+  id              String   @id @default(cuid())
+  name            String
+  type            String
+  pincodes        Json
+  minDeliveryDays Int      @default(2)
+  maxDeliveryDays Int      @default(5)
+  baseCharge      Decimal  @default(0)
+  perKgCharge     Decimal  @default(0)
+  isActive        Boolean  @default(true)
+  displayOrder    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([type])
+  @@index([isActive])
+}
+
+model CourierPartner {
+  id                    String   @id @default(cuid())
+  name                  String   @unique
+  trackingUrlTemplate   String?
+  supportsCOD           Boolean  @default(false)
+  supportsInternational Boolean  @default(false)
+  isActive              Boolean  @default(true)
+  displayOrder          Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model ShippingSettings {
+  id                       String   @id @default(cuid())
+  freeShippingEnabled      Boolean  @default(false)
+  freeShippingThreshold    Decimal  @default(0)
+  codEnabled               Boolean  @default(true)
+  codMaxAmount             Decimal  @default(10000)
+  codExtraCharges          Decimal  @default(0)
+  giftWrapEnabled          Boolean  @default(true)
+  giftWrapCharge           Decimal  @default(50)
+  giftWrapMessageMaxLength Int      @default(200)
+  internationalEnabled     Boolean  @default(false)
+  autoSendTrackingEmail    Boolean  @default(true)
+  defaultCourierId         String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+model Coupon {
+  id                   String        @id @default(cuid())
+  code                 String        @unique
+  description          String?
+  type                 CouponType
+  value                Decimal
+  startDate            DateTime
+  endDate              DateTime
+  isActive             Boolean       @default(true)
+  maxUses              Int?
+  maxUsesPerUser       Int?
+  currentUses          Int           @default(0)
+  minOrderValue        Decimal?
+  applicableProducts   Json?
+  applicableCategories Json?
+  newUsersOnly         Boolean       @default(false)
+  firstOrderOnly       Boolean       @default(false)
+  autoApply            Boolean       @default(false)
+  priority             Int           @default(0)
+  views                Int           @default(0)
+  totalRevenue         Decimal       @default(0)
+  totalDiscount        Decimal       @default(0)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  usages               CouponUsage[]
+
+  @@index([code])
+  @@index([isActive])
+  @@index([type])
+  @@index([startDate, endDate])
+}
+
+model CouponUsage {
+  id             String   @id @default(cuid())
+  couponId       String
+  userId         String
+  orderId        String?
+  discountAmount Decimal
+  createdAt      DateTime @default(now())
+  coupon         Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  order          Order?   @relation(fields: [orderId], references: [id])
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([couponId])
+  @@index([userId])
+  @@index([orderId])
+  @@index([createdAt])
+}
+
+model StoreSettings {
+  id                 String   @id @default(cuid())
+  storeName          String   @default("My Store")
+  tagline            String?
+  logo               String?
+  favicon            String?
+  email              String?
+  phone              String?
+  address            String?
+  city               String?
+  state              String?
+  country            String   @default("India")
+  zipCode            String?
+  businessName       String?
+  registrationNumber String?
+  panNumber          String?
+  operatingHours     Json?
+  facebook           String?
+  instagram          String?
+  twitter            String?
+  youtube            String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model TaxSettings {
+  id                  String   @id @default(cuid())
+  gstEnabled          Boolean  @default(true)
+  gstin               String?
+  stateOfReg          String?
+  cgstRate            Decimal  @default(9)
+  sgstRate            Decimal  @default(9)
+  igstRate            Decimal  @default(18)
+  defaultHsnCode      String?
+  taxExemptCategories Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model EmailSettings {
+  id                 String   @id @default(cuid())
+  smtpHost           String?
+  smtpPort           Int?     @default(587)
+  smtpUsername       String?
+  smtpPassword       String?
+  smtpSecure         Boolean  @default(true)
+  fromEmail          String?
+  fromName           String?
+  replyToEmail       String?
+  orderConfirmation  Boolean  @default(true)
+  orderShipped       Boolean  @default(true)
+  orderDelivered     Boolean  @default(true)
+  accountCreated     Boolean  @default(true)
+  passwordReset      Boolean  @default(true)
+  adminOrderEmail    String?
+  adminNotifications Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model SystemSettings {
+  id                    String   @id @default(cuid())
+  maintenanceMode       Boolean  @default(false)
+  maintenanceMessage    String?
+  maintenanceAllowedIPs Json?
+  currency              String   @default("INR")
+  currencySymbol        String   @default("₹")
+  currencyPosition      String   @default("before")
+  decimalPlaces         Int      @default(2)
+  timezone              String   @default("Asia/Kolkata")
+  dateFormat            String   @default("DD/MM/YYYY")
+  timeFormat            String   @default("12")
+  sessionTimeout        Int      @default(30)
+  passwordMinLength     Int      @default(12)
+  passwordRequireUpper  Boolean  @default(true)
+  passwordRequireLower  Boolean  @default(true)
+  passwordRequireNumber Boolean  @default(true)
+  passwordRequireSymbol Boolean  @default(true)
+  passwordExpiryDays    Int?
+  maxLoginAttempts      Int      @default(5)
+  lockoutDuration       Int      @default(30)
+  require2FA            Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model ActivityLog {
+  id           String   @id @default(cuid())
+  userId       String?
+  userEmail    String?
+  action       String
+  description  String
+  resourceType String?
+  resourceId   String?
+  oldValue     Json?
+  newValue     Json?
+  ipAddress    String?
+  userAgent    String?
+  method       String?
+  path         String?
+  status       String   @default("SUCCESS")
+  errorMessage String?
+  createdAt    DateTime @default(now())
+  user         User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType])
+  @@index([createdAt])
+  @@index([status])
+}
+
+model Notification {
+  id             String                @id @default(cuid())
+  userId         String?
+  role           Role?
+  type           NotificationType
+  title          String
+  message        String
+  priority       NotificationPriority  @default(NORMAL)
+  resourceType   String?
+  resourceId     String?
+  data           Json?
+  channels       NotificationChannel[] @default([IN_APP])
+  read           Boolean               @default(false)
+  readAt         DateTime?
+  emailSent      Boolean               @default(false)
+  emailSentAt    DateTime?
+  whatsappSent   Boolean               @default(false)
+  whatsappSentAt DateTime?
+  pushSent       Boolean               @default(false)
+  pushSentAt     DateTime?
+  actionUrl      String?
+  actionText     String?
+  createdAt      DateTime              @default(now())
+  expiresAt      DateTime?
+  user           User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([read])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@index([role])
+}
+
+model NotificationPreferences {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  preferences       Json     @default("{}")
+  emailEnabled      Boolean  @default(true)
+  whatsappEnabled   Boolean  @default(false)
+  pushEnabled       Boolean  @default(true)
+  quietHoursEnabled Boolean  @default(false)
+  quietHoursStart   String?
+  quietHoursEnd     String?
+  digestEnabled     Boolean  @default(false)
+  digestFrequency   String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BackupLog {
+  id           String       @id @default(cuid())
+  filename     String       @unique
+  fileSize     Int
+  backupType   BackupType   @default(MANUAL)
+  status       BackupStatus @default(IN_PROGRESS)
+  totalRecords Int?
+  entityCounts Json?
+  compressed   Boolean      @default(true)
+  errorMessage String?
+  createdBy    String?
+  createdAt    DateTime     @default(now())
+  completedAt  DateTime?
+
+  @@index([createdAt])
+  @@index([backupType])
+  @@index([status])
+}
+
+model DataImportLog {
+  id           String       @id @default(cuid())
+  filename     String
+  entityType   String
+  totalRows    Int          @default(0)
+  successCount Int          @default(0)
+  failureCount Int          @default(0)
+  status       ImportStatus @default(IN_PROGRESS)
+  errors       Json?
+  importedBy   String
+  createdAt    DateTime     @default(now())
+  completedAt  DateTime?
+
+  @@index([createdAt])
+  @@index([entityType])
+  @@index([status])
+  @@index([importedBy])
+}
+
+model SearchQuery {
+  id        String   @id @default(cuid())
+  term      String   @unique
+  count     Int      @default(1)
+  updatedAt DateTime @updatedAt
+}
+
+model HeroBanner {
+  id           String          @id @default(cuid())
+  ctaLink      String
+  imageUrl     String
+  displayOrder Int             @default(0)
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  mediaType    BannerMediaType @default(IMAGE)
+  videoUrl     String?
+  bannerType   BannerType      @default(HERO)
+
+  @@index([isActive])
+  @@index([displayOrder])
+  @@index([bannerType])
+  @@index([bannerType, isActive])
+}
+
+model Appointment {
+  id                String            @id @default(cuid())
+  customerName      String
+  customerEmail     String
+  customerPhone     String
+  storeLocation     String
+  appointmentDate   DateTime
+  preferredTime     String
+  eventDate         DateTime?
+  message           String?
+  status            AppointmentStatus @default(PENDING)
+  adminNotes        String?
+  allowPhoneContact Boolean           @default(true)
+  newsletterSignup  Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([status])
+  @@index([appointmentDate])
+  @@index([createdAt])
+  @@index([customerEmail])
+}
+
+model ContactSubmission {
+  id          String          @id @default(cuid())
+  fullName    String
+  email       String
+  countryCode String          @default("+91")
+  phoneNumber String
+  country     String
+  city        String?
+  comment     String?
+  newsletter  Boolean         @default(false)
+  status      ContactStatus   @default(NEW)
+  assignedTo  String?
+  priority    ContactPriority @default(NORMAL)
+  adminNotes  String?
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  ipAddress   String?
+  userAgent   String?
+  referrer    String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([email])
 }
 
 enum Role {
@@ -371,297 +822,6 @@ enum RefundStatusEnum {
   FAILED
 }
 
-model OrderNote {
-  id        String   @id @default(cuid())
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId   String
-  content   String
-  createdBy String   // Admin user ID or name
-  createdAt DateTime @default(now())
-  
-  @@index([orderId])
-}
-
-model OrderTimeline {
-  id        String   @id @default(cuid())
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId   String
-  event     String   // e.g., "Order Placed", "Status Changed to SHIPPED"
-  details   String?  // Additional details (JSON or text)
-  createdBy String?  // User/Admin who triggered the event
-  createdAt DateTime @default(now())
-  
-  @@index([orderId])
-}
-
-model CustomerNote {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  content   String
-  createdBy String   // Admin user ID or name
-  createdAt DateTime @default(now())
-  
-  @@index([userId])
-}
-
-model Payment {
-  id                String             @id @default(cuid())
-  order             Order              @relation(fields: [orderId], references: [id])
-  orderId           String
-  
-  // Payment Details
-  amount            Decimal
-  currency          String             @default("INR")
-  status            PaymentStatusEnum  @default(PENDING)
-  method            PaymentMethodEnum
-  
-  // Gateway Details
-  gatewayProvider   String?            // "razorpay", "payu", "cod"
-  gatewayOrderId    String?            @unique
-  gatewayPaymentId  String?            @unique
-  gatewaySignature  String?
-  
-  // Failure Tracking
-  failureReason     String?
-  failureCode       String?
-  retryCount        Int                @default(0)
-  
-  // GST Breakdown
-  subtotal          Decimal?
-  cgst              Decimal?           @default(0)
-  sgst              Decimal?           @default(0)
-  igst              Decimal?           @default(0)
-  gstRate           Decimal?           @default(18)
-  
-  // Metadata
-  metadata          Json?              // For storing gateway-specific data
-  verifiedAt        DateTime?
-  verifiedBy        String?            // Admin user ID
-  
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  
-  refunds           Refund[]
-  
-  @@index([orderId])
-  @@index([status])
-  @@index([method])
-  @@index([gatewayOrderId])
-}
-
-model Refund {
-  id                String            @id @default(cuid())
-  payment           Payment           @relation(fields: [paymentId], references: [id])
-  paymentId         String
-  order             Order             @relation(fields: [orderId], references: [id])
-  orderId           String
-  
-  // Refund Details
-  amount            Decimal
-  reason            String
-  status            RefundStatusEnum  @default(PENDING)
-  
-  // Gateway Refund
-  gatewayRefundId   String?           @unique
-  gatewayStatus     String?
-  
-  // Workflow
-  requestedBy       String            // User ID or "customer"
-  requestedAt       DateTime          @default(now())
-  
-  approvedBy        String?           // Admin user ID
-  approvedAt        DateTime?
-  approvalNotes     String?
-  
-  processedBy       String?           // Admin user ID
-  processedAt       DateTime?
-  processingNotes   String?
-  
-  rejectedBy        String?           // Admin user ID
-  rejectedAt        DateTime?
-  rejectionReason   String?
-  
-  // Metadata
-  metadata          Json?
-  
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  
-  @@index([paymentId])
-  @@index([orderId])
-  @@index([status])
-}
-
-model PaymentGatewaySettings {
-  id                String   @id @default(cuid())
-  provider          String   @unique  // "razorpay", "payu"
-  
-  isEnabled         Boolean  @default(false)
-  isTestMode        Boolean  @default(true)
-  
-  // API Credentials (should be encrypted in production)
-  apiKey            String?
-  apiSecret         String?
-  merchantId        String?
-  
-  // Webhook
-  webhookSecret     String?
-  webhookUrl        String?
-  
-  // Settings
-  settings          Json?    // Provider-specific settings
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
-model ShippingZone {
-  id                String   @id @default(cuid())
-  name              String   // "Mumbai Local", "Delhi NCR", "Rest of India"
-  type              String   // "LOCAL", "METRO", "REST_OF_INDIA", "INTERNATIONAL"
-  
-  // Pincode Configuration
-  pincodes          Json     // Array of pincode ranges: ["400001-400100", "421001"]
-  
-  // Delivery Time
-  minDeliveryDays   Int      @default(2)
-  maxDeliveryDays   Int      @default(5)
-  
-  // Pricing
-  baseCharge        Decimal  @default(0)
-  perKgCharge       Decimal  @default(0)
-  
-  // Status
-  isActive          Boolean  @default(true)
-  displayOrder      Int      @default(0)
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  @@index([type])
-  @@index([isActive])
-}
-
-model CourierPartner {
-  id                  String   @id @default(cuid())
-  name                String   @unique
-  
-  // Tracking
-  trackingUrlTemplate String?  // e.g., "https://track.example.com/{TRACKING_NUMBER}"
-  
-  // Capabilities
-  supportsCOD         Boolean  @default(false)
-  supportsInternational Boolean @default(false)
-  
-  // Status & Order
-  isActive            Boolean  @default(true)
-  displayOrder        Int      @default(0)
-  
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  
-  @@index([isActive])
-}
-
-model ShippingSettings {
-  id                        String   @id @default(cuid())
-  
-  // Free Shipping
-  freeShippingEnabled       Boolean  @default(false)
-  freeShippingThreshold     Decimal  @default(0)
-  
-  // COD Settings
-  codEnabled                Boolean  @default(true)
-  codMaxAmount              Decimal  @default(10000)
-  codExtraCharges           Decimal  @default(0)
-  
-  // Gift Wrap
-  giftWrapEnabled           Boolean  @default(true)
-  giftWrapCharge            Decimal  @default(50)
-  giftWrapMessageMaxLength  Int      @default(200)
-  
-  // International Shipping
-  internationalEnabled      Boolean  @default(false)
-  
-  // Tracking
-  autoSendTrackingEmail     Boolean  @default(true)
-  defaultCourierId          String?
-  
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
-}
-
-model Coupon {
-  id                  String       @id @default(cuid())
-  
-  // Basic Information
-  code                String       @unique
-  description         String?      // Internal description for admins
-  type                CouponType
-  value               Decimal      // Percentage or flat amount
-  
-  // Validity
-  startDate           DateTime
-  endDate             DateTime
-  isActive            Boolean      @default(true)
-  
-  // Usage Limits
-  maxUses             Int?         // Total usage limit (null = unlimited)
-  maxUsesPerUser      Int?         // Per-user limit (null = unlimited)
-  currentUses         Int          @default(0)
-  
-  // Restrictions
-  minOrderValue       Decimal?     // Minimum cart value required
-  applicableProducts  Json?        // Array of product IDs (null = all products)
-  applicableCategories Json?       // Array of category IDs (null = all categories)
-  newUsersOnly        Boolean      @default(false)
-  firstOrderOnly      Boolean      @default(false)
-  
-  // Auto-Apply
-  autoApply           Boolean      @default(false)
-  priority            Int          @default(0) // Higher priority auto-applies first
-  
-  // Analytics
-  views               Int          @default(0)  // How many times viewed/checked
-  totalRevenue        Decimal      @default(0)  // Total revenue from orders with this coupon
-  totalDiscount       Decimal      @default(0)  // Total discount amount given
-  
-  // Relations
-  usages              CouponUsage[]
-  
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
-  
-  @@index([code])
-  @@index([isActive])
-  @@index([type])
-  @@index([startDate, endDate])
-}
-
-model CouponUsage {
-  id              String   @id @default(cuid())
-  
-  coupon          Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
-  couponId        String
-  
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId          String
-  
-  order           Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  orderId         String?
-  
-  // Discount Details
-  discountAmount  Decimal  // Actual discount applied
-  
-  createdAt       DateTime @default(now())
-  
-  @@index([couponId])
-  @@index([userId])
-  @@index([orderId])
-  @@index([createdAt])
-}
-
 enum CouponType {
   PERCENTAGE
   FLAT_AMOUNT
@@ -672,261 +832,6 @@ enum CouponStatus {
   ACTIVE
   INACTIVE
   EXPIRED
-}
-
-// ========================================
-// SETTINGS & SECURITY MODELS
-// ========================================
-
-model StoreSettings {
-  id          String   @id @default(cuid())
-  
-  // Store Information
-  storeName   String   @default("My Store")
-  tagline     String?
-  logo        String?  // URL to logo image
-  favicon     String?  // URL to favicon
-  
-  // Contact Information
-  email       String?
-  phone       String?
-  address     String?
-  city        String?
-  state       String?
-  country     String   @default("India")
-  zipCode     String?
-  
-  // Business Registration
-  businessName       String?
-  registrationNumber String?
-  panNumber          String?
-  
-  // Operating Hours (JSON)
-  operatingHours     Json?  // { "monday": "9:00-18:00", ... }
-  
-  // Social Media
-  facebook    String?
-  instagram   String?
-  twitter     String?
-  youtube     String?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model TaxSettings {
-  id              String   @id @default(cuid())
-  
-  // GST Configuration
-  gstEnabled      Boolean  @default(true)
-  gstin           String?  // GST Identification Number
-  stateOfReg      String?  // State of GST registration
-  
-  // Tax Rates
-  cgstRate        Decimal  @default(9)   // Central GST %
-  sgstRate        Decimal  @default(9)   // State GST %
-  igstRate        Decimal  @default(18)  // Integrated GST %
-  
-  // HSN/SAC Codes
-  defaultHsnCode  String?
-  
-  // Tax Exemptions
-  taxExemptCategories Json?  // Array of category IDs
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-model EmailSettings {
-  id              String   @id @default(cuid())
-  
-  // SMTP Configuration
-  smtpHost        String?
-  smtpPort        Int?     @default(587)
-  smtpUsername    String?
-  smtpPassword    String?  // Should be encrypted
-  smtpSecure      Boolean  @default(true)
-  
-  // Email Configuration
-  fromEmail       String?
-  fromName        String?
-  replyToEmail    String?
-  
-  // Email Templates Enabled/Disabled
-  orderConfirmation    Boolean @default(true)
-  orderShipped         Boolean @default(true)
-  orderDelivered       Boolean @default(true)
-  accountCreated       Boolean @default(true)
-  passwordReset        Boolean @default(true)
-  
-  // Notification Settings
-  adminOrderEmail      String?
-  adminNotifications   Boolean @default(true)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-model SystemSettings {
-  id                    String   @id @default(cuid())
-  
-  // Maintenance Mode
-  maintenanceMode       Boolean  @default(false)
-  maintenanceMessage    String?
-  maintenanceAllowedIPs Json?    // Array of IPs that can access during maintenance
-  
-  // Currency & Localization
-  currency              String   @default("INR")
-  currencySymbol        String   @default("₹")
-  currencyPosition      String   @default("before") // before or after
-  decimalPlaces         Int      @default(2)
-  
-  // Timezone & Date Format
-  timezone              String   @default("Asia/Kolkata")
-  dateFormat            String   @default("DD/MM/YYYY")
-  timeFormat            String   @default("12") // 12 or 24 hour
-  
-  // Security Settings
-  sessionTimeout        Int      @default(30) // minutes
-  passwordMinLength     Int      @default(12)
-  passwordRequireUpper  Boolean  @default(true)
-  passwordRequireLower  Boolean  @default(true)
-  passwordRequireNumber Boolean  @default(true)
-  passwordRequireSymbol Boolean  @default(true)
-  passwordExpiryDays    Int?     // null = never expires
-  maxLoginAttempts      Int      @default(5)
-  lockoutDuration       Int      @default(30) // minutes
-  
-  // 2FA Settings
-  require2FA            Boolean  @default(false) // Require 2FA for all admins
-  
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-}
-
-model ActivityLog {
-  id          String   @id @default(cuid())
-  
-  // User Information
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId      String?
-  userEmail   String?  // Stored separately in case user is deleted
-  
-  // Action Details
-  action      String   // e.g., "UPDATE_PRODUCT", "DELETE_ORDER", "LOGIN"
-  description String   // Human-readable description
-  
-  // Resource Information
-  resourceType String? // e.g., "Product", "Order", "User"
-  resourceId   String? // ID of the affected resource
-  
-  // Change Tracking
-  oldValue    Json?    // Previous state (for updates)
-  newValue    Json?    // New state (for updates/creates)
-  
-  // Request Information
-  ipAddress   String?
-  userAgent   String?
-  method      String?  // HTTP method (GET, POST, PUT, DELETE)
-  path        String?  // Request path
-  
-  // Status
-  status      String   @default("SUCCESS") // SUCCESS, FAILED, WARNING
-  errorMessage String? // If action failed
-  
-  createdAt   DateTime @default(now())
-  
-  @@index([userId])
-  @@index([action])
-  @@index([resourceType])
-  @@index([createdAt])
-  @@index([status])
-}
-
-// =============================================
-// Notifications System
-// =============================================
-
-model Notification {
-  id          String   @id @default(cuid())
-  
-  // Recipient
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // For broadcast/admin notifications
-  role        Role?    // If set, notify all users with this role
-  
-  // Notification Details
-  type        NotificationType
-  title       String
-  message     String
-  priority    NotificationPriority @default(NORMAL)
-  
-  // Related Resources
-  resourceType String?  // Order, Product, Payment, Refund, etc.
-  resourceId   String?
-  
-  // Additional Data (JSON)
-  data        Json?
-  
-  // Delivery Channels
-  channels    NotificationChannel[] @default([IN_APP])
-  
-  // Delivery Status
-  read        Boolean  @default(false)
-  readAt      DateTime?
-  
-  emailSent   Boolean  @default(false)
-  emailSentAt DateTime?
-  
-  whatsappSent Boolean  @default(false)
-  whatsappSentAt DateTime?
-  
-  pushSent    Boolean  @default(false)
-  pushSentAt  DateTime?
-  
-  // Action Button
-  actionUrl   String?
-  actionText  String?
-  
-  createdAt   DateTime @default(now())
-  expiresAt   DateTime? // For auto-cleanup of old notifications
-  
-  @@index([userId])
-  @@index([type])
-  @@index([read])
-  @@index([createdAt])
-  @@index([expiresAt])
-  @@index([role])
-}
-
-model NotificationPreferences {
-  id        String   @id @default(cuid())
-  
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Channel Preferences (per notification type)
-  // Structure: { "NEW_ORDER": ["IN_APP", "EMAIL"], "LOW_STOCK_ALERT": ["IN_APP", "EMAIL", "WHATSAPP"], ... }
-  preferences Json  @default("{}")
-  
-  // Global Settings
-  emailEnabled     Boolean @default(true)
-  whatsappEnabled  Boolean @default(false)
-  pushEnabled      Boolean @default(true)
-  
-  // Quiet Hours
-  quietHoursEnabled Boolean @default(false)
-  quietHoursStart   String? // "22:00"
-  quietHoursEnd     String? // "08:00"
-  
-  // Frequency Control
-  digestEnabled     Boolean @default(false) // Bundle notifications
-  digestFrequency   String? // "DAILY", "WEEKLY"
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 enum NotificationType {
@@ -959,64 +864,6 @@ enum NotificationChannel {
   PUSH
 }
 
-// =============================================
-// Backup & Data Management
-// =============================================
-
-model BackupLog {
-  id          String   @id @default(cuid())
-  
-  // Backup Details
-  filename    String   @unique
-  fileSize    Int      // Size in bytes
-  backupType  BackupType @default(MANUAL)
-  status      BackupStatus @default(IN_PROGRESS)
-  
-  // Metadata
-  totalRecords Int?
-  entityCounts Json?   // { "users": 100, "products": 500, etc }
-  compressed   Boolean  @default(true)
-  
-  // Error tracking
-  errorMessage String?
-  
-  // Audit
-  createdBy    String?  // Admin user ID
-  createdAt    DateTime @default(now())
-  completedAt  DateTime?
-  
-  @@index([createdAt])
-  @@index([backupType])
-  @@index([status])
-}
-
-model DataImportLog {
-  id          String   @id @default(cuid())
-  
-  // Import Details
-  filename    String
-  entityType  String   // "products", "customers", "orders"
-  
-  // Results
-  totalRows   Int      @default(0)
-  successCount Int     @default(0)
-  failureCount Int     @default(0)
-  status      ImportStatus @default(IN_PROGRESS)
-  
-  // Error Details
-  errors      Json?    // Array of error objects with row numbers
-  
-  // Audit
-  importedBy  String   // Admin user ID
-  createdAt   DateTime @default(now())
-  completedAt DateTime?
-  
-  @@index([createdAt])
-  @@index([entityType])
-  @@index([status])
-  @@index([importedBy])
-}
-
 enum BackupType {
   MANUAL
   AUTOMATIC
@@ -1035,80 +882,15 @@ enum ImportStatus {
   FAILED
 }
 
-model SearchQuery {
-  id        String   @id @default(cuid())
-  term      String   @unique
-  count     Int      @default(1)
-  updatedAt DateTime @updatedAt
-}
-
-model HeroBanner {
-  id           String              @id @default(cuid())
-  ctaLink      String
-  mediaType    BannerMediaType     @default(IMAGE)
-  imageUrl     String
-  videoUrl     String?
-  
-  // Banner Type
-  bannerType   BannerType          @default(HERO)
-  
-  displayOrder Int                 @default(0)
-  isActive     Boolean             @default(true)
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-  
-  @@index([isActive])
-  @@index([displayOrder])
-  @@index([bannerType])
-  @@index([bannerType, isActive])
-}
-
 enum BannerMediaType {
   IMAGE
   VIDEO
 }
 
-
-
 enum BannerType {
   HERO
   MID_PAGE
   BOTTOM_PAGE
-}
-
-model Appointment {
-  id                String            @id @default(cuid())
-  
-  // Customer Information
-  customerName      String
-  customerEmail     String
-  customerPhone     String
-  
-  // Appointment Details
-  storeLocation     String            // e.g., "New Delhi - Flagship Store", "Mumbai - Juhu", "Virtual Appointment"
-  appointmentDate   DateTime
-  preferredTime     String            // e.g., "Morning (10AM - 1PM)", "Afternoon (1PM - 4PM)", "Evening (4PM - 7PM)"
-  
-  // Additional Information
-  eventDate         DateTime?         // Optional estimated date of event
-  message           String?           // Message to consultants
-  
-  // Status Management
-  status            AppointmentStatus @default(PENDING)
-  adminNotes        String?           // Internal notes from admin
-  
-  // Preferences
-  allowPhoneContact Boolean           @default(true)
-  newsletterSignup  Boolean           @default(false)
-  
-  // Timestamps
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  
-  @@index([status])
-  @@index([appointmentDate])
-  @@index([createdAt])
-  @@index([customerEmail])
 }
 
 enum AppointmentStatus {
@@ -1117,43 +899,6 @@ enum AppointmentStatus {
   COMPLETED
   CANCELLED
   RESCHEDULED
-}
-
-// Contact Form Submissions
-model ContactSubmission {
-  id            String   @id @default(cuid())
-  
-  // Form Data
-  fullName      String
-  email         String
-  countryCode   String   @default("+91")
-  phoneNumber   String
-  country       String
-  city          String?
-  comment       String?
-  newsletter    Boolean  @default(false)
-  
-  // Status
-  status        ContactStatus @default(NEW)
-  assignedTo    String?  // Admin user ID
-  priority      ContactPriority @default(NORMAL)
-  
-  // Notes
-  adminNotes    String?
-  resolvedAt    DateTime?
-  resolvedBy    String?  // Admin user ID
-  
-  // Metadata
-  ipAddress     String?
-  userAgent     String?
-  referrer      String?
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  @@index([status])
-  @@index([createdAt])
-  @@index([email])
 }
 
 enum ContactStatus {
