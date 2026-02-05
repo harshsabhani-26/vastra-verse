@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { trackOrder } from "./actions"
 import { Search, Package, Calendar, Clock, AlertCircle } from "lucide-react"
+import { TrackingTimeline } from "@/components/order/TrackingTimeline"
 
 export default function TrackOrderPage() {
     const [orderId, setOrderId] = useState("")
@@ -75,33 +76,42 @@ export default function TrackOrderPage() {
                                 <span className="font-serif font-medium text-lg">Order Details</span>
                                 <span className="text-sm text-stone-500">ID: {result.id}</span>
                             </div>
-                            <div className="p-6 space-y-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-[#1a4d3a]">
-                                        <Package size={20} />
+                            <div className="p-6 space-y-8">
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-[#1a4d3a]">
+                                            <Package size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-stone-500 uppercase tracking-wider">Status</p>
+                                            <p className="font-medium text-lg capitalize text-[#1a4d3a]">{result.status.toLowerCase()}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-xs text-stone-500 uppercase tracking-wider">Status</p>
-                                        <p className="font-medium text-lg capitalize text-[#1a4d3a]">{result.status.toLowerCase()}</p>
+
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-600">
+                                            <Calendar size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-stone-500 uppercase tracking-wider">Order Date</p>
+                                            <p className="font-medium text-stone-800">{result.date}</p>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center text-stone-600">
-                                        <Calendar size={20} />
+                                {result.timeline && result.timeline.length > 0 ? (
+                                    <div className="border-t border-stone-100 pt-8">
+                                        <h3 className="font-serif font-medium text-lg mb-6 text-[#1C1917]">Detailed Status</h3>
+                                        <TrackingTimeline events={result.timeline} />
                                     </div>
-                                    <div>
-                                        <p className="text-xs text-stone-500 uppercase tracking-wider">Order Date</p>
-                                        <p className="font-medium text-stone-800">{result.date}</p>
+                                ) : (
+                                    <div className="mt-6 pt-6 border-t border-stone-100">
+                                        <div className="flex gap-3 text-sm text-stone-600 bg-stone-50 p-3 rounded">
+                                            <Clock size={16} className="mt-0.5 shrink-0" />
+                                            <p>Standard delivery typically takes 5-7 business days from the dispatch date.</p>
+                                        </div>
                                     </div>
-                                </div>
-
-                                <div className="mt-6 pt-6 border-t border-stone-100">
-                                    <div className="flex gap-3 text-sm text-stone-600 bg-stone-50 p-3 rounded">
-                                        <Clock size={16} className="mt-0.5 shrink-0" />
-                                        <p>Standard delivery typically takes 5-7 business days from the dispatch date.</p>
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         </div>
                     )}

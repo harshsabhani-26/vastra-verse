@@ -2,11 +2,11 @@ import { Cookie, Eye, Settings, BarChart, AlertCircle } from "lucide-react";
 
 export default function CookiePolicyPage() {
     return (
-        <div className="bg-[#FAF9F6] min-h-screen py-12">
+        <div className="bg-background min-h-screen py-12">
             <div className="container mx-auto px-4 md:px-8 max-w-4xl">
                 {/* Header */}
                 <div className="text-center mb-16">
-                    <h1 className="text-3xl md:text-4xl font-serif text-[#1C1917] mb-4">Cookie Policy</h1>
+                    <h1 className="text-3xl md:text-4xl font-serif text-primary mb-4">Cookie Policy</h1>
                     <div className="w-24 h-1 bg-[#1a4d3a] mx-auto mb-4"></div>
                     <p className="text-stone-600">Last Updated: {new Date().toLocaleDateString('en-IN', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
                 </div>
@@ -19,7 +19,7 @@ export default function CookiePolicyPage() {
                             <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center text-[#1a4d3a]">
                                 <Cookie size={20} strokeWidth={1.5} />
                             </div>
-                            <h2 className="text-2xl font-serif text-[#1C1917]">What Are Cookies?</h2>
+                            <h2 className="text-2xl font-serif text-primary">What Are Cookies?</h2>
                         </div>
                         <p className="text-stone-600 leading-relaxed">
                             Cookies are small text files that are placed on your device (computer, smartphone, or tablet) when you visit our website. They help us provide you with a better browsing experience by remembering your preferences, analyzing how you use our site, and improving our services.
@@ -28,7 +28,7 @@ export default function CookiePolicyPage() {
 
                     {/* Why We Use Cookies */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">Why We Use Cookies</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">Why We Use Cookies</h2>
                         <div className="space-y-3 text-stone-600 leading-relaxed">
                             <p>We use cookies for various purposes:</p>
                             <ul className="list-disc list-inside space-y-2 ml-4">
@@ -45,7 +45,7 @@ export default function CookiePolicyPage() {
 
                     {/* Types of Cookies */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">Types of Cookies We Use</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">Types of Cookies We Use</h2>
 
                         <div className="space-y-6">
                             {/* Essential Cookies */}
@@ -140,7 +140,7 @@ export default function CookiePolicyPage() {
 
                     {/* Cookie Duration */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">Cookie Duration</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">Cookie Duration</h2>
                         <div className="space-y-3 text-stone-600 leading-relaxed">
                             <p><span className="font-semibold text-stone-800">Session Cookies:</span> Temporary cookies that are deleted when you close your browser.</p>
                             <p><span className="font-semibold text-stone-800">Persistent Cookies:</span> Remain on your device for a set period (from a few days to several years) or until you manually delete them.</p>
@@ -149,7 +149,7 @@ export default function CookiePolicyPage() {
 
                     {/* Managing Cookies */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">How to Manage Cookies</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">How to Manage Cookies</h2>
                         <div className="space-y-4 text-stone-600 leading-relaxed">
                             <p>You have the right to accept or reject cookies. Here's how you can manage them:</p>
 
@@ -189,7 +189,7 @@ export default function CookiePolicyPage() {
 
                     {/* Opt-Out Links */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">Opt-Out of Targeted Advertising</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">Opt-Out of Targeted Advertising</h2>
                         <div className="space-y-3 text-stone-600 leading-relaxed">
                             <p>To opt-out of interest-based advertising:</p>
                             <ul className="list-disc list-inside space-y-2 ml-4">
@@ -202,7 +202,7 @@ export default function CookiePolicyPage() {
 
                     {/* Do Not Track */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">Do Not Track (DNT) Signals</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">Do Not Track (DNT) Signals</h2>
                         <p className="text-stone-600 leading-relaxed">
                             Some browsers have a "Do Not Track" feature that signals to websites that you do not want to be tracked. Currently, there is no industry standard for how to respond to DNT signals. We do not currently respond to DNT signals, but we respect your privacy choices and you can manage cookies through your browser settings.
                         </p>
@@ -210,7 +210,7 @@ export default function CookiePolicyPage() {
 
                     {/* Updates to Policy */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">Updates to This Policy</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">Updates to This Policy</h2>
                         <p className="text-stone-600 leading-relaxed">
                             We may update this Cookie Policy from time to time to reflect changes in technology, legislation, or our business operations. We will notify you of any material changes by updating the "Last Updated" date at the top of this page.
                         </p>
@@ -218,12 +218,12 @@ export default function CookiePolicyPage() {
 
                     {/* Contact */}
                     <div className="pt-8 border-t border-stone-100">
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">Questions About Cookies?</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">Questions About Cookies?</h2>
                         <p className="text-stone-600 leading-relaxed mb-4">
                             If you have any questions about our use of cookies, please contact us:
                         </p>
                         <div className="bg-stone-50 p-6 rounded-lg text-stone-700 space-y-2">
-                            <p><span className="font-semibold">Email:</span> privacy@vayanaheritage.com</p>
+                            <p><span className="font-semibold">Email:</span> privacy@vastraverse.com</p>
                             <p><span className="font-semibold">Phone:</span> +91 XXX XXX XXXX</p>
                         </div>
                     </div>

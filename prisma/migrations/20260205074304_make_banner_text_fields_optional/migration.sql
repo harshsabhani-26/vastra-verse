@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "HeroBanner" ALTER COLUMN "title" DROP NOT NULL,
+ALTER COLUMN "subtitle" DROP NOT NULL,
+ALTER COLUMN "ctaText" DROP NOT NULL;

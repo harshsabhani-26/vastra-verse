@@ -28,9 +28,13 @@ export const authConfig = {
             if (token.phone && session.user) {
                 session.user.phone = token.phone;
             }
+            // Include phoneVerified from token
+            if (token.phoneVerified !== undefined && session.user) {
+                session.user.phoneVerified = token.phoneVerified;
+            }
             return session;
         },
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger }) {
             // When user first logs in, add role and phone to token
             if (user) {
                 // Strict admin email validation
@@ -45,7 +49,14 @@ export const authConfig = {
                 }
 
                 token.phone = user.phone;
+                token.phoneVerified = user.phoneVerified;
             }
+
+            // NOTE: Database queries removed from JWT callback
+            // This callback runs in Edge Runtime (middleware) where Prisma is not supported
+            // Phone verification status updates are handled via session update triggers
+            // when the user verifies their phone (see /api/auth/verify-phone)
+
             return token;
         },
     },

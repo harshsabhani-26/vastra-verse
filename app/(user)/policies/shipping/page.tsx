@@ -3,12 +3,12 @@ import { Truck, Clock, Globe, AlertCircle } from "lucide-react";
 
 export default function ShippingPolicyPage() {
     return (
-        <div className="bg-[#FAF9F6] min-h-screen py-12">
+        <div className="bg-background min-h-screen py-12">
             <div className="container mx-auto px-4 md:px-8 max-w-4xl">
                 {/* Header */}
                 <div className="text-center mb-16">
-                    <h1 className="text-3xl md:text-4xl font-serif text-[#1C1917] mb-4">Orders & Shipment Policy</h1>
-                    <div className="w-24 h-1 bg-[#1a4d3a] mx-auto"></div>
+                    <h1 className="text-3xl md:text-4xl font-serif text-primary mb-4">Orders & Shipment Policy</h1>
+                    <div className="w-24 h-1 bg-primary mx-auto"></div>
                 </div>
 
                 <div className="bg-white p-8 md:p-12 rounded-xl border border-stone-200 shadow-sm space-y-12">
@@ -21,7 +21,7 @@ export default function ShippingPolicyPage() {
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-xl font-serif text-[#1C1917] mb-3">Dispatch Time</h2>
+                            <h2 className="text-xl font-serif text-primary mb-3">Dispatch Time</h2>
                             <p className="text-stone-600 leading-relaxed">
                                 We understand your excitement to receive your order! All ready-to-ship items are dispatched within <span className="font-semibold text-stone-800">24-48 hours</span> of placing the order. For made-to-order or customized items, the dispatch timeline may vary between 7-15 days, as specified on the product page.
                             </p>
@@ -36,7 +36,7 @@ export default function ShippingPolicyPage() {
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-xl font-serif text-[#1C1917] mb-3">Delivery Timelines</h2>
+                            <h2 className="text-xl font-serif text-primary mb-3">Delivery Timelines</h2>
                             <div className="space-y-3 text-stone-600 leading-relaxed">
                                 <p>Once dispatched, you can expect your package to arrive within:</p>
                                 <ul className="list-disc list-inside space-y-1 ml-2">
@@ -56,7 +56,7 @@ export default function ShippingPolicyPage() {
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-xl font-serif text-[#1C1917] mb-3">International Shipping</h2>
+                            <h2 className="text-xl font-serif text-primary mb-3">International Shipping</h2>
                             <p className="text-stone-600 leading-relaxed mb-4">
                                 Yes, we ship globally! International shipping rates are calculated at checkout based on the weight of the package and the destination country. Delivery typically takes 10-15 working days.
                             </p>
@@ -69,10 +69,10 @@ export default function ShippingPolicyPage() {
 
                     {/* Tracking Section */}
                     <div className="pt-8 border-t border-stone-100 text-center">
-                        <h3 className="text-lg font-serif text-[#1C1917] mb-2">Track Your Order</h3>
+                        <h3 className="text-lg font-serif text-primary mb-2">Track Your Order</h3>
                         <p className="text-stone-600 mb-6">Already placed an order? You can track its status using your order ID.</p>
                         <Link href="/track-order">
-                            <button className="px-8 py-3 bg-[#1a4d3a] text-white hover:bg-[#153e2e] transition-colors uppercase tracking-widest text-sm font-medium rounded-sm">
+                            <button className="px-8 py-3 bg-primary text-white hover:bg-[#153e2e] transition-colors uppercase tracking-widest text-sm font-medium rounded-sm">
                                 Track Shipment
                             </button>
                         </Link>

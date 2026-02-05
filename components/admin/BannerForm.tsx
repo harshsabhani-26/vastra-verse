@@ -18,12 +18,14 @@ export function BannerForm({ banner }: BannerFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [imagePreview, setImagePreview] = useState(banner?.imageUrl || "");
+    const [videoPreview, setVideoPreview] = useState(banner?.videoUrl || "");
     const [formData, setFormData] = useState({
-        title: banner?.title || "",
-        subtitle: banner?.subtitle || "",
-        ctaText: banner?.ctaText || "",
         ctaLink: banner?.ctaLink || "",
+        mediaType: (banner?.mediaType as "IMAGE" | "VIDEO") || "IMAGE",
         imageUrl: banner?.imageUrl || "",
+        videoUrl: banner?.videoUrl || "",
+        // Banner Type
+        bannerType: (banner?.bannerType as "HERO" | "MID_PAGE" | "BOTTOM_PAGE") || "HERO",
         displayOrder: banner?.displayOrder || 0,
         isActive: banner?.isActive !== undefined ? banner.isActive : true
     });
@@ -54,14 +56,51 @@ export function BannerForm({ banner }: BannerFormProps) {
         reader.readAsDataURL(file);
     };
 
+    const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('video/')) {
+            toast.error("Please select a video file");
+            return;
+        }
+
+        // Validate file size (50MB max)
+        if (file.size > 50 * 1024 * 1024) {
+            toast.error("Video size must be less than 50MB");
+            return;
+        }
+
+        // For now, we'll use a data URL. In production, upload to cloud storage
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const dataUrl = reader.result as string;
+            setVideoPreview(dataUrl);
+            setFormData(prev => ({ ...prev, videoUrl: dataUrl }));
+        };
+        reader.readAsDataURL(file);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
         try {
+            // Prepare data for submission - ensure it matches Omit<HeroBanner, 'id'>
+            const bannerData = {
+                ctaLink: formData.ctaLink,
+                mediaType: formData.mediaType,
+                imageUrl: formData.imageUrl,
+                videoUrl: formData.videoUrl || null,
+                bannerType: formData.bannerType,
+                displayOrder: formData.displayOrder,
+                isActive: formData.isActive,
+            };
+
             if (banner) {
                 // Update existing banner
-                const result = await updateBanner(banner.id, formData);
+                const result = await updateBanner(banner.id, bannerData);
                 if (result.success) {
                     toast.success("Banner updated successfully!");
                     router.push("/admin/banners");
@@ -71,7 +110,7 @@ export function BannerForm({ banner }: BannerFormProps) {
                 }
             } else {
                 // Create new banner
-                const result = await createBanner(formData);
+                const result = await createBanner(bannerData);
                 if (result.success) {
                     toast.success("Banner created successfully!");
                     router.push("/admin/banners");
@@ -90,79 +129,120 @@ export function BannerForm({ banner }: BannerFormProps) {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Image Upload */}
+            {/* Media Type Selection */}
             <div className="space-y-2">
-                <Label htmlFor="image">Banner Image *</Label>
-                <div className="flex flex-col gap-4">
-                    <div className="border-2 border-dashed border-stone-300 rounded-lg p-8 text-center">
-                        {imagePreview ? (
-                            <div className="space-y-4">
-                                <img src={imagePreview} alt="Preview" className="max-h-48 mx-auto rounded" />
-                                <Button type="button" variant="outline" onClick={() => {
-                                    setImagePreview("");
-                                    setFormData(prev => ({ ...prev, imageUrl: "" }));
-                                }}>
-                                    Change Image
-                                </Button>
-                            </div>
-                        ) : (
-                            <label htmlFor="image" className="cursor-pointer">
-                                <Upload className="w-12 h-12 mx-auto text-stone-400 mb-2" />
-                                <p className="text-sm text-stone-600">Click to upload banner image</p>
-                                <p className="text-xs text-stone-500 mt-1">JPG, PNG or WebP. Max size 5MB</p>
-                                <input
-                                    id="image"
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={handleImageChange}
-                                />
-                            </label>
-                        )}
+                <Label htmlFor="mediaType">Media Type *</Label>
+                <select
+                    id="mediaType"
+                    value={formData.mediaType}
+                    onChange={(e) => {
+                        const newType = e.target.value as "IMAGE" | "VIDEO";
+                        setFormData(prev => ({ ...prev, mediaType: newType }));
+                        // Reset previews when switching types
+                        if (newType === "IMAGE") {
+                            setVideoPreview("");
+                            setFormData(prev => ({ ...prev, videoUrl: "" }));
+                        } else {
+                            setImagePreview("");
+                            setFormData(prev => ({ ...prev, imageUrl: "" }));
+                        }
+                    }}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1C1917]"
+                >
+                    <option value="IMAGE">Image</option>
+                    <option value="VIDEO">Video</option>
+                </select>
+            </div>
+
+            {/* Banner Type Selection */}
+            <div className="space-y-2">
+                <Label htmlFor="bannerType">Banner Type *</Label>
+                <select
+                    id="bannerType"
+                    value={formData.bannerType}
+                    onChange={(e) => setFormData(prev => ({ ...prev, bannerType: e.target.value as "HERO" | "MID_PAGE" | "BOTTOM_PAGE" }))}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1C1917]"
+                >
+                    <option value="HERO">Hero Banner (Top of page)</option>
+                    <option value="MID_PAGE">Mid-Page Banner (Between categories & best sellers)</option>
+                    <option value="BOTTOM_PAGE">Bottom Banner (Between best sellers & appointment)</option>
+                </select>
+                <p className="text-xs text-stone-500">Choose where this banner will display on the homepage</p>
+            </div>
+
+            {/* Image Upload - Show only when IMAGE is selected */}
+            {formData.mediaType === "IMAGE" && (
+                <div className="space-y-2">
+                    <Label htmlFor="image">Banner Image *</Label>
+                    <div className="flex flex-col gap-4">
+                        <div className="border-2 border-dashed border-stone-300 rounded-lg p-8 text-center">
+                            {imagePreview ? (
+                                <div className="space-y-4">
+                                    <img src={imagePreview} alt="Preview" className="max-h-48 mx-auto rounded" />
+                                    <Button type="button" variant="outline" onClick={() => {
+                                        setImagePreview("");
+                                        setFormData(prev => ({ ...prev, imageUrl: "" }));
+                                    }}>
+                                        Change Image
+                                    </Button>
+                                </div>
+                            ) : (
+                                <label htmlFor="image" className="cursor-pointer">
+                                    <Upload className="w-12 h-12 mx-auto text-stone-400 mb-2" />
+                                    <p className="text-sm text-stone-600">Click to upload banner image</p>
+                                    <p className="text-xs text-stone-500 mt-1">JPG, PNG or WebP. Max size 5MB</p>
+                                    <input
+                                        id="image"
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handleImageChange}
+                                    />
+                                </label>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
-            {/* Title */}
-            <div className="space-y-2">
-                <Label htmlFor="title">Title *</Label>
-                <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="The Royal Weave"
-                    required
-                />
-            </div>
+            {/* Video Upload - Show only when VIDEO is selected */}
+            {formData.mediaType === "VIDEO" && (
+                <div className="space-y-2">
+                    <Label htmlFor="video">Banner Video *</Label>
+                    <div className="flex flex-col gap-4">
+                        <div className="border-2 border-dashed border-stone-300 rounded-lg p-8 text-center">
+                            {videoPreview ? (
+                                <div className="space-y-4">
+                                    <video src={videoPreview} controls className="max-h-48 mx-auto rounded" />
+                                    <Button type="button" variant="outline" onClick={() => {
+                                        setVideoPreview("");
+                                        setFormData(prev => ({ ...prev, videoUrl: "" }));
+                                    }}>
+                                        Change Video
+                                    </Button>
+                                </div>
+                            ) : (
+                                <label htmlFor="video" className="cursor-pointer">
+                                    <Upload className="w-12 h-12 mx-auto text-stone-400 mb-2" />
+                                    <p className="text-sm text-stone-600">Click to upload banner video</p>
+                                    <p className="text-xs text-stone-500 mt-1">MP4 or WebM. Max size 50MB</p>
+                                    <input
+                                        id="video"
+                                        type="file"
+                                        accept="video/*"
+                                        className="hidden"
+                                        onChange={handleVideoChange}
+                                    />
+                                </label>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
-            {/* Subtitle */}
+            {/* Banner Link */}
             <div className="space-y-2">
-                <Label htmlFor="subtitle">Subtitle *</Label>
-                <Textarea
-                    id="subtitle"
-                    value={formData.subtitle}
-                    onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
-                    placeholder="Discover the timeless elegance of handwoven heritage."
-                    rows={3}
-                    required
-                />
-            </div>
-
-            {/* CTA Text */}
-            <div className="space-y-2">
-                <Label htmlFor="ctaText">Button Text *</Label>
-                <Input
-                    id="ctaText"
-                    value={formData.ctaText}
-                    onChange={(e) => setFormData(prev => ({ ...prev, ctaText: e.target.value }))}
-                    placeholder="Shop Sarees"
-                    required
-                />
-            </div>
-
-            {/* CTA Link */}
-            <div className="space-y-2">
-                <Label htmlFor="ctaLink">Button Link *</Label>
+                <Label htmlFor="ctaLink">Banner Link *</Label>
                 <Input
                     id="ctaLink"
                     value={formData.ctaLink}
@@ -170,6 +250,7 @@ export function BannerForm({ banner }: BannerFormProps) {
                     placeholder="/shop?sort=newest"
                     required
                 />
+                <p className="text-xs text-stone-500">Users will be redirected to this link when they click on the banner</p>
             </div>
 
             {/* Display Order */}
@@ -199,7 +280,14 @@ export function BannerForm({ banner }: BannerFormProps) {
 
             {/* Actions */}
             <div className="flex gap-4 pt-4">
-                <Button type="submit" disabled={loading || !formData.imageUrl}>
+                <Button
+                    type="submit"
+                    disabled={
+                        loading ||
+                        (formData.mediaType === "IMAGE" && !formData.imageUrl) ||
+                        (formData.mediaType === "VIDEO" && !formData.videoUrl)
+                    }
+                >
                     {loading ? (
                         <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />

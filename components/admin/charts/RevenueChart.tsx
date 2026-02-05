@@ -46,7 +46,7 @@ export default function RevenueChart({
                             border: '1px solid #e5e7eb',
                             borderRadius: '8px',
                         }}
-                        formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                        formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, 'Revenue']}
                     />
                     <Legend />
                     {type === 'area' ? (

@@ -14,7 +14,7 @@ export default function SignUpForm() {
         <form action={dispatch} className="space-y-6 w-full max-w-sm">
             <div className="flex flex-col space-y-2 text-center">
                 <h1 className="text-3xl font-serif text-primary">Create Account</h1>
-                <p className="text-sm text-muted-foreground">Join Vayana Heritage for exclusive access</p>
+                <p className="text-sm text-muted-foreground">Join Vastra Verse for exclusive access</p>
             </div>
             <div className="space-y-4">
                 <div>

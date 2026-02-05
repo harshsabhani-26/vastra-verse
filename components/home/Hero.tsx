@@ -33,11 +33,13 @@ const defaultSlides = [
 interface HeroProps {
     banners?: Array<{
         id: string;
-        title: string;
-        subtitle: string;
-        ctaText: string;
+        title?: string | null;
+        subtitle?: string | null;
+        ctaText?: string | null;
         ctaLink: string;
+        mediaType?: "IMAGE" | "VIDEO";
         imageUrl: string;
+        videoUrl?: string | null;
     }>;
 }
 
@@ -46,135 +48,116 @@ export function Hero({ banners }: HeroProps) {
     const slides = banners && banners.length > 0
         ? banners.map((b, idx) => ({
             id: idx + 1,
+            mediaType: b.mediaType || "IMAGE",
             image: b.imageUrl,
-            title: b.title,
-            subtitle: b.subtitle,
-            subtitle2: "",
-            tagline: "",
-            cta: b.ctaText,
-            link: b.ctaLink
+            videoUrl: b.videoUrl || null,
+            buttonLink: b.ctaLink,
         }))
-        : defaultSlides;
+        : defaultSlides.map(s => ({
+            ...s,
+            mediaType: "IMAGE" as const,
+            videoUrl: null,
+            buttonLink: s.link
+        }));
 
     const [currentSlide, setCurrentSlide] = useState(0);
+    const [isPaused, setIsPaused] = useState(false);
 
+    // Auto-play with pause on hover
     useEffect(() => {
+        if (isPaused || slides.length <= 1) return;
+
         const timer = setInterval(() => {
             setCurrentSlide((prev) => (prev + 1) % slides.length);
         }, 5000);
+
         return () => clearInterval(timer);
-    }, [slides.length]);
+    }, [slides.length, isPaused]);
 
     const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
     const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
 
     return (
-        <section className="relative w-full h-[90vh] overflow-hidden">
-            <AnimatePresence mode="wait">
+        <section
+            className="relative w-full h-screen overflow-hidden bg-background"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+        >
+            {/* Background */}
+            <AnimatePresence initial={false} mode="wait">
                 <motion.div
                     key={currentSlide}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.7 }}
+                    transition={{ duration: 1.0, ease: "easeInOut" }}
                     className="absolute inset-0"
                 >
-                    {/* Full Background Image */}
-                    <div
-                        className="absolute inset-0 bg-cover bg-center"
-                        style={{ backgroundImage: `url(${slides[currentSlide].image})` }}
-                    />
-                    {/* Gradient Overlay for text readability */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-900/60 via-purple-700/40 to-pink-600/60" />
+                    {slides[currentSlide].mediaType === "VIDEO" && slides[currentSlide].videoUrl ? (
+                        <>
+                            <video
+                                className="absolute inset-0 w-full h-full object-cover"
+                                src={slides[currentSlide].videoUrl}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/50 via-primary/30 to-primary/20" />
+                        </>
+                    ) : (
+                        <>
+                            <div
+                                className="absolute inset-0 bg-cover bg-center"
+                                style={{
+                                    backgroundImage: `url(${slides[currentSlide].image})`,
+                                }}
+                            />
+                            {/* Lighter, warmer overlay for Light Luxury feel */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-primary/60 via-primary/20 to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent opacity-80" />
+                        </>
+                    )}
                 </motion.div>
             </AnimatePresence>
 
-            {/* Decorative mandala pattern on right */}
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[600px] md:h-[600px] opacity-10 pointer-events-none">
-                <svg viewBox="0 0 200 200" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="100" cy="100" r="80" fill="none" stroke="white" strokeWidth="0.5" />
-                    <circle cx="100" cy="100" r="60" fill="none" stroke="white" strokeWidth="0.5" />
-                    <circle cx="100" cy="100" r="40" fill="none" stroke="white" strokeWidth="0.5" />
-                    <line x1="100" y1="100" x2="180" y2="100" stroke="white" strokeWidth="0.5" />
-                    <line x1="100" y1="100" x2="169.28" y2="140" stroke="white" strokeWidth="0.5" />
-                    <line x1="100" y1="100" x2="140" y2="169.28" stroke="white" strokeWidth="0.5" />
-                    <line x1="100" y1="100" x2="100" y2="180" stroke="white" strokeWidth="0.5" />
-                    <line x1="100" y1="100" x2="60" y2="169.28" stroke="white" strokeWidth="0.5" />
-                    <line x1="100" y1="100" x2="30.72" y2="140" stroke="white" strokeWidth="0.5" />
-                    <line x1="100" y1="100" x2="20" y2="100" stroke="white" strokeWidth="0.5" />
-                    <line x1="100" y1="100" x2="30.72" y2="60" stroke="white" strokeWidth="0.5" />
-                    <line x1="100" y1="100" x2="60" y2="30.72" stroke="white" strokeWidth="0.5" />
-                    <line x1="100" y1="100" x2="100" y2="20" stroke="white" strokeWidth="0.5" />
-                    <line x1="100" y1="100" x2="140" y2="30.72" stroke="white" strokeWidth="0.5" />
-                    <line x1="100" y1="100" x2="169.28" y2="60" stroke="white" strokeWidth="0.5" />
-                </svg>
-            </div>
 
-            {/* Content - Centered */}
-            <div className="absolute inset-0 flex items-center justify-center z-10 px-4">
-                <div className="text-white space-y-6 text-center max-w-4xl mx-auto">
-                    <motion.h1
-                        key={`h1-${currentSlide}`}
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.2, duration: 0.8 }}
-                        className="text-6xl md:text-7xl lg:text-8xl font-serif lowercase"
-                    >
-                        {slides[currentSlide].title}
-                    </motion.h1>
-                    <motion.div
-                        key={`desc-${currentSlide}`}
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.4, duration: 0.8 }}
-                        className="space-y-2"
-                    >
-                        <p className="text-xl md:text-2xl font-serif italic">
-                            {slides[currentSlide].subtitle}
-                        </p>
-                        {slides[currentSlide].subtitle2 && (
-                            <p className="text-2xl md:text-3xl font-sans font-bold">
-                                {slides[currentSlide].subtitle2}
-                            </p>
-                        )}
-                        {slides[currentSlide].tagline && (
-                            <p className="text-sm md:text-base font-sans font-light tracking-[0.2em] text-white/70 uppercase">
-                                {slides[currentSlide].tagline}
-                            </p>
-                        )}
-                    </motion.div>
-                    <motion.div
-                        key={`btn-${currentSlide}`}
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.6, duration: 0.8 }}
-                    >
-                        <Link href={slides[currentSlide].link}>
-                            <Button variant="gold" size="lg" className="min-w-[200px] h-14 uppercase tracking-widest">
-                                {slides[currentSlide].cta}
-                            </Button>
-                        </Link>
-                    </motion.div>
-                </div>
-            </div>
+            {/* Clickable Banner Background */}
+            <Link href={slides[currentSlide].buttonLink} className="absolute inset-0 z-10">
+                <span className="sr-only">View {slides[currentSlide].buttonLink}</span>
+            </Link>
 
-            {/* Navigation Buttons */}
+            {/* Navigation - Only show when multiple slides */}
             {slides.length > 1 && (
                 <>
                     <button
                         onClick={prevSlide}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full border border-white/30 text-white hover:bg-white/20 transition-colors z-20"
+                        className="absolute left-6 lg:left-8 top-1/2 -translate-y-1/2 text-white/60 hover:text-white/95 transition-all duration-300 z-20 group"
                         aria-label="Previous slide"
                     >
-                        <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
+                        <ChevronLeft className="w-8 h-8 lg:w-10 lg:h-10 stroke-[1.5]" />
                     </button>
                     <button
                         onClick={nextSlide}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full border border-white/30 text-white hover:bg-white/20 transition-colors z-20"
+                        className="absolute right-6 lg:right-8 top-1/2 -translate-y-1/2 text-white/60 hover:text-white/95 transition-all duration-300 z-20 group"
                         aria-label="Next slide"
                     >
-                        <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
+                        <ChevronRight className="w-8 h-8 lg:w-10 lg:h-10 stroke-[1.5]" />
                     </button>
+
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                        {slides.map((_, index) => (
+                            <button
+                                key={index}
+                                onClick={() => setCurrentSlide(index)}
+                                className={`h-1.5 rounded-full transition-all duration-500 ${index === currentSlide
+                                    ? 'w-8 bg-white/90'
+                                    : 'w-1.5 bg-white/30 hover:bg-white/50'
+                                    }`}
+                                aria-label={`Go to slide ${index + 1}`}
+                            />
+                        ))}
+                    </div>
                 </>
             )}
         </section>

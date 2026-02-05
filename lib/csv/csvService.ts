@@ -387,7 +387,7 @@ export async function importProductsFromCSV(
                     status: 'FAILED',
                     totalRows,
                     failureCount: allErrors.length,
-                    errors: allErrors,
+                    errors: allErrors as any,
                     completedAt: new Date(),
                 },
             });
@@ -536,7 +536,7 @@ export async function importProductsFromCSV(
                 totalRows,
                 successCount,
                 failureCount,
-                errors: importErrors,
+                errors: importErrors as any,
                 completedAt: new Date(),
             },
         });
@@ -560,7 +560,7 @@ export async function importProductsFromCSV(
                         field: 'general',
                         message: error instanceof Error ? error.message : 'Unknown error',
                     },
-                ],
+                ] as any,
                 completedAt: new Date(),
             },
         });

@@ -93,30 +93,27 @@ export function ProductDetails({ product, initialIsWishlisted = false }: Product
             <div className="space-y-4">
                 <div className="flex justify-between items-start">
                     <div>
-                        <p className="text-xs font-medium uppercase tracking-widest text-[#1C1917] mb-2">
+                        <p className="text-xs font-medium uppercase tracking-[0.2em] text-secondary mb-2">
                             {product.category?.name || "Collection"}
                         </p>
-                        <h1 className="text-3xl lg:text-4xl font-serif text-[#1C1917] leading-tight">
+                        <h1 className="text-3xl lg:text-4xl font-serif text-primary leading-tight">
                             {product.name}
                         </h1>
                     </div>
-                    <button className="text-stone-500 hover:text-stone-900">
-                        <Share2 className="w-5 h-5" />
-                    </button>
                 </div>
 
                 <div>
-                    <p className="text-2xl font-serif text-[#1C1917]">
+                    <p className="text-2xl font-serif text-primary">
                         ₹{Number(product.finalPrice || product.price).toLocaleString()}
                     </p>
-                    <p className="text-[10px] text-stone-500 mt-1 uppercase tracking-wide">
+                    <p className="text-[10px] text-text-muted mt-1 uppercase tracking-wide">
                         MRP Inclusive of all taxes
                     </p>
                 </div>
             </div>
 
             {/* Description */}
-            <div className="prose prose-stone text-sm text-stone-600 leading-relaxed">
+            <div className="prose prose-stone text-sm text-text-main leading-relaxed font-sans">
                 <p>{product.description}</p>
             </div>
 
@@ -124,7 +121,7 @@ export function ProductDetails({ product, initialIsWishlisted = false }: Product
             {product.colors && product.colors.length > 0 && (
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <span className="text-sm text-[#1C1917]">Colour: <span className="font-medium">{selectedColor}</span></span>
+                        <span className="text-sm text-primary">Colour: <span className="font-medium">{selectedColor}</span></span>
                     </div>
                     <div className="flex flex-wrap gap-3">
                         {product.colors.map((color: string) => (
@@ -133,7 +130,7 @@ export function ProductDetails({ product, initialIsWishlisted = false }: Product
                                 onClick={() => setSelectedColor(color)}
                                 className={cn(
                                     "w-8 h-8 rounded-full border relative transition-all",
-                                    selectedColor === color ? "ring-1 ring-offset-2 ring-[#1C1917] scale-110" : "hover:scale-110 border-stone-200",
+                                    selectedColor === color ? "ring-1 ring-offset-2 ring-primary scale-110" : "hover:scale-110 border-primary/20",
                                     COLOR_MAP[color] || "bg-stone-200"
                                 )}
                                 title={color}
@@ -147,21 +144,21 @@ export function ProductDetails({ product, initialIsWishlisted = false }: Product
 
             {/* Delivery Method */}
             <div className="space-y-3 pt-2">
-                <span className="text-sm text-[#1C1917]">Delivery Method:</span>
+                <span className="text-sm text-primary">Delivery Method:</span>
                 <div className="flex gap-6">
                     <label className="flex items-center gap-2 cursor-pointer">
-                        <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center", deliveryMethod === 'home' ? "border-[#1C1917]" : "border-stone-300")}>
-                            {deliveryMethod === 'home' && <div className="w-2 h-2 rounded-full bg-[#1C1917]" />}
+                        <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center", deliveryMethod === 'home' ? "border-primary" : "border-primary/20")}>
+                            {deliveryMethod === 'home' && <div className="w-2 h-2 rounded-full bg-primary" />}
                         </div>
                         <input type="radio" className="hidden" checked={deliveryMethod === 'home'} onChange={() => setDeliveryMethod('home')} />
-                        <span className="text-sm text-stone-600">Home Delivery</span>
+                        <span className="text-sm text-text-main">Home Delivery</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
-                        <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center", deliveryMethod === 'store' ? "border-[#1C1917]" : "border-stone-300")}>
-                            {deliveryMethod === 'store' && <div className="w-2 h-2 rounded-full bg-[#1C1917]" />}
+                        <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center", deliveryMethod === 'store' ? "border-primary" : "border-primary/20")}>
+                            {deliveryMethod === 'store' && <div className="w-2 h-2 rounded-full bg-primary" />}
                         </div>
                         <input type="radio" className="hidden" checked={deliveryMethod === 'store'} onChange={() => setDeliveryMethod('store')} />
-                        <span className="text-sm text-stone-600">Store Pick-up</span>
+                        <span className="text-sm text-text-main">Store Pick-up</span>
                     </label>
                 </div>
             </div>
@@ -172,59 +169,59 @@ export function ProductDetails({ product, initialIsWishlisted = false }: Product
                     onClick={handleAddToCart}
                     disabled={loading || product.stock === 0}
                     className={cn(
-                        "flex-1 h-12 uppercase tracking-widest text-xs font-medium rounded-none",
+                        "flex-1 h-12 uppercase tracking-[0.2em] text-xs font-medium rounded-sm transition-all duration-300 shadow-luxury",
                         product.stock === 0
-                            ? "bg-stone-200 text-stone-400 cursor-not-allowed hover:bg-stone-200"
-                            : "bg-[#545454] hover:bg-[#333333] text-white"
+                            ? "bg-primary/5 text-text-muted cursor-not-allowed"
+                            : "bg-primary hover:bg-primary/90 text-white hover:shadow-elevated"
                     )}
                 >
                     {loading ? "Adding..." : (product.stock === 0 ? "Out of Stock" : "Add To Cart")}
                 </Button>
                 <button
                     onClick={toggleWishlist}
-                    className="h-12 w-12 flex items-center justify-center border border-stone-200 hover:border-[#1C1917] transition-colors"
+                    className="h-12 w-12 flex items-center justify-center border border-primary/20 hover:border-primary transition-colors text-primary"
                 >
-                    <Heart className={cn("w-5 h-5", isWishlisted ? "fill-[#1C1917] text-[#1C1917]" : "text-[#1C1917]")} />
+                    <Heart className={cn("w-5 h-5", isWishlisted ? "fill-primary text-primary" : "text-primary")} />
                 </button>
             </div>
 
-            <p className="text-xs text-stone-500 leading-relaxed">
+            <p className="text-xs text-text-muted leading-relaxed">
                 This is a made to order style and we will take 7-10 business days for production and dispatch orders within India and internationally.
             </p>
 
             {/* Accordions */}
-            <div className="border-t border-stone-200 mt-8">
+            <div className="border-t border-primary/10 mt-8">
                 <AccordionItem
                     title="Product Details"
                     isOpen={openSection === 'details'}
                     onClick={() => toggleSection('details')}
                 >
-                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm text-stone-600">
+                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm text-text-muted">
                         {product.fabricType && (
                             <>
-                                <span className="font-medium text-[#1C1917]">Fabric:</span>
+                                <span className="font-medium text-primary">Fabric:</span>
                                 <span>{product.fabricType}</span>
                             </>
                         )}
                         {product.weaveType && (
                             <>
-                                <span className="font-medium text-[#1C1917]">Weave:</span>
+                                <span className="font-medium text-primary">Weave:</span>
                                 <span>{product.weaveType}</span>
                             </>
                         )}
                         {product.sareeLength && (
                             <>
-                                <span className="font-medium text-[#1C1917]">Saree Length:</span>
+                                <span className="font-medium text-primary">Saree Length:</span>
                                 <span>{product.sareeLength}</span>
                             </>
                         )}
                         {product.blouseLength && (
                             <>
-                                <span className="font-medium text-[#1C1917]">Blouse Length:</span>
+                                <span className="font-medium text-primary">Blouse Length:</span>
                                 <span>{product.blouseLength}</span>
                             </>
                         )}
-                        <span className="font-medium text-[#1C1917]">SKU:</span>
+                        <span className="font-medium text-primary">SKU:</span>
                         <span>{product.sku || product.id.slice(0, 8).toUpperCase()}</span>
                     </div>
                 </AccordionItem>
@@ -234,8 +231,8 @@ export function ProductDetails({ product, initialIsWishlisted = false }: Product
                     isOpen={openSection === 'stylist'}
                     onClick={() => toggleSection('stylist')}
                 >
-                    <p className="text-sm text-stone-600">
-                        Need help with styling or customization? Contact our styling team at <a href="mailto:stylist@example.com" className="underline">stylist@example.com</a> or call us at +91 91234 56789.
+                    <p className="text-sm text-text-muted">
+                        Need help with styling or customization? Contact our styling team at <a href="mailto:stylist@example.com" className="underline hover:text-primary">stylist@example.com</a> or call us at +91 91234 56789.
                     </p>
                 </AccordionItem>
 
@@ -244,7 +241,7 @@ export function ProductDetails({ product, initialIsWishlisted = false }: Product
                     isOpen={openSection === 'delivery'}
                     onClick={() => toggleSection('delivery')}
                 >
-                    <p className="text-sm text-stone-600">
+                    <p className="text-sm text-text-muted">
                         We offer free shipping on all orders above ₹5,000 within India. International shipping is calculated at checkout. Returns are accepted within 7 days of delivery for store credit only.
                     </p>
                 </AccordionItem>
@@ -254,7 +251,7 @@ export function ProductDetails({ product, initialIsWishlisted = false }: Product
                     isOpen={openSection === 'disclaimer'}
                     onClick={() => toggleSection('disclaimer')}
                 >
-                    <p className="text-sm text-stone-600">
+                    <p className="text-sm text-text-muted">
                         The colors you see on your screen may slightly vary from the actual product due to different screen calibrations. Handwoven fabrics may have slight irregularities which are natural.
                     </p>
                 </AccordionItem>
@@ -265,15 +262,15 @@ export function ProductDetails({ product, initialIsWishlisted = false }: Product
 
 function AccordionItem({ title, isOpen, onClick, children }: { title: string, isOpen: boolean, onClick: () => void, children: React.ReactNode }) {
     return (
-        <div className="border-b border-stone-200">
+        <div className="border-b border-primary/10">
             <button
                 onClick={onClick}
                 className="w-full py-4 flex items-center justify-between text-left group"
             >
-                <span className="text-xs font-medium uppercase tracking-widest text-[#1C1917] group-hover:text-stone-600 transition-colors">
+                <span className="text-xs font-medium uppercase tracking-[0.2em] text-primary group-hover:text-secondary transition-colors">
                     {title}
                 </span>
-                {isOpen ? <Minus className="w-4 h-4 text-[#1C1917]" /> : <Plus className="w-4 h-4 text-[#1C1917]" />}
+                {isOpen ? <Minus className="w-4 h-4 text-primary" /> : <Plus className="w-4 h-4 text-primary" />}
             </button>
             <div
                 className={cn(

@@ -26,7 +26,7 @@ export default function CorporateInformationPage() {
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-1">Business Name</h3>
-                                    <p className="text-lg text-stone-800">M & H (Vayana Heritage)</p>
+                                    <p className="text-lg text-stone-800">Vastra Verse</p>
                                 </div>
 
                                 <div>
@@ -74,7 +74,7 @@ export default function CorporateInformationPage() {
 
                         <div className="bg-stone-50 p-6 rounded-lg border border-stone-200">
                             <p className="text-stone-800 leading-relaxed">
-                                M & H (Vayana Heritage)<br />
+                                Vastra Verse<br />
                                 [Building Name/Number]<br />
                                 [Street Address]<br />
                                 [Locality/Area]<br />
@@ -99,8 +99,8 @@ export default function CorporateInformationPage() {
                                     <Mail className="w-5 h-5 text-[#1a4d3a] mt-1" />
                                     <div>
                                         <h3 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-1">Email</h3>
-                                        <a href="mailto:support@vayanaheritage.com" className="text-stone-800 hover:text-[#1a4d3a] transition-colors">
-                                            support@vayanaheritage.com
+                                        <a href="mailto:support@vastraverse.com" className="text-stone-800 hover:text-[#1a4d3a] transition-colors">
+                                            support@vastraverse.com
                                         </a>
                                     </div>
                                 </div>
@@ -184,7 +184,7 @@ export default function CorporateInformationPage() {
                             <p className="text-stone-800">
                                 <span className="font-semibold">Name:</span> [Grievance Officer Name]<br />
                                 <span className="font-semibold">Designation:</span> [Designation]<br />
-                                <span className="font-semibold">Email:</span> <a href="mailto:grievance@vayanaheritage.com" className="text-[#1a4d3a] hover:underline">grievance@vayanaheritage.com</a><br />
+                                <span className="font-semibold">Email:</span> <a href="mailto:grievance@vastraverse.com" className="text-[#1a4d3a] hover:underline">grievance@vastraverse.com</a><br />
                                 <span className="font-semibold">Phone:</span> +91 XXX XXX XXXX<br />
                                 <span className="font-semibold">Response Time:</span> Within 48 hours
                             </p>
@@ -198,7 +198,7 @@ export default function CorporateInformationPage() {
 
                         <div className="bg-stone-50 p-6 rounded-lg border border-stone-200 space-y-2">
                             <p className="text-stone-800">
-                                <span className="font-semibold">Account Name:</span> M & H (Vayana Heritage)
+                                <span className="font-semibold">Account Name:</span> Vastra Verse
                             </p>
                             <p className="text-stone-800">
                                 <span className="font-semibold">Bank Name:</span> [Your Bank Name]
@@ -220,7 +220,7 @@ export default function CorporateInformationPage() {
                         <h2 className="text-2xl font-serif text-[#1C1917] mb-6">Compliance & Certifications</h2>
 
                         <div className="space-y-3 text-stone-600 leading-relaxed">
-                            <p>M & H (Vayana Heritage) is committed to operating in full compliance with all applicable laws and regulations:</p>
+                            <p>Vastra Verse is committed to operating in full compliance with all applicable laws and regulations:</p>
                             <ul className="list-disc list-inside space-y-2 ml-4">
                                 <li>GST Registration & Compliance</li>
                                 <li>Consumer Protection Act, 2019</li>
@@ -235,7 +235,7 @@ export default function CorporateInformationPage() {
                     <div>
                         <h2 className="text-2xl font-serif text-[#1C1917] mb-6">Our Commitment</h2>
                         <p className="text-stone-600 leading-relaxed">
-                            At Vayana Heritage, we are committed to preserving traditional Indian handloom and handicraft heritage. We work directly with artisan communities, ensuring fair wages and sustainable practices. Our goal is to bring the finest Indian textiles to you while supporting the livelihoods of skilled craftspeople.
+                            At Vastra Verse, we are committed to preserving traditional Indian handloom and handicraft heritage. We work directly with artisan communities, ensuring fair wages and sustainable practices. Our goal is to bring the finest Indian textiles to you while supporting the livelihoods of skilled craftspeople.
                         </p>
                     </div>
 
@@ -243,7 +243,7 @@ export default function CorporateInformationPage() {
                     <div className="pt-8 border-t border-stone-200 text-center">
                         <p className="text-sm text-stone-500">
                             For any inquiries regarding our corporate information or business operations,<br />
-                            please contact us at <a href="mailto:legal@vayanaheritage.com" className="text-[#1a4d3a] hover:underline">legal@vayanaheritage.com</a>
+                            please contact us at <a href="mailto:legal@vastraverse.com" className="text-[#1a4d3a] hover:underline">legal@vastraverse.com</a>
                         </p>
                     </div>
 

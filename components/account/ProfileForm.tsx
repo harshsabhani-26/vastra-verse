@@ -1,14 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { updateProfile } from "@/app/actions/account";
 import { useState, useTransition } from "react";
 import { toast } from "react-hot-toast";
+import { Check, Mail, Phone, User as UserIcon } from "lucide-react";
 
 interface UserData {
     name: string | null;
     email: string | null;
     phone: string | null;
+    phoneVerified: boolean;
     newsletter: boolean;
 }
 
@@ -31,110 +35,224 @@ export function ProfileForm({ user }: { user: UserData }) {
         });
     }
 
+    // Phone state
+    const [currentPhone, setCurrentPhone] = useState(user.phoneVerified ? (user.phone || "") : "");
+    const [isEditing, setIsEditing] = useState(false);
+
+    // Derived state: User is verified only if user.phoneVerified is true AND the input matches the saved phone
+    // However, since we now blank the input if unverified, currentPhone will be empty or user typed.
+    // So if user.phoneVerified is false, isVerified should be false.
+    // If user.phoneVerified is true, checking against user.phone ensures we detect changes.
+    const isVerified = user.phoneVerified && user.phone === currentPhone;
+
     return (
-        <form action={handleSubmit} className="space-y-8">
+        <form action={handleSubmit} className="space-y-8 animate-fade-in-up">
             {/* Name Fields */}
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                    <label htmlFor="firstName" className="block text-xs uppercase tracking-wider text-stone-500">
+                    <label htmlFor="firstName" className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium">
                         First Name <span className="text-red-500">*</span>
                     </label>
-                    <input
-                        type="text"
-                        name="firstName"
-                        id="firstName"
-                        defaultValue={firstNameDefault}
-                        required
-                        className="w-full bg-transparent border-b border-stone-300 py-2 focus:outline-none focus:border-primary transition-colors text-primary font-medium"
-                    />
+                    <div className="relative">
+                        <UserIcon className="absolute left-3 top-2.5 h-4 w-4 text-primary/40" />
+                        <Input
+                            type="text"
+                            name="firstName"
+                            id="firstName"
+                            defaultValue={firstNameDefault}
+                            required
+                            className="pl-9 bg-background border-primary/20 focus:border-primary focus:ring-0 rounded-sm h-11 transition-all"
+                            placeholder="Your First Name"
+                        />
+                    </div>
                 </div>
 
                 <div className="space-y-2">
-                    <label htmlFor="lastName" className="block text-xs uppercase tracking-wider text-stone-500">
+                    <label htmlFor="lastName" className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium">
                         Last Name <span className="text-red-500">*</span>
                     </label>
-                    <input
-                        type="text"
-                        name="lastName"
-                        id="lastName"
-                        defaultValue={lastNameDefault}
-                        required
-                        className="w-full bg-transparent border-b border-stone-300 py-2 focus:outline-none focus:border-primary transition-colors text-primary font-medium"
-                    />
+                    <div className="relative">
+                        <UserIcon className="absolute left-3 top-2.5 h-4 w-4 text-primary/40" />
+                        <Input
+                            type="text"
+                            name="lastName"
+                            id="lastName"
+                            defaultValue={lastNameDefault}
+                            required
+                            className="pl-9 bg-background border-primary/20 focus:border-primary focus:ring-0 rounded-sm h-11 transition-all"
+                            placeholder="Your Last Name"
+                        />
+                    </div>
                 </div>
             </div>
 
             {/* Mobile Number */}
             <div className="space-y-2">
-                <label htmlFor="mobile" className="block text-xs uppercase tracking-wider text-stone-500">
-                    Mobile Number <span className="text-red-500">*</span>
-                </label>
-                <div className="flex gap-4 items-end">
-                    <select className="bg-transparent border-b border-stone-300 py-2 focus:outline-none text-primary w-20">
-                        <option>+91</option>
-                    </select>
-                    <input
-                        type="tel"
-                        name="mobile"
-                        id="mobile"
-                        defaultValue={user.phone || ""}
-                        required
-                        maxLength={10}
-                        pattern="[0-9]{10}"
-                        className="flex-1 bg-transparent border-b border-stone-300 py-2 focus:outline-none focus:border-primary transition-colors text-primary font-medium"
-                    />
+                <div className="flex items-center justify-between">
+                    <label htmlFor="mobile" className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium">
+                        Mobile Number <span className="text-red-500">*</span>
+                    </label>
+                    {isVerified ? (
+                        <Badge variant="secondary" className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200 gap-1 px-3 py-1 font-medium rounded-full shadow-sm">
+                            <Check className="w-3 h-3" />
+                            Verified
+                        </Badge>
+                    ) : (
+                        <span className="text-[10px] uppercase tracking-wider text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-sm border border-amber-100 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            Unverified
+                        </span>
+                    )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex gap-3 flex-1">
+                        <div className="flex-shrink-0">
+                            <select className="h-11 px-3 bg-surface border border-primary/20 text-sm text-primary focus:outline-none focus:border-primary w-20 rounded-sm">
+                                <option>+91</option>
+                            </select>
+                        </div>
+                        <div className="relative flex-1">
+                            <Phone className="absolute left-3 top-3.5 h-4 w-4 text-primary/40" />
+                            <Input
+                                type="tel"
+                                name="mobile"
+                                id="mobile"
+                                value={currentPhone}
+                                onChange={(e) => setCurrentPhone(e.target.value)}
+                                disabled={isVerified && !isEditing}
+                                required
+                                maxLength={10}
+                                placeholder="99999 99999"
+                                pattern="[0-9]{10}"
+                                className={`pl-9 bg-background border-primary/20 h-11 rounded-sm transition-all focus:border-primary focus:ring-0 ${isVerified && !isEditing ? 'opacity-70 cursor-not-allowed bg-surface' : 'bg-background'}`}
+                            />
+                        </div>
+                    </div>
+
+                    {isVerified && !isEditing ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                                setIsEditing(true);
+                                setCurrentPhone("");
+                            }}
+                            className="w-full sm:w-auto h-11 px-6 text-[10px] uppercase tracking-[0.2em] border-primary/20 hover:border-primary hover:bg-surface text-primary rounded-sm transition-all"
+                        >
+                            Edit
+                        </Button>
+                    ) : (
+                        <Button
+                            type="button"
+                            onClick={() => {
+                                if (!currentPhone || currentPhone.length !== 10) {
+                                    toast.error('Please enter a valid 10-digit mobile number');
+                                    return;
+                                }
+                                // Trigger MSG91 OTP widget
+                                if (typeof window !== 'undefined' && (window as any).initSendOTP) {
+                                    (window as any).initSendOTP({
+                                        widgetId: process.env.NEXT_PUBLIC_MSG91_WIDGET_ID,
+                                        tokenAuth: process.env.NEXT_PUBLIC_MSG91_TOKEN_AUTH,
+                                        mobile: '91' + currentPhone,
+                                        identifier: '91' + currentPhone,
+                                        success: async (data: any) => {
+                                            // Handle various response formats
+                                            const token = data.token || data.message || (typeof data === 'string' ? data : null);
+
+                                            if (!token) {
+                                                toast.error('Could not retrieve verification token');
+                                                return;
+                                            }
+
+                                            // Update phoneVerified status
+                                            const res = await fetch('/api/auth/verify-phone', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ token: token, phone: currentPhone })
+                                            });
+                                            const responseData = await res.json();
+                                            if (res.ok) {
+                                                toast.success('Phone verified successfully!');
+                                                window.location.reload();
+                                            } else {
+                                                toast.error(responseData.error || 'Verification failed');
+                                            }
+                                        },
+                                        failure: () => {
+                                            toast.error('Verification failed. Please try again.');
+                                        }
+                                    });
+                                } else {
+                                    toast.error('Verification service not available');
+                                }
+                            }}
+                            className="w-full sm:w-auto h-11 px-8 bg-primary text-white hover:bg-primary-dark uppercase tracking-[0.2em] text-[10px] font-bold shadow-luxury hover:shadow-elevated rounded-sm transition-all"
+                        >
+                            Verify Now
+                        </Button>
+                    )}
                 </div>
             </div>
 
             {/* Email */}
             <div className="space-y-2">
-                <label htmlFor="email" className="block text-xs uppercase tracking-wider text-stone-500">
+                <label htmlFor="email" className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium">
                     Email <span className="text-red-500">*</span>
                 </label>
-                <input
-                    type="email"
-                    id="email"
-                    defaultValue={user.email || ""}
-                    disabled
-                    className="w-full bg-transparent border-b border-stone-300 py-2 focus:outline-none text-stone-500 cursor-not-allowed"
-                />
-                <div className="mt-4 text-xs text-stone-500 space-y-1">
-                    <p>Wish to change your email?</p>
-                    <p>Reach out to us at <a href="mailto:care@anitadongre.com" className="underline hover:text-primary">care@anitadongre.com</a> or</p>
-                    <p>call us at +91 99993 13366</p>
+                <div className="relative">
+                    <Mail className="absolute left-3 top-3.5 h-4 w-4 text-primary/40" />
+                    <Input
+                        type="email"
+                        id="email"
+                        defaultValue={user.email || ""}
+                        disabled
+                        className="pl-9 bg-surface/50 border-primary/10 text-text-muted cursor-not-allowed rounded-sm h-11"
+                    />
+                </div>
+                <div className="flex items-start gap-3 mt-3 p-4 bg-surface border border-primary/5 rounded-sm text-xs text-text-muted">
+                    <div className="shrink-0 text-primary mt-0.5 font-serif italic">i</div>
+                    <div>
+                        <p className="mb-1">To change your email address, please contact our support team:</p>
+                        <div className="font-medium flex flex-wrap gap-x-4 gap-y-1 text-primary">
+                            <a href="mailto:care@anitadongre.com" className="hover:text-secondary underline underline-offset-4 transition-colors">care@anitadongre.com</a>
+                            <span className="text-primary/20">|</span>
+                            <span>+91 99993 13366</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* Newsletter */}
-            <div className="flex items-center space-x-3 pt-4">
+            <div className="flex items-center space-x-3 pt-2">
                 <input
                     type="checkbox"
                     name="newsletter"
                     id="newsletter"
                     defaultChecked={user.newsletter}
-                    className="h-4 w-4 rounded border-stone-300 text-primary focus:ring-primary/20 bg-transparent"
+                    className="h-4 w-4 rounded-sm border-primary/20 text-primary focus:ring-primary/20 cursor-pointer accent-primary"
                 />
-                <label htmlFor="newsletter" className="text-sm text-stone-600">
-                    I would like to receive the Newsletter
+                <label htmlFor="newsletter" className="text-sm text-text-muted cursor-pointer select-none hover:text-primary transition-colors">
+                    Subscribe to our newsletter for exclusive updates
                 </label>
             </div>
 
             {/* Actions */}
-            {/* Actions */}
-            <div className="flex gap-4 pt-8">
+            <div className="flex gap-4 pt-8 border-t border-primary/10 mt-8">
                 <Button
                     type="button"
-                    variant="outline"
-                    className="w-full md:w-auto min-w-[200px] border-stone-800 text-stone-800 hover:bg-stone-50 uppercase tracking-widest text-xs h-12 rounded-none font-medium"
+                    variant="ghost"
+                    className="flex-1 md:flex-none md:w-32 text-text-muted hover:text-primary hover:bg-surface uppercase tracking-[0.2em] text-[10px] h-12 rounded-sm font-medium transition-all"
                 >
                     Cancel
                 </Button>
                 <Button
                     type="submit"
                     disabled={isPending}
-                    className="w-full md:w-auto min-w-[200px] bg-[#1a1a1a] text-white hover:bg-black uppercase tracking-widest text-xs h-12 rounded-none font-medium"
+                    className="flex-1 md:flex-none md:w-48 bg-primary text-white hover:bg-primary-dark uppercase tracking-[0.2em] text-[10px] h-12 rounded-sm font-bold shadow-luxury hover:shadow-elevated transition-all"
                 >
-                    {isPending ? "Saving..." : "Save"}
+                    {isPending ? "Saving..." : "Save Changes"}
                 </Button>
             </div>
         </form>

@@ -3,6 +3,7 @@ import { ProfileForm } from "@/components/account/ProfileForm";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
+import Script from "next/script";
 
 export default async function ProfilePage() {
     const session = await auth();
@@ -22,22 +23,31 @@ export default async function ProfilePage() {
         name: user.name,
         email: user.email,
         phone: user.phone,
+        phoneVerified: user.phoneVerified,
         newsletter: user.newsletter || false,
     };
 
     return (
-        <div className="bg-[#FAF9F6] min-h-screen py-12">
-            <div className="container mx-auto px-4 md:px-8">
-                <div className="flex flex-col md:flex-row gap-12 md:gap-24">
-                    <AccountSidebar />
-                    <div className="flex-1 max-w-4xl">
-                        <h1 className="text-3xl font-serif text-primary mb-10 tracking-wide">My Profile</h1>
-                        <div className="bg-white p-8 md:p-12 border border-stone-200">
-                            <ProfileForm user={userData} />
+        <>
+            {/* MSG91 OTP Widget Script */}
+            <Script
+                src="https://verify.msg91.com/otp-provider.js"
+                strategy="lazyOnload"
+            />
+
+            <div className="bg-background min-h-screen py-16">
+                <div className="container mx-auto px-4 md:px-8 max-w-7xl">
+                    <div className="flex flex-col md:flex-row gap-12 lg:gap-24">
+                        <AccountSidebar />
+                        <div className="flex-1 max-w-3xl">
+                            <h1 className="text-3xl font-serif text-primary mb-8 tracking-tight">My Profile</h1>
+                            <div className="bg-background p-0 md:p-8 animate-fade-in-up">
+                                <ProfileForm user={userData} />
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }

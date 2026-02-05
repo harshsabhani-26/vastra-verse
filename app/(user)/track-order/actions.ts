@@ -10,6 +10,7 @@ export async function trackOrder(orderId: string) {
                 id: true,
                 status: true,
                 createdAt: true,
+                timeline: true
                 // Add tracking details if available in schema
                 // trackingNumber: true, 
                 // courier: true
@@ -25,7 +26,8 @@ export async function trackOrder(orderId: string) {
             order: {
                 id: order.id,
                 status: order.status,
-                date: order.createdAt.toLocaleDateString()
+                date: order.createdAt.toLocaleDateString(),
+                timeline: order.timeline
             }
         }
     } catch (error) {

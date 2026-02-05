@@ -23,7 +23,7 @@ export const sendOrderShippedEmail = async (
         ` : '';
 
         const mailOptions = {
-            from: `"M & H Heritage" <${process.env.EMAIL_USER}>`,
+            from: `"Vastra Verse" <${process.env.EMAIL_USER}>`,
             to: to,
             subject: `Your Order #${orderId.slice(-6)} has been Shipped!`,
             html: `
@@ -36,7 +36,7 @@ export const sendOrderShippedEmail = async (
                                 <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; margin-top: 20px; margin-bottom: 20px;">
                                     <tr>
                                         <td align="left" bgcolor="${brandColor}" style="padding: 15px 20px;">
-                                            <h1 style="color: #ffffff; margin: 0; font-size: 20px;">M & H Heritage</h1>
+                                            <h1 style="color: #ffffff; margin: 0; font-size: 20px;">Vastra Verse</h1>
                                         </td>
                                         <td align="right" bgcolor="${brandColor}" style="padding: 15px 20px;">
                                             <span style="color: #ffffff; font-size: 14px;">Status: Shipped</span>
@@ -88,13 +88,13 @@ export const sendInvoiceEmail = async (
             },
         });
 
-        // Brand Color: #1a4d3a (Deep Green to match M&H theme instead of Flipkart Blue)
+        // Brand Color: #1a4d3a (Deep Green to match Vastra Verse theme)
         const brandColor = "#1a4d3a";
 
         const mailOptions = {
-            from: `"M & H Heritage" <${process.env.EMAIL_USER}>`,
+            from: `"Vastra Verse" <${process.env.EMAIL_USER}>`,
             to: to,
-            subject: `Invoice Copy for M & H Order ${orderId}`,
+            subject: `Invoice Copy for Vastra Verse Order ${orderId}`,
             html: `
                 <!DOCTYPE html>
                 <html>
@@ -113,7 +113,7 @@ export const sendInvoiceEmail = async (
                                     <!-- Header -->
                                     <tr>
                                         <td align="left" bgcolor="${brandColor}" style="padding: 15px 20px;">
-                                            <h1 style="color: #ffffff; margin: 0; font-size: 20px;">M & H Heritage</h1>
+                                            <h1 style="color: #ffffff; margin: 0; font-size: 20px;">Vastra Verse</h1>
                                         </td>
                                         <td align="right" bgcolor="${brandColor}" style="padding: 15px 20px;">
                                             <span style="color: #ffffff; font-size: 14px;">Order Status: Confirmed</span>
@@ -128,7 +128,7 @@ export const sendInvoiceEmail = async (
                                             </p>
                                             
                                             <p style="color: #333333; font-size: 14px; margin-bottom: 20px;">
-                                                Thank you for shopping with M & H Heritage.
+                                                Thank you for shopping with Vastra Verse.
                                             </p>
                                             
                                             <p style="color: #333333; font-size: 14px; margin-bottom: 20px;">
@@ -141,7 +141,7 @@ export const sendInvoiceEmail = async (
 
                                             <p style="color: #333333; font-size: 14px; margin-top: 30px;">
                                                 Thank you for shopping!<br/>
-                                                <strong>M & H Heritage</strong>
+                                                <strong>Vastra Verse</strong>
                                             </p>
                                         </td>
                                     </tr>

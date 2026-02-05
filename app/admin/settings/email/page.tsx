@@ -16,8 +16,8 @@ export default function EmailSettingsPage() {
         smtpPort: '587',
         smtpUser: '',
         smtpPassword: '',
-        senderName: 'Vayana Heritage',
-        senderEmail: 'noreply@vayanaheritage.com',
+        senderName: 'Vastra Verse',
+        senderEmail: 'noreply@vastraverse.com',
     });
 
     const handleSave = async () => {

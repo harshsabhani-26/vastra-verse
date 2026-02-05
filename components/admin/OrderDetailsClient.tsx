@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { OrderStatus, PaymentStatus, RefundStatus } from "@prisma/client";
+import { OrderStatus, PaymentStatus } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import {
     ArrowLeft, User, MapPin, CreditCard, Package, Clock,
@@ -55,7 +55,7 @@ interface Order {
     courierName: string | null;
     cancellationReason: string | null;
     cancelledAt: string | null;
-    refundStatus: RefundStatus;
+    refundStatus: string;
     createdAt: string;
     updatedAt: string;
     user: {

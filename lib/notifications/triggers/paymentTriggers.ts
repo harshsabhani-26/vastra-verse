@@ -20,7 +20,7 @@ export async function notifyPaymentReceived(
         role: 'ADMIN',
         type: 'PAYMENT_RECEIVED',
         title: 'Payment Received',
-        message: `₹${amount} received for Order #${payment.orderId.slice(0, 8)} via ${payment.provider}`,
+        message: `₹${amount} received for Order #${payment.orderId.slice(0, 8)} via ${(payment as any).method || 'Unknown'}`,
         priority: 'NORMAL',
         resourceType: 'Payment',
         resourceId: payment.id,
@@ -28,7 +28,7 @@ export async function notifyPaymentReceived(
         actionText: 'View Payment',
         data: {
             amount,
-            provider: payment.provider,
+            provider: (payment as any).method || 'Unknown',
             orderId: payment.orderId,
         },
     });

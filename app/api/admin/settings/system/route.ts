@@ -69,7 +69,7 @@ export async function PUT(request: NextRequest) {
                 description: `Updated system settings`,
                 resourceType: 'SystemSettings',
                 resourceId: settings.id,
-                oldValue,
+                oldValue: oldValue as any,
                 newValue: data,
                 ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
                 userAgent: request.headers.get('user-agent'),

@@ -1,18 +1,33 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
 export function AppointmentBanner() {
     return (
-        <section className="relative h-[400px] md:h-[500px] w-full bg-stone-400">
-            <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4 max-w-4xl mx-auto space-y-6">
-                <h2 className="text-3xl md:text-5xl font-serif text-white tracking-widest uppercase">
+        <section className="relative w-full h-[400px] md:h-[500px] overflow-hidden">
+            {/* Background Image */}
+            <Image
+                src="/images/boutique/showroom.png"
+                alt="Luxury Boutique Showroom"
+                fill
+                className="object-cover"
+                sizes="100vw"
+                priority
+            />
+
+            {/* Dark Overlay for better text readability */}
+            <div className="absolute inset-0 bg-black/40" />
+
+            {/* Content */}
+            <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 max-w-2xl mx-auto h-full space-y-8">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif text-white tracking-wide drop-shadow-xl">
                     Schedule an Appointment
                 </h2>
-                <p className="text-white/90 text-lg md:text-xl font-light max-w-2xl tracking-wide">
-                    Click below to book a virtual or in-store appointment for custom designs and orders
+                <p className="text-white text-base md:text-lg font-light max-w-lg tracking-wide leading-relaxed drop-shadow-lg">
+                    Book a virtual or in-store consultation for bespoke designs
                 </p>
                 <Link href="/appointment">
-                    <Button className="bg-white text-primary hover:bg-stone-100 text-lg px-8 py-6 rounded-none uppercase tracking-[0.2em] font-medium mt-4">
+                    <Button className="bg-white text-primary hover:bg-surface hover:text-secondary px-10 h-14 text-sm uppercase tracking-[0.25em] font-medium rounded-sm transition-all duration-300 hover:scale-105 shadow-luxury">
                         Book Now
                     </Button>
                 </Link>

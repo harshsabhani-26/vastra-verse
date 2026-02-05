@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
         const methodBreakdown = stats.reduce((acc, stat) => {
             acc[stat.method] = {
                 count: stat._count,
-                total: stat._sum.amount || 0,
+                total: Number(stat._sum.amount) || 0,
             };
             return acc;
         }, {} as Record<string, { count: number; total: number }>);

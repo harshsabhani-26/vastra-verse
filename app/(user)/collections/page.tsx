@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 
 export const metadata = {
-    title: "Collections | Vayana Heritage",
+    title: "Collections | Vastra Verse",
     description: "Explore our exclusive collections of heritage weaves and contemporary designs.",
 };
 

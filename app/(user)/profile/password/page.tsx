@@ -10,13 +10,13 @@ export default async function PasswordPage() {
     }
 
     return (
-        <div className="bg-[#FAF9F6] min-h-screen py-12">
-            <div className="container mx-auto px-4 md:px-8">
-                <div className="flex flex-col md:flex-row gap-12 md:gap-24">
+        <div className="bg-background min-h-screen py-16">
+            <div className="container mx-auto px-4 md:px-8 max-w-7xl">
+                <div className="flex flex-col md:flex-row gap-12 lg:gap-24">
                     <AccountSidebar />
-                    <div className="flex-1 max-w-4xl">
-                        <h1 className="text-3xl font-serif text-primary mb-10 tracking-wide">Password</h1>
-                        <div className="bg-white p-8 md:p-12 border border-stone-200">
+                    <div className="flex-1 max-w-3xl animate-fade-in-up">
+                        <h1 className="text-3xl font-serif text-primary mb-8 tracking-tight">Change Password</h1>
+                        <div className="bg-background">
                             <PasswordForm />
                         </div>
                     </div>

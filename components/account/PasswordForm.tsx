@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { changePassword } from "@/app/actions/account";
 import { useState, useTransition } from "react";
 import { toast } from "react-hot-toast";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Lock } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export function PasswordForm() {
     const [isPending, startTransition] = useTransition();
@@ -47,22 +48,24 @@ export function PasswordForm() {
     return (
         <form id="password-form" action={handleSubmit} className="space-y-8 max-w-lg">
             {/* Current Password */}
-            <div className="space-y-2 relative">
-                <label htmlFor="currentPassword" className="block text-sm text-stone-500">
-                    Old Password <span className="text-red-500">*</span>
+            <div className="space-y-2">
+                <label htmlFor="currentPassword" className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium">
+                    Current Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                    <input
+                    <Lock className="absolute left-3 top-3.5 h-4 w-4 text-primary/40" />
+                    <Input
                         type={showCurrentPassword ? "text" : "password"}
                         name="currentPassword"
                         id="currentPassword"
                         required
-                        className="w-full bg-transparent border-b border-stone-300 py-2 pr-10 focus:outline-none focus:border-primary transition-colors text-primary"
+                        className="pl-9 pr-10 bg-background border-primary/20 focus:border-primary focus:ring-0 rounded-sm h-11 transition-all"
+                        placeholder="••••••••"
                     />
                     <button
                         type="button"
                         onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                        className="absolute right-0 top-2 text-stone-400 hover:text-primary"
+                        className="absolute right-3 top-3.5 text-text-muted hover:text-primary transition-colors"
                     >
                         {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -70,29 +73,31 @@ export function PasswordForm() {
             </div>
 
             {/* New Password */}
-            <div className="space-y-2 relative">
-                <label htmlFor="newPassword" className="block text-sm text-stone-500">
-                    Set password <span className="text-red-500">*</span>
+            <div className="space-y-2">
+                <label htmlFor="newPassword" className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium">
+                    New Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                    <input
+                    <Lock className="absolute left-3 top-3.5 h-4 w-4 text-primary/40" />
+                    <Input
                         type={showNewPassword ? "text" : "password"}
                         name="newPassword"
                         id="newPassword"
                         required
-                        className="w-full bg-transparent border-b border-stone-300 py-2 pr-10 focus:outline-none focus:border-primary transition-colors text-primary"
+                        className="pl-9 pr-10 bg-background border-primary/20 focus:border-primary focus:ring-0 rounded-sm h-11 transition-all"
+                        placeholder="••••••••"
                     />
                     <button
                         type="button"
                         onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute right-0 top-2 text-stone-400 hover:text-primary"
+                        className="absolute right-3 top-3.5 text-text-muted hover:text-primary transition-colors"
                     >
                         {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                 </div>
 
                 {/* Requirements */}
-                <div className="grid grid-cols-2 gap-x-8 gap-y-1 mt-4 text-xs text-stone-500">
+                <div className="grid grid-cols-2 gap-x-8 gap-y-1 mt-4 text-[10px] text-text-muted bg-surface/30 p-4 rounded-sm border border-primary/5">
                     <ul className="list-disc pl-4 space-y-1">
                         <li>8 characters minimum</li>
                         <li>One number</li>
@@ -106,22 +111,24 @@ export function PasswordForm() {
             </div>
 
             {/* Confirm Password */}
-            <div className="space-y-2 relative">
-                <label htmlFor="confirmPassword" className="block text-sm text-stone-500">
-                    Confirm password <span className="text-red-500">*</span>
+            <div className="space-y-2">
+                <label htmlFor="confirmPassword" className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium">
+                    Confirm Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                    <input
+                    <Lock className="absolute left-3 top-3.5 h-4 w-4 text-primary/40" />
+                    <Input
                         type={showConfirmPassword ? "text" : "password"}
                         name="confirmPassword"
                         id="confirmPassword"
                         required
-                        className="w-full bg-transparent border-b border-stone-300 py-2 pr-10 focus:outline-none focus:border-primary transition-colors text-primary"
+                        className="pl-9 pr-10 bg-background border-primary/20 focus:border-primary focus:ring-0 rounded-sm h-11 transition-all"
+                        placeholder="••••••••"
                     />
                     <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-0 top-2 text-stone-400 hover:text-primary"
+                        className="absolute right-3 top-3.5 text-text-muted hover:text-primary transition-colors"
                     >
                         {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -129,11 +136,11 @@ export function PasswordForm() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-4 pt-4">
+            <div className="flex gap-4 pt-8 border-t border-primary/10 mt-8">
                 <Button
                     type="button"
-                    variant="outline"
-                    className="w-full bg-primary-dark text-white hover:bg-primary-dark/90 border-none uppercase tracking-widest text-xs h-12 rounded-none"
+                    variant="ghost"
+                    className="flex-1 text-text-muted hover:text-primary hover:bg-surface uppercase tracking-[0.2em] text-[10px] h-12 rounded-sm font-medium transition-all"
                     onClick={() => (document.getElementById("password-form") as HTMLFormElement).reset()}
                 >
                     Cancel
@@ -141,14 +148,10 @@ export function PasswordForm() {
                 <Button
                     type="submit"
                     disabled={isPending}
-                    className="w-full bg-black text-white hover:bg-black/90 uppercase tracking-widest text-xs h-12 rounded-none"
+                    className="flex-1 bg-primary text-white hover:bg-primary-dark uppercase tracking-[0.2em] text-[10px] h-12 rounded-sm font-bold shadow-luxury hover:shadow-elevated transition-all"
                 >
-                    {isPending ? "Saving..." : "Save"}
+                    {isPending ? "Updating..." : "Update Password"}
                 </Button>
-            </div>
-
-            <div className="pt-4">
-                <a href="/profile" className="text-sm underline text-stone-500 hover:text-primary">Back to my account</a>
             </div>
         </form>
     );

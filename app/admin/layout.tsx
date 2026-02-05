@@ -8,7 +8,6 @@ import {
     FolderOpen,
     Package,
     Users,
-    UserCheck,
     Archive,
     CreditCard,
     Truck,
@@ -18,8 +17,7 @@ import {
     Settings,
     HelpCircle,
     LogOut,
-    Image,
-    Calendar
+    Image
 } from "lucide-react";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 
@@ -52,24 +50,38 @@ export default async function AdminLayout({
         <div className="min-h-screen bg-stone-50 flex font-sans">
             {/* Admin Sidebar */}
             <aside className="w-64 bg-[#1C1917] text-white flex flex-col fixed h-full">
-                <div className="p-6 border-b border-stone-800">
-                    <h1 className="text-xl font-serif tracking-wide text-amber-50">Vayana Admin</h1>
+                <div className="p-6 border-b border-stone-800 flex items-center gap-3">
+                    <img src="/images/logo.png" alt="Vastra Verse" className="h-8 w-auto" />
+                    <h1 className="text-xl font-serif tracking-wide text-amber-50">Vastra Admin</h1>
                 </div>
 
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                    {/* Overview */}
                     <AdminLink href="/admin" icon={<LayoutDashboard size={20} />} label="Dashboard" />
+
+                    {/* Catalog Management */}
                     <AdminLink href="/admin/products" icon={<ShoppingBag size={20} />} label="Products" />
                     <AdminLink href="/admin/categories" icon={<FolderOpen size={20} />} label="Categories" />
-                    <AdminLink href="/admin/banners" icon={<Image size={20} />} label="Hero Banners" />
-                    <AdminLink href="/admin/orders" icon={<Package size={20} />} label="Orders" />
-                    <AdminLink href="/admin/appointments" icon={<Calendar size={20} />} label="Appointments" />
-                    <AdminLink href="/admin/customers" icon={<Users size={20} />} label="Customers" />
-                    <AdminLink href="/admin/users/auth" icon={<UserCheck size={20} />} label="Auth Tracking" />
                     <AdminLink href="/admin/inventory" icon={<Archive size={20} />} label="Inventory" />
+
+                    {/* Content */}
+                    <AdminLink href="/admin/banners" icon={<Image size={20} />} label="Hero Banners" />
+
+                    {/* Sales */}
+                    <AdminLink href="/admin/orders" icon={<Package size={20} />} label="Orders" />
+                    <AdminLink href="/admin/coupons" icon={<Tag size={20} />} label="Coupons & Discounts" />
+
+                    {/* Customers */}
+                    <AdminLink href="/admin/customer-management" icon={<Users size={20} />} label="Customer Management" />
+
+                    {/* Fulfillment */}
                     <AdminLink href="/admin/payments" icon={<CreditCard size={20} />} label="Payments & Refunds" />
                     <AdminLink href="/admin/shipping" icon={<Truck size={20} />} label="Shipping" />
-                    <AdminLink href="/admin/coupons" icon={<Tag size={20} />} label="Coupons & Discounts" />
+
+                    {/* Analytics */}
                     <AdminLink href="/admin/reports" icon={<BarChart3 size={20} />} label="Reports & Analytics" />
+
+                    {/* System */}
                     <AdminLink href="/admin/notifications" icon={<Bell size={20} />} label="Notifications" />
                     <AdminLink href="/admin/settings" icon={<Settings size={20} />} label="Settings" />
                     <AdminLink href="/admin/help" icon={<HelpCircle size={20} />} label="Help & Support" />

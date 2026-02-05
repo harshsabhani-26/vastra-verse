@@ -33,7 +33,7 @@ export default function EditZonePage({ params }: { params: { id: string } }) {
             const zone = result.zone
             setFormData({
                 name: zone.name,
-                type: zone.type,
+                type: zone.type as ShippingZoneType,
                 pincodes: zone.pincodes as string[],
                 minDeliveryDays: zone.minDeliveryDays,
                 maxDeliveryDays: zone.maxDeliveryDays,

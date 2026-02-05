@@ -1,35 +1,40 @@
 import type { Metadata } from "next";
-import { Montserrat, Crimson_Pro } from "next/font/google";
+import { Judson, Teachers } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 
-const montserrat = Montserrat({
-    variable: "--font-montserrat",
+const teachers = Teachers({
+    variable: "--font-teachers",
     subsets: ["latin"],
 });
 
-const crimsonPro = Crimson_Pro({
-    variable: "--font-crimson-pro",
+const judson = Judson({
+    variable: "--font-judson",
+    weight: ["400", "700"],
     subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-    title: "Vayana Heritage | Premium Indian Sarees",
+    title: "Vastra Verse | Premium Indian Sarees",
     description: "Experience the elegance of traditional Indian heritage with our curated collection of premium sarees.",
 };
 
-export default function RootLayout({
+import { auth } from "@/auth";
+
+export default async function RootLayout({
     children,
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+    const session = await auth();
+
     return (
         <html lang="en" suppressHydrationWarning>
             <body
-                className={`${montserrat.variable} ${crimsonPro.variable} antialiased base-transition bg-white text-gray-900 selection:bg-brand-gold/20`}
+                className={`${teachers.variable} ${judson.variable} antialiased base-transition bg-background text-text-main selection:bg-secondary/30 selection:text-primary-dark`}
                 suppressHydrationWarning
             >
-                <Providers>
+                <Providers session={session}>
                     {children}
                 </Providers>
             </body>

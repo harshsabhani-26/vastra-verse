@@ -3,13 +3,21 @@
 @tailwind utilities;
 
 :root {
-    --font-crimson-pro: "Crimson Pro", serif;
-    --font-montserrat: "Montserrat", sans-serif;
+    --font-judson: "Judson", serif;
+    --font-teachers: "Teachers", sans-serif;
+
+    /* Spacing scale for sections */
+    --section-padding-sm: 2.5rem;
+    --section-padding-md: 4rem;
+    --section-padding-lg: 6rem;
+    --section-padding-xl: 8rem;
 }
 
 @layer base {
     body {
         @apply bg-background text-text-main font-sans;
+        line-height: 1.6;
+        /* Increased line-height as requested */
     }
 
     h1,
@@ -18,12 +26,335 @@
     h4,
     h5,
     h6 {
-        @apply font-serif;
+        @apply font-serif tracking-wide;
+        line-height: 1.2;
+        letter-spacing: 0.04em;
+        /* Letter spacing for headings */
+    }
+
+    /* Enhanced focus states for accessibility */
+    *:focus-visible {
+        outline: 2px solid #D4A87A;
+        outline-offset: 2px;
+    }
+}
+
+@layer components {
+
+    /* Luxury Button - Primary (Deep Walnut) */
+    .btn-luxury-primary {
+        @apply inline-flex items-center justify-center;
+        @apply bg-primary text-white;
+        @apply text-sm uppercase tracking-[0.2em] font-medium;
+        @apply px-8 py-4 rounded-sm;
+        /* Sharper corners for modern feel */
+        @apply transition-all duration-300 ease-out;
+        @apply hover:bg-primary-light hover:shadow-elevated hover:-translate-y-0.5;
+        @apply focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2;
+    }
+
+    /* Luxury Button - Secondary / CTA (Muted Gold) */
+    .btn-luxury-secondary {
+        @apply inline-flex items-center justify-center;
+        @apply bg-secondary text-primary-dark;
+        @apply text-sm uppercase tracking-[0.2em] font-medium;
+        @apply px-8 py-4 rounded-sm;
+        @apply transition-all duration-300 ease-out;
+        @apply hover:bg-secondary-light hover:shadow-elevated hover:-translate-y-0.5;
+        @apply focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:ring-offset-2;
+    }
+
+    /* Luxury Button - Outline */
+    .btn-luxury-outline {
+        @apply inline-flex items-center justify-center;
+        @apply bg-transparent text-primary;
+        @apply border border-primary/30;
+        @apply text-sm uppercase tracking-[0.2em] font-medium;
+        @apply px-8 py-4 rounded-sm;
+        @apply transition-all duration-300 ease-out;
+        @apply hover:bg-primary hover:text-white hover:border-primary;
+        @apply focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2;
+    }
+
+    /* Form Input Styles - Modern & Clean */
+    .input-luxury {
+        @apply w-full px-4 py-3.5;
+        @apply bg-white border border-primary/10;
+        @apply text-text-main text-base;
+        /* Slightly larger text for readability */
+        @apply rounded-sm;
+        @apply transition-all duration-300;
+        @apply placeholder:text-text-muted/70;
+        @apply hover:border-primary/30;
+        @apply focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50;
+        @apply focus:shadow-soft;
+    }
+
+    /* Section Padding Utilities */
+    .section-padding-sm {
+        padding-top: var(--section-padding-sm);
+        padding-bottom: var(--section-padding-sm);
+    }
+
+    .section-padding-md {
+        padding-top: var(--section-padding-md);
+        padding-bottom: var(--section-padding-md);
+    }
+
+    .section-padding-lg {
+        padding-top: var(--section-padding-lg);
+        padding-bottom: var(--section-padding-lg);
     }
 }
 
 @layer utilities {
     .text-balance {
         text-wrap: balance;
+    }
+
+    /* Enhanced Typography */
+    .heading-xl {
+        @apply text-4xl md:text-5xl lg:text-6xl font-serif tracking-wide;
+        line-height: 1.1;
+    }
+
+    .heading-lg {
+        @apply text-3xl md:text-4xl lg:text-5xl font-serif tracking-wide;
+        line-height: 1.15;
+    }
+
+    .heading-md {
+        @apply text-2xl md:text-3xl lg:text-4xl font-serif tracking-wide;
+        line-height: 1.2;
+    }
+
+    .body-relaxed {
+        line-height: 1.8;
+        letter-spacing: 0.01em;
+    }
+
+    /* Luxury Shadows - Enhanced */
+    .shadow-luxury {
+        box-shadow: 0 4px 20px rgba(31, 31, 31, 0.08);
+    }
+
+    .shadow-luxury-lg {
+        box-shadow: 0 8px 30px rgba(31, 31, 31, 0.12);
+    }
+
+    .shadow-luxury-xl {
+        box-shadow: 0 12px 40px rgba(31, 31, 31, 0.15);
+    }
+
+    .shadow-hover {
+        box-shadow: 0 8px 30px rgba(31, 31, 31, 0.15), 0 2px 8px rgba(230, 200, 122, 0.1);
+    }
+
+    /* Smooth Animations */
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes fade-in-up {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fade-in-down {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slide-in-left {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes scale-in {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    @keyframes pulse-subtle {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.8;
+        }
+    }
+
+    .animate-fade-in {
+        animation: fade-in 0.4s ease-out;
+    }
+
+    .animate-fade-in-up {
+        animation: fade-in-up 0.5s ease-out;
+    }
+
+    .animate-fade-in-down {
+        animation: fade-in-down 0.3s ease-out;
+    }
+
+    .animate-slide-in-left {
+        animation: slide-in-left 0.4s ease-out;
+    }
+
+    .animate-scale-in {
+        animation: scale-in 0.3s ease-out;
+    }
+
+    .animate-pulse-subtle {
+        animation: pulse-subtle 2s ease-in-out infinite;
+    }
+
+    /* Stagger delays for lists */
+    .stagger-1 {
+        animation-delay: 0.05s;
+    }
+
+    .stagger-2 {
+        animation-delay: 0.1s;
+    }
+
+    .stagger-3 {
+        animation-delay: 0.15s;
+    }
+
+    .stagger-4 {
+        animation-delay: 0.2s;
+    }
+
+    .stagger-5 {
+        animation-delay: 0.25s;
+    }
+
+    .stagger-6 {
+        animation-delay: 0.3s;
+    }
+
+    /* Transitions */
+    .transition-luxury {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .transition-smooth {
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Interactive Elements */
+    .hover-lift {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .hover-lift:hover {
+        transform: translateY(-4px);
+    }
+
+    .hover-scale {
+        transition: transform 0.3s ease;
+    }
+
+    .hover-scale:hover {
+        transform: scale(1.02);
+    }
+
+    /* Fine Grain Texture */
+    .grain-texture::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.015;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' /%3E%3C/svg%3E");
+        pointer-events: none;
+    }
+
+    /* Loading States */
+    @keyframes skeleton-loading {
+        0% {
+            background-position: -200% 0;
+        }
+
+        100% {
+            background-position: 200% 0;
+        }
+    }
+
+    .skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s ease-in-out infinite;
+    }
+
+    /* Backdrop Effects */
+    .backdrop-blur-sm {
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+    }
+
+    .backdrop-blur-md {
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+
+    .backdrop-blur-lg {
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+
+    /* Scroll Behavior */
+    .scroll-smooth {
+        scroll-behavior: smooth;
+    }
+
+    /* Selection Colors */
+    ::selection {
+        background-color: #E6C87A;
+        color: #1F1F1F;
+    }
+
+    ::-moz-selection {
+        background-color: #E6C87A;
+        color: #1F1F1F;
     }
 }

@@ -263,7 +263,7 @@ export default function AppointmentPage() {
                                     className="text-sm text-stone-600"
                                 >
                                     Sign up for our newsletters and stay up to date on
-                                    the latest news, collections and events from M&H.
+                                    the latest news, collections and events from Vastra Verse.
                                 </label>
                             </div>
                             <div className="flex items-start gap-2">

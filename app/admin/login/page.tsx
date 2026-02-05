@@ -31,14 +31,7 @@ export default function AdminLoginPage() {
                 return;
             }
 
-            // Check if user has admin access
-            const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "yogitextile43@gmail.com";
-            if (email !== adminEmail) {
-                setError("Access Denied - You are not authorized to access admin panel");
-                setLoading(false);
-                return;
-            }
-
+            // Server-side middleware will verify admin role
             router.push("/admin");
             router.refresh();
         } catch (err) {

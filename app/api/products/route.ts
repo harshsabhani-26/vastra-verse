@@ -1,9 +1,25 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { ratelimit } from "@/lib/rate-limit";
+import { requireAdmin, unauthorizedResponse } from "@/lib/auth-utils";
 
 // GET /api/products - Public product listing with pagination
 export async function GET(req: Request) {
+    // Rate Limiting
+    const ip = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
+    const { success, limit, reset, remaining } = await ratelimit.limit(ip);
+
+    if (!success) {
+        return new NextResponse("Too Many Requests", {
+            status: 429,
+            headers: {
+                "X-RateLimit-Limit": limit.toString(),
+                "X-RateLimit-Remaining": remaining.toString(),
+                "X-RateLimit-Reset": reset.toString(),
+            },
+        });
+    }
+
     try {
         const { searchParams } = new URL(req.url);
 
@@ -98,17 +114,13 @@ export async function GET(req: Request) {
     }
 }
 
-// POST /api/products
+// POST /api/products - Admin only: Create a new product
 export async function POST(req: Request) {
     try {
-        const session = await auth();
-        // Assuming admin check - strict check needed for production
-        // Allowing common test emails for now
-        const isAdmin = session?.user?.email === "admin@vayana.com" || session?.user?.email === "shree@vayana.com" || true; // Enabling for test
-
-        if (!session) {
-            // For testing, we might skip strict admin check if user is logged in
-            // return new NextResponse("Unauthorized", { status: 401 });
+        // SECURITY: Strict admin authentication check
+        const adminCheck = await requireAdmin();
+        if (!adminCheck.authorized) {
+            return unauthorizedResponse(adminCheck.reason);
         }
 
         const body = await req.formData();
@@ -188,7 +200,7 @@ export async function POST(req: Request) {
 
         return NextResponse.json(product);
     } catch (error) {
-        console.log("[PRODUCTS_POST]", error);
+        console.error("[PRODUCTS_POST]", error);
         return new NextResponse("Internal Error", { status: 500 });
     }
 }

@@ -20,18 +20,18 @@ export function AccountSidebar() {
     const { data: session } = useSession();
 
     return (
-        <nav className="w-full md:w-64 flex-shrink-0">
+        <nav className="w-full md:w-64 flex-shrink-0 animate-fade-in bg-surface/30 p-6 rounded-sm border border-primary/5 h-fit">
             {/* User Info */}
-            <div className="mb-8 pb-4 border-b border-stone-200">
-                <p className="font-serif text-lg text-primary">
+            <div className="mb-8 pb-6 border-b border-primary/10">
+                <p className="font-serif text-xl text-primary tracking-tight">
                     Hi, {session?.user?.name || "Guest"}
                 </p>
-                <p className="text-xs text-stone-500 mt-1">
+                <p className="text-xs text-text-muted mt-1 font-light tracking-wide">
                     {session?.user?.email}
                 </p>
             </div>
 
-            <ul className="space-y-6">
+            <ul className="space-y-2">
                 {sidebarLinks.map((link) => {
                     const isActive = pathname === link.href;
                     return (
@@ -39,10 +39,10 @@ export function AccountSidebar() {
                             <Link
                                 href={link.href}
                                 className={cn(
-                                    "block text-sm transition-colors duration-200 relative pl-4",
+                                    "block text-sm transition-all duration-300 relative pl-4 py-2 rounded-sm border-l-2",
                                     isActive
-                                        ? "text-primary font-medium border-l-2 border-primary"
-                                        : "text-stone-500 hover:text-primary border-l-2 border-transparent"
+                                        ? "text-primary font-medium border-primary bg-primary/5 shadow-sm"
+                                        : "text-text-muted hover:text-primary hover:bg-secondary/5 border-transparent hover:border-primary/20"
                                 )}
                             >
                                 {link.name}
@@ -50,10 +50,10 @@ export function AccountSidebar() {
                         </li>
                     );
                 })}
-                <li>
+                <li className="pt-4 mt-4 border-t border-primary/5">
                     <button
                         onClick={() => signOut({ callbackUrl: "/" })}
-                        className="block text-sm text-stone-500 hover:text-primary transition-colors duration-200 relative pl-4 border-l-2 border-transparent w-full text-left"
+                        className="block w-full text-left text-sm text-text-muted hover:text-red-600 transition-all duration-300 relative pl-4 py-2 border-l-2 border-transparent hover:bg-red-50 hover:border-red-200 rounded-sm"
                     >
                         Logout
                     </button>

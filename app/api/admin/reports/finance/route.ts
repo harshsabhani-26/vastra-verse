@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
             ? Prisma.sql`AND "createdAt" <= ${new Date(endDate)}`
             : Prisma.sql``;
 
-        const dailyRevenue = await prisma.$queryRaw<Array<{ date: Date; revenue: number; count: number }>>`
+        const dailyRevenue = await prisma.$queryRaw<Array<{ date: Date; revenue: number; count: number }>>` 
             SELECT 
                 DATE("createdAt") as date,
                 SUM(CAST("amount" AS DECIMAL)) as revenue,

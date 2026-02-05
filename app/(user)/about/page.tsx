@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function AboutPage() {
     return (
-        <div className="bg-[#FDFBF7]">
+        <div className="bg-background">
             {/* Hero Section */}
             <section className="relative py-20 overflow-hidden bg-gradient-to-br from-primary/5 via-secondary/5 to-primary/5">
                 <div className="container mx-auto px-4 md:px-8">
@@ -152,7 +152,7 @@ export default function AboutPage() {
                             </div>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                 <Link href="/shop">
-                                    <Button size="lg" className="bg-[#D4AF37] text-black hover:bg-[#F4C430]">
+                                    <Button size="lg" className="bg-accent text-primary-dark hover:bg-accent-light">
                                         Explore Our Collection
                                     </Button>
                                 </Link>

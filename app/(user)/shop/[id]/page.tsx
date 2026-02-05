@@ -40,18 +40,18 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     }
 
     return (
-        <div className="min-h-screen bg-[#FAF9F6]">
+        <div className="min-h-screen bg-background">
             {/* Breadcrumb / Top Bar */}
-            <div className="border-b border-stone-200">
+            <div className="border-b border-primary/10">
                 <div className="container mx-auto px-4 md:px-8 py-4">
-                    <div className="text-[10px] uppercase tracking-widest text-stone-500">
+                    <div className="text-[10px] uppercase tracking-widest text-text-muted">
                         Home / Shop / {product.category?.name} / {product.name}
                     </div>
                 </div>
             </div>
 
             <div className="container mx-auto px-4 md:px-8 py-12">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20">
                     {/* Image Gallery - Left Side */}
                     <div>
                         <ProductImageGallery

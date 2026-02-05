@@ -12,7 +12,9 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { amount, currency = "INR", receipt } = body;
 
-        console.log("Creating Razorpay order:", { amount, currency, receipt });
+        if (process.env.NODE_ENV === "development") {
+            console.log("Creating Razorpay order:", { amount, currency, receipt });
+        }
 
         if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
             console.error("Razorpay credentials missing");
@@ -32,9 +34,21 @@ export async function POST(req: Request) {
 
         const order = await razorpay.orders.create(options);
 
+        if (process.env.NODE_ENV === "development") {
+            console.log("Razorpay order created successfully:", order);
+        }
         return NextResponse.json(order);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Razorpay Order Error:", error);
-        return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
+        console.error("Error details:", {
+            message: error.message,
+            description: error.error?.description,
+            statusCode: error.statusCode,
+            code: error.error?.code,
+        });
+        return NextResponse.json({
+            error: "Failed to create order",
+            details: error.message || "Unknown error"
+        }, { status: 500 });
     }
 }

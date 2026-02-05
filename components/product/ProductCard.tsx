@@ -27,59 +27,73 @@ export function ProductCard({
     isWishlisted
 }: ProductCardProps) {
     return (
-        <div className="group relative block">
-            <div className="relative aspect-[3/4] overflow-hidden bg-stone-100">
-                {isNew && (
-                    <span className="absolute top-2 left-2 z-10 bg-primary text-white text-[10px] uppercase tracking-wider px-2 py-1">
-                        New Arrival
-                    </span>
-                )}
-                {discountPercentage && discountPercentage > 0 && (
-                    <span className="absolute top-2 left-2 z-10 bg-red-600 text-white text-[10px] uppercase tracking-wider px-2 py-1" style={{ top: isNew ? '2.5rem' : '0.5rem' }}>
-                        -{discountPercentage}%
-                    </span>
-                )}
+        <div className="group relative block animate-fade-in-up">
+            <div className="relative aspect-[3/4] overflow-hidden bg-secondary/5 shadow-soft group-hover:shadow-elevated transition-all duration-700 ease-out">
+                {/* Badges */}
+                <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+                    {isNew && (
+                        <span className="bg-primary text-white text-[10px] uppercase tracking-[0.2em] px-2.5 py-1 font-medium shadow-sm animate-fade-in">
+                            New
+                        </span>
+                    )}
+                    {discountPercentage && discountPercentage > 0 && (
+                        <span className="bg-white text-primary text-[10px] uppercase tracking-[0.2em] px-2.5 py-1 font-medium shadow-sm border border-primary/10 animate-fade-in">
+                            -{discountPercentage}%
+                        </span>
+                    )}
+                </div>
+
+                {/* Wishlist Toggle */}
                 <WishlistToggle
                     productId={id}
                     initialIsWishlisted={isWishlisted}
-                    className="absolute top-2 right-2"
+                    className="absolute top-4 right-4 z-10 transition-transform duration-300 hover:scale-110 text-primary hover:text-secondary"
                 />
 
+                {/* Product Image */}
                 <Image
                     src={image}
                     alt={name}
                     fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                    className="object-cover transition-transform duration-1000 group-hover:scale-105"
+                    loading="lazy"
                 />
 
-                {/* Quick Add Overlay */}
-                <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <Button className="w-full bg-white text-primary hover:bg-primary hover:text-white font-serif uppercase tracking-widest text-xs">
-                        Quick View
-                    </Button>
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                {/* Quick View Overlay */}
+                <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out z-20">
+                    <Link href={`/shop/${id}`}>
+                        <Button className="w-full bg-white/95 text-primary hover:bg-primary hover:text-white border border-primary/10 shadow-lg text-xs uppercase tracking-[0.2em] h-10 font-medium transition-all duration-300">
+                            Quick View
+                        </Button>
+                    </Link>
                 </div>
             </div>
 
-            <div className="mt-4 text-center space-y-1">
-                <p className="text-xs text-stone-500 uppercase tracking-wide">{category}</p>
-                <h3 className="text-sm font-medium text-text-main font-serif">
+            {/* Product Info */}
+            <div className="mt-5 text-center space-y-2">
+                <p className="text-[10px] text-text-muted uppercase tracking-[0.2em] font-medium transition-colors group-hover:text-primary/70">{category}</p>
+                <h3 className="text-base font-medium text-primary font-serif line-clamp-2 px-2 group-hover:text-secondary transition-colors duration-300">
                     <Link href={`/shop/${id}`}>
                         <span aria-hidden="true" className="absolute inset-0" />
                         {name}
                     </Link>
                 </h3>
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-3 pt-1">
                     {originalPrice && originalPrice > price ? (
                         <>
-                            <p className="text-sm font-medium text-primary">
-                                ₹{price.toLocaleString('en-IN')}
-                            </p>
-                            <p className="text-xs text-stone-400 line-through">
+                            <p className="text-xs text-text-muted line-through font-light">
                                 ₹{originalPrice.toLocaleString('en-IN')}
+                            </p>
+                            <p className="text-base font-medium text-primary">
+                                ₹{price.toLocaleString('en-IN')}
                             </p>
                         </>
                     ) : (
-                        <p className="text-sm font-medium text-primary">
+                        <p className="text-base font-medium text-primary">
                             ₹{price.toLocaleString('en-IN')}
                         </p>
                     )}

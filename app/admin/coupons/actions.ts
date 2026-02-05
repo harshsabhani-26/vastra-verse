@@ -380,7 +380,7 @@ export async function validateCoupon(
     }
 
     // Check product restrictions
-    if (coupon.applicableProducts && context.productIds) {
+    if (coupon.applicableProducts && Array.isArray(coupon.applicableProducts) && coupon.applicableProducts.length > 0 && context.productIds) {
         const applicableProducts = coupon.applicableProducts as string[];
         const hasApplicableProduct = context.productIds.some((id) =>
             applicableProducts.includes(id)
@@ -391,7 +391,7 @@ export async function validateCoupon(
     }
 
     // Check category restrictions
-    if (coupon.applicableCategories && context.categoryIds) {
+    if (coupon.applicableCategories && Array.isArray(coupon.applicableCategories) && coupon.applicableCategories.length > 0 && context.categoryIds) {
         const applicableCategories = coupon.applicableCategories as string[];
         const hasApplicableCategory = context.categoryIds.some((id) =>
             applicableCategories.includes(id)

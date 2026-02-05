@@ -3,91 +3,223 @@
 import { Button } from "@/components/ui/button"
 import { Check, TicketPercent } from "lucide-react"
 import { useCartStore } from "@/lib/store"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { toast } from "react-hot-toast"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 
 export function CartSummary() {
-    const { items, totalItems, totalPrice } = useCartStore();
+    const { items, totalItems, totalPrice, appliedCoupon, setCoupon, removeCoupon } = useCartStore();
     const [termsAccepted, setTermsAccepted] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+    const [couponCode, setCouponCode] = useState("");
+    const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
     const router = useRouter();
-    const count = totalItems();
-    const total = totalPrice();
+    const { data: session } = useSession();
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
+    }, [appliedCoupon]);
+
+    const count = isMounted ? totalItems() : 0;
+    const subtotal = isMounted ? totalPrice() : 0;
+    const discount = isMounted && appliedCoupon ? appliedCoupon.discount : 0;
+    const total = subtotal - discount;
+
+    const handleApplyCoupon = async () => {
+        if (!couponCode.trim()) {
+            toast.error("Please enter a coupon code");
+            return;
+        }
+
+        if (!session?.user?.id) {
+            toast.error("Please login to apply coupon");
+            router.push("/login?callbackUrl=/cart");
+            return;
+        }
+
+        setIsApplyingCoupon(true);
+
+        try {
+            // Fetch product details to get categories
+            const productIds = items.map(item => item.id);
+            const productsResponse = await fetch('/api/products/details', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productIds })
+            });
+
+            const { products } = await productsResponse.json();
+
+            // Map products to include categoryId
+            const itemsWithCategory = items.map(item => {
+                const product = products.find((p: any) => p.id === item.id);
+                return {
+                    productId: item.id,
+                    categoryId: product?.categoryId || "",
+                    price: item.price,
+                    quantity: item.quantity
+                };
+            });
+
+            const response = await fetch('/api/coupons/apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: couponCode,
+                    cart: {
+                        userId: session.user.id,
+                        subtotal: subtotal,
+                        shippingCharges: 0,
+                        items: itemsWithCategory
+                    }
+                })
+            });
+
+            const result = await response.json();
+
+
+
+            if (result.success) {
+                const couponData = {
+                    code: result.couponCode,
+                    discount: result.discount,
+                    type: result.couponType
+                };
+
+                setCoupon(couponData);
+
+                toast.success(`Coupon applied! You saved ₹${result.discount.toLocaleString('en-IN')}`);
+            } else {
+
+                toast.error(result.error || "Invalid coupon code");
+            }
+        } catch (error) {
+            console.error('Failed to apply coupon:', error);
+            toast.error("Failed to apply coupon");
+        } finally {
+            setIsApplyingCoupon(false);
+        }
+    };
 
     const handleCheckout = async () => {
-        // Since we are client-side here and createOrder is a server action
-        // We can create a FormData to match the action signature or (better)
-        // just call a modified action that accepts our data.
-        // For this audit, we'll assume the action is set up for form submission
-        // or we'll wrap it in a form.
-
-        // Simulating form submission for now as action expects FormData
-        // In a real app, verify user session or handle guest checkout
-    }
+        // Coupon is now persisted in Zustand store, no need for sessionStorage
+        router.push("/checkout");
+    };
 
     return (
-        <div className="bg-[#FAF9F6] p-8 space-y-8 sticky top-32">
-            {/* Coupon */}
-            <div className="flex items-center gap-2 border-b border-stone-200 pb-4">
-                <TicketPercent className="h-5 w-5 text-stone-400" />
-                <input
-                    type="text"
-                    placeholder="Apply Coupon"
-                    className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-[#1C1917] font-medium"
-                />
-                <button className="text-xs uppercase tracking-widest text-[#AA8C2C] font-semibold hover:text-[#886e20]">
-                    Apply
-                </button>
-            </div>
-
-            {/* Order Summary */}
-            <div className="bg-stone-100 p-6 space-y-4">
-                <h3 className="font-serif text-sm text-[#1C1917] mb-4">Order Summary</h3>
-
-                <div className="flex justify-between text-sm text-stone-600 font-sans border-b border-stone-200 pb-4">
-                    <span>Subtotal ({count} Item{count !== 1 ? 's' : ''})</span>
-                    <span className="font-medium text-[#1C1917]">₹{total.toLocaleString('en-IN')}</span>
-                </div>
-
-                <div className="flex justify-between text-sm font-bold text-[#1C1917] font-sans">
-                    <span>Payable Amount</span>
-                    <span>₹{total.toLocaleString('en-IN')}</span>
-                </div>
-            </div>
-
-            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                <div className="flex items-center gap-3 cursor-pointer select-none" onClick={() => setTermsAccepted(!termsAccepted)}>
-                    <div
-                        className={cn(
-                            "w-5 h-5 border flex items-center justify-center transition-colors flex-shrink-0",
-                            termsAccepted ? "bg-[#9A8453] border-[#9A8453]" : "border-stone-400 bg-transparent"
-                        )}
-                    >
-                        {termsAccepted && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+        <div className="space-y-3 sticky top-32 animate-fade-in">
+            {/* Apply Coupon - Enhanced */}
+            <div className="bg-background border border-primary/20 p-4 rounded-sm shadow-sm hover:shadow-md transition-shadow duration-300">
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 flex-1">
+                        <TicketPercent className="h-4 w-4 text-primary" />
+                        <input
+                            type="text"
+                            placeholder="Apply Coupon Code"
+                            value={couponCode}
+                            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                            disabled={!!appliedCoupon}
+                            className="flex-1 bg-transparent text-xs focus:outline-none placeholder:text-text-muted disabled:opacity-50 text-primary font-medium tracking-wide"
+                        />
                     </div>
-                    <label className="text-[10px] uppercase tracking-widest text-stone-500 hover:text-stone-900 cursor-pointer">
-                        I Agree to Terms and Conditions
-                    </label>
+                    {appliedCoupon ? (
+                        <button
+                            onClick={() => {
+                                removeCoupon();
+                                setCouponCode("");
+                            }}
+                            className="text-xs text-red-600 font-medium hover:text-red-700 transition-colors uppercase tracking-wider"
+                        >
+                            Remove
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleApplyCoupon}
+                            disabled={isApplyingCoupon || !couponCode.trim()}
+                            className="text-xs text-primary font-semibold hover:text-primary/70 transition-colors disabled:opacity-50 uppercase tracking-wider"
+                        >
+                            {isApplyingCoupon ? "Applying..." : "Apply"}
+                        </button>
+                    )}
+                </div>
+                {appliedCoupon && (
+                    <div className="mt-3 p-2 text-xs text-green-700 font-medium flex items-center gap-2 bg-green-50 rounded-sm animate-scale-in border border-green-100">
+                        <Check className="h-3 w-3" />
+                        Coupon "{appliedCoupon.code}" applied successfully!
+                    </div>
+                )}
+            </div>
+
+            {/* Order Summary - Enhanced */}
+            <div className="bg-surface/50 border border-primary/20 p-6 rounded-sm shadow-soft hover:shadow-luxury transition-all duration-300 backdrop-blur-sm">
+                {/* Title */}
+                <h3 className="text-sm font-semibold text-primary mb-5 pb-3 border-b border-primary/10 uppercase tracking-[0.2em]">Order Summary</h3>
+
+                {/* Subtotal */}
+                <div className="flex justify-between text-sm mb-4">
+                    <span className="text-text-muted">Subtotal ({count} Item{count !== 1 ? 's' : ''})</span>
+                    <span className="font-medium text-primary">₹{subtotal.toLocaleString('en-IN')}</span>
                 </div>
 
+                {/* Discount */}
+                {appliedCoupon && (
+                    <div className="flex justify-between text-sm mb-4 animate-fade-in">
+                        <span className="text-green-700 flex items-center gap-2">
+                            <Check className="h-3 w-3" />
+                            Discount
+                        </span>
+                        <span className="font-medium text-green-700">-₹{discount.toLocaleString('en-IN')}</span>
+                    </div>
+                )}
+
+                {/* Payable Amount */}
+                <div className="flex justify-between text-base font-bold text-primary mb-6 pt-4 border-t border-primary/20">
+                    <span className="font-serif">Total</span>
+                    <span className="text-xl font-serif">₹{total.toLocaleString('en-IN')}</span>
+                </div>
+
+                {/* Terms Checkbox */}
+                <div className="mb-6">
+                    <div className="flex items-start gap-2 cursor-pointer select-none group" onClick={() => setTermsAccepted(!termsAccepted)}>
+                        <input
+                            type="checkbox"
+                            checked={termsAccepted}
+                            onChange={() => setTermsAccepted(!termsAccepted)}
+                            className="mt-0.5 accent-primary cursor-pointer h-3 w-3 rounded-none border-primary/30"
+                        />
+                        <label className="text-[10px] text-text-muted cursor-pointer leading-relaxed uppercase tracking-wider group-hover:text-primary transition-colors select-none">
+                            I Agree to Terms and Conditions
+                        </label>
+                    </div>
+                </div>
+
+                {/* Checkout Button */}
                 <Button
-                    onClick={() => {
-                        if (termsAccepted) {
-                            router.push("/checkout");
-                        }
-                    }}
+                    onClick={handleCheckout}
                     disabled={!termsAccepted || count === 0}
                     className={cn(
-                        "w-full h-12 rounded-none uppercase tracking-widest text-xs font-medium transition-all duration-300",
+                        "w-full bg-primary text-white hover:bg-primary/90 text-xs shadow-luxury rounded-sm uppercase tracking-[0.2em] h-12 transition-all duration-300",
                         (termsAccepted && count > 0)
-                            ? "bg-[#1C1917] hover:bg-[#333333] text-white"
-                            : "bg-[#9F9F9F] text-white hover:bg-[#9F9F9F] opacity-100 cursor-not-allowed"
+                            ? "hover:shadow-elevated hover:scale-[1.01]"
+                            : "opacity-50 cursor-not-allowed hover:bg-primary"
                     )}
                 >
-                    Checkout
+                    Proceed to Checkout
                 </Button>
+
+                {/* Savings Highlight */}
+                {appliedCoupon && discount > 0 && (
+                    <div className="mt-4 text-center text-xs text-primary/80 font-medium animate-fade-in-up font-serif italic">
+                        You're saving ₹{discount.toLocaleString('en-IN')} on this order
+                    </div>
+                )}
             </div>
         </div>
     )
+
 }

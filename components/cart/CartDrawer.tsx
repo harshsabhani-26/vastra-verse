@@ -1,16 +1,15 @@
 "use client";
 
 import { useCartStore } from "@/lib/store";
-import { X, Trash2, Heart, ChevronDown } from "lucide-react"; // Changed Trash to Trash2, added ChevronDown
+import { X, ShoppingBag, Minus, Plus } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
 export function CartDrawer() {
-    const { items, isOpen, closeCart, removeItem, addItem, totalPrice, totalItems } = useCartStore();
+    const { items, isOpen, closeCart, removeItem, updateQuantity, totalPrice } = useCartStore();
     const [mounted, setMounted] = useState(false);
     const router = useRouter();
 
@@ -18,139 +17,129 @@ export function CartDrawer() {
         setMounted(true);
     }, []);
 
+    // Sync cart prices with database when cart opens (optional, adhering to previous logic if needed, but keeping it simple for UI focus first)
+    // If needed specifically, we can re-add the sync logic. For now, ensuring UI works.
+
     if (!mounted) return null;
 
     return (
-        <>
-            {/* Backdrop */}
-            <div
-                className={cn(
-                    "fixed inset-0 bg-black/40 z-[60] transition-opacity duration-300",
-                    isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-                )}
-                onClick={closeCart}
-            />
+        <Sheet open={isOpen} onOpenChange={(open) => !open && closeCart()}>
+            <SheetContent className="w-full sm:max-w-md bg-background p-0 border-l border-primary/10 shadow-2xl">
+                <SheetTitle className="sr-only">Shopping Cart</SheetTitle>
+                <div className="flex flex-col h-full">
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-6 border-b border-primary/10 bg-surface/50 backdrop-blur-sm">
+                        <h2 className="text-xl font-serif text-primary tracking-tight">Shopping Bag ({items.length})</h2>
+                        {/* Close button is handled by Sheet automatically usually, but we can add explicit one if desired or rely on Sheet's X */}
+                        {/* Shadcn Sheet usually includes a close button, but we can have our own header control */}
+                    </div>
 
-            {/* Drawer */}
-            <div
-                className={cn(
-                    "fixed inset-y-0 right-0 w-full sm:w-[450px] bg-[#FAF9F6] z-[70] shadow-2xl transform transition-transform duration-500 ease-out flex flex-col",
-                    isOpen ? "translate-x-0" : "translate-x-full"
-                )}
-            >
-                {/* Header */}
-                <div className="px-6 py-5 flex items-center justify-between bg-white border-b border-stone-100">
-                    <h2 className="text-lg font-serif text-[#1C1917] tracking-wide">
-                        Your shopping bag ({totalItems()} Items)
-                    </h2>
-                    <button onClick={closeCart} className="p-1 hover:bg-stone-50 rounded-full transition-colors">
-                        <X className="h-5 w-5 text-stone-400 font-light" />
-                    </button>
-                </div>
-
-                {/* Items */}
-                <div className="flex-1 overflow-y-auto bg-white">
-                    {items.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-center space-y-4 p-8">
-                            <p className="text-stone-500 font-serif text-lg">Your bag is empty.</p>
-                            <Button
-                                onClick={closeCart}
-                                variant="outline"
-                                className="border-stone-800 text-stone-800 hover:bg-stone-800 hover:text-white rounded-none uppercase tracking-widest text-xs px-8 py-6"
-                            >
-                                Continue Shopping
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="divide-y divide-stone-100">
-                            {items.map((item) => (
-                                <div key={item.id} className="p-6 flex gap-5 bg-white">
-                                    {/* Image */}
-                                    <div className="relative h-40 w-28 flex-shrink-0 bg-stone-50">
-                                        <Image src={item.image} alt={item.name} fill className="object-cover" />
+                    {/* Items */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-primary/10 hover:scrollbar-thumb-primary/20">
+                        {items.length === 0 ? (
+                            <div className="h-full flex flex-col items-center justify-center space-y-4 text-center">
+                                <ShoppingBag className="h-12 w-12 text-primary/20" strokeWidth={1} />
+                                <p className="text-text-muted text-lg font-light">Your bag is empty</p>
+                                <Button
+                                    onClick={closeCart}
+                                    variant="link"
+                                    className="text-primary hover:text-primary-dark uppercase tracking-widest text-xs font-medium underline-offset-4"
+                                >
+                                    Continue Shopping
+                                </Button>
+                            </div>
+                        ) : (
+                            items.map((item) => (
+                                <div key={item.id} className="flex gap-4 animate-fade-in">
+                                    <div className="relative w-24 h-32 bg-secondary/5 flex-shrink-0 border border-primary/5 cursor-pointer overflow-hidden group">
+                                        <Image
+                                            src={item.image}
+                                            alt={item.name}
+                                            fill
+                                            className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                        />
                                     </div>
-
-                                    {/* Details */}
-                                    <div className="flex-1 flex flex-col">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <h3 className="font-serif text-[#1C1917] text-base leading-snug max-w-[200px] mb-1">
+                                    <div className="flex-1 flex flex-col justify-between py-1">
+                                        <div>
+                                            <div className="flex justify-between items-start gap-2">
+                                                <h3 className="font-serif text-primary text-base leading-tight line-clamp-2 hover:text-secondary transition-colors cursor-pointer">
                                                     {item.name}
                                                 </h3>
-                                                <div className="space-y-1 mt-2">
-                                                    <p className="text-xs text-stone-500 font-light tracking-wide">
-                                                        Colour: <span className="text-stone-800">{item.color || 'Ivory'}</span>
-                                                    </p>
-
-                                                </div>
+                                                <button
+                                                    onClick={() => removeItem(item.id)}
+                                                    className="text-text-muted hover:text-red-500 transition-colors p-1"
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                            <p className="text-sm font-medium text-primary mt-1">₹{item.price.toLocaleString('en-IN')}</p>
+                                            <div className="mt-2 space-y-1">
+                                                <p className="text-[10px] text-text-muted uppercase tracking-wide">Size: XS</p>
+                                                <p className="text-[10px] text-text-muted uppercase tracking-wide">Color: Ivory</p>
                                             </div>
                                         </div>
 
-                                        <div className="mt-auto flex items-end justify-between">
-                                            <div className="flex items-center gap-4">
-                                                {/* Qty Dropdown (Visual) */}
-                                                <div className="relative group cursor-pointer">
-                                                    <div className="flex items-center gap-1 text-xs text-stone-800 border-b border-transparent hover:border-stone-300 pb-0.5">
-                                                        <span>Qty: {item.quantity}</span>
-                                                        <ChevronDown className="h-3 w-3 text-stone-400" />
-                                                    </div>
-                                                </div>
-
-                                                {/* Actions */}
-                                                <div className="flex items-center gap-3 ml-2">
-                                                    <button onClick={() => removeItem(item.id)} className="text-stone-400 hover:text-red-800 transition-colors">
-                                                        <Trash2 className="h-4 w-4" strokeWidth={1.5} />
-                                                    </button>
-                                                    <button className="text-stone-400 hover:text-stone-800 transition-colors">
-                                                        <Heart className="h-4 w-4" strokeWidth={1.5} />
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <div className="text-right">
-                                                <p className="text-sm font-medium text-[#1C1917]">
-                                                    ₹{(item.price * item.quantity).toLocaleString('en-IN')}
-                                                </p>
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex items-center border border-primary/20 rounded-sm">
+                                                <button
+                                                    onClick={() => updateQuantity(item.id, Math.max(0, item.quantity - 1))}
+                                                    className="p-1 hover:bg-primary/5 text-primary transition-colors"
+                                                    disabled={item.quantity <= 1}
+                                                >
+                                                    <Minus className="h-3 w-3" />
+                                                </button>
+                                                <span className="w-8 text-center text-xs font-medium text-primary">{item.quantity}</span>
+                                                <button
+                                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                    className="p-1 hover:bg-primary/5 text-primary transition-colors"
+                                                >
+                                                    <Plus className="h-3 w-3" />
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                            ))
+                        )}
+                    </div>
+
+                    {/* Footer */}
+                    {items.length > 0 && (
+                        <div className="p-6 border-t border-primary/10 bg-surface/50 backdrop-blur-sm space-y-4">
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-base font-medium text-primary">
+                                    <span>Subtotal</span>
+                                    <span>₹{totalPrice().toLocaleString('en-IN')}</span>
+                                </div>
+                                <p className="text-[10px] text-text-muted text-center uppercase tracking-wide">
+                                    Shipping & taxes calculated at checkout
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <Button
+                                    onClick={() => {
+                                        closeCart();
+                                        router.push("/cart");
+                                    }}
+                                    variant="outline"
+                                    className="h-12 border-primary text-primary hover:bg-primary hover:text-white rounded-sm uppercase tracking-widest text-[10px] font-bold transition-all duration-300"
+                                >
+                                    View Bag
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        closeCart();
+                                        router.push("/checkout");
+                                    }}
+                                    className="h-12 bg-primary hover:bg-primary-dark text-white rounded-sm uppercase tracking-widest text-[10px] font-bold shadow-luxury hover:shadow-elevated transition-all duration-300"
+                                >
+                                    Checkout
+                                </Button>
+                            </div>
                         </div>
                     )}
                 </div>
-
-                {/* Footer */}
-                {items.length > 0 && (
-                    <div className="bg-[#FAF9F6] p-6 space-y-4 border-t border-stone-100">
-                        <div className="flex justify-between items-center text-[#1C1917]">
-                            <span className="font-medium text-sm">Total</span>
-                            <span className="font-serif text-lg font-medium">₹{totalPrice().toLocaleString('en-IN')}</span>
-                        </div>
-                        <p className="text-[10px] text-stone-500 font-light tracking-wide">
-                            Shipping and taxes calculated at checkout.
-                        </p>
-
-                        <div className="pt-4 space-y-3">
-                            <Link href="/cart" onClick={closeCart} className="block w-full">
-                                <Button className="w-full bg-[#1C1917] hover:bg-[#333333] text-white h-12 rounded-none uppercase tracking-[0.2em] text-xs font-medium">
-                                    View Shopping Cart
-                                </Button>
-                            </Link>
-
-                            <div className="text-center">
-                                <Link
-                                    href="/checkout"
-                                    onClick={closeCart}
-                                    className="inline-block border-b border-stone-800 pb-0.5 text-xs uppercase tracking-widest text-[#1C1917] hover:text-stone-600 hover:border-stone-400 transition-colors"
-                                >
-                                    Checkout
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </>
+            </SheetContent>
+        </Sheet>
     );
 }

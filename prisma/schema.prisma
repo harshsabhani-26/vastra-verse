@@ -110,15 +110,18 @@ model VerificationToken {
 
 model EmailVerification {
   id        String   @id @default(cuid())
-  email     String
+  email     String?
+  phone     String?
   otp       String
-  type      String   // 'register' | 'login' | 'forgot-password'
-  expiresAt DateTime
+  type      String   // "register", "login", "forgot-password"
   verified  Boolean  @default(false)
+  expiresAt DateTime
   createdAt DateTime @default(now())
-  
+
   @@index([email, otp])
+  @@index([phone, otp])
   @@index([email, type])
+  @@index([phone, type])
 }
 
 model Address {
@@ -1040,19 +1043,37 @@ model SearchQuery {
 }
 
 model HeroBanner {
-  id           String   @id @default(cuid())
-  title        String
-  subtitle     String
-  ctaText      String
+  id           String              @id @default(cuid())
   ctaLink      String
+  mediaType    BannerMediaType     @default(IMAGE)
   imageUrl     String
-  displayOrder Int      @default(0)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  videoUrl     String?
+  
+  // Banner Type
+  bannerType   BannerType          @default(HERO)
+  
+  displayOrder Int                 @default(0)
+  isActive     Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
   
   @@index([isActive])
   @@index([displayOrder])
+  @@index([bannerType])
+  @@index([bannerType, isActive])
+}
+
+enum BannerMediaType {
+  IMAGE
+  VIDEO
+}
+
+
+
+enum BannerType {
+  HERO
+  MID_PAGE
+  BOTTOM_PAGE
 }
 
 model Appointment {
@@ -1096,4 +1117,55 @@ enum AppointmentStatus {
   COMPLETED
   CANCELLED
   RESCHEDULED
+}
+
+// Contact Form Submissions
+model ContactSubmission {
+  id            String   @id @default(cuid())
+  
+  // Form Data
+  fullName      String
+  email         String
+  countryCode   String   @default("+91")
+  phoneNumber   String
+  country       String
+  city          String?
+  comment       String?
+  newsletter    Boolean  @default(false)
+  
+  // Status
+  status        ContactStatus @default(NEW)
+  assignedTo    String?  // Admin user ID
+  priority      ContactPriority @default(NORMAL)
+  
+  // Notes
+  adminNotes    String?
+  resolvedAt    DateTime?
+  resolvedBy    String?  // Admin user ID
+  
+  // Metadata
+  ipAddress     String?
+  userAgent     String?
+  referrer      String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([status])
+  @@index([createdAt])
+  @@index([email])
+}
+
+enum ContactStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  SPAM
+}
+
+enum ContactPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
 }

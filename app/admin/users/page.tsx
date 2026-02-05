@@ -19,9 +19,9 @@ import {
 export default function AdminUsersPage() {
     // Mock data for display
     const users = [
-        { id: 1, name: 'Admin User', email: 'admin@vayana.com', role: 'Super Admin', status: 'Active', lastLogin: '2 mins ago' },
-        { id: 2, name: 'Support Staff', email: 'support@vayana.com', role: 'Support', status: 'Active', lastLogin: '1 day ago' },
-        { id: 3, name: 'Inventory Manager', email: 'stock@vayana.com', role: 'Editor', status: 'Inactive', lastLogin: '1 week ago' },
+        { id: 1, name: 'Admin User', email: 'admin@vastraverse.com', role: 'Super Admin', status: 'Active', lastLogin: '2 mins ago' },
+        { id: 2, name: 'Support Staff', email: 'support@vastraverse.com', role: 'Support', status: 'Active', lastLogin: '1 day ago' },
+        { id: 3, name: 'Inventory Manager', email: 'stock@vastraverse.com', role: 'Editor', status: 'Inactive', lastLogin: '1 week ago' },
     ];
 
     return (

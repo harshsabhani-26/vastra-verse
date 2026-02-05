@@ -8,7 +8,7 @@ import { checkUserExists, authenticate, register, googleSignIn } from "@/lib/act
 import { GoogleLogo } from "@/components/auth/GoogleLogo";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, ArrowRight, Mail } from "lucide-react";
 
 export function UnifiedAuthForm() {
     const [step, setStep] = useState<"EMAIL" | "LOGIN" | "REGISTER">("EMAIL");
@@ -25,6 +25,7 @@ export function UnifiedAuthForm() {
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [password, setPassword] = useState("");
+    const [phone, setPhone] = useState("");
     const [newsletter, setNewsletter] = useState(false);
 
     // OTP state
@@ -32,6 +33,7 @@ export function UnifiedAuthForm() {
     const [otp, setOtp] = useState("");
     const [otpTimer, setOtpTimer] = useState(0);
     const [otpVerified, setOtpVerified] = useState(false);
+    const [otpMethod, setOtpMethod] = useState<"email" | "phone">("email"); // Which method to use
 
     // OTP Timer countdown
     useEffect(() => {
@@ -74,12 +76,19 @@ export function UnifiedAuthForm() {
         }
     };
 
-    const sendOTP = async (type: 'register' | 'login') => {
+    const sendOTP = async (type: 'register' | 'login', method?: 'email' | 'phone') => {
+        const useMethod = method || otpMethod;
+
         try {
-            const response = await fetch('/api/auth/send-otp', {
+            const endpoint = useMethod === 'phone' ? '/api/auth/send-sms-otp' : '/api/auth/send-otp';
+            const body = useMethod === 'phone'
+                ? { phone, type }
+                : { email, type };
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, type }),
+                body: JSON.stringify(body),
             });
 
             const data = await response.json();
@@ -87,14 +96,15 @@ export function UnifiedAuthForm() {
             if (data.success) {
                 setOtpSent(true);
                 setOtpTimer(300); // 5 minutes = 300 seconds
-                toast.success('OTP sent to your email!');
+                const destination = useMethod === 'phone' ? 'phone' : 'email';
+                toast.success(`OTP sent to your ${destination}!`);
 
                 // Show OTP in development
                 if (data.otp) {
                     toast.success(`Development OTP: ${data.otp}`, { duration: 10000 });
                 }
             } else {
-                toast.error('Failed to send OTP');
+                toast.error(data.error || 'Failed to send OTP');
             }
         } catch (error) {
             toast.error('Error sending OTP');
@@ -108,17 +118,22 @@ export function UnifiedAuthForm() {
         }
 
         try {
+            const body = otpMethod === 'phone'
+                ? { phone, otp }
+                : { email, otp };
+
             const response = await fetch('/api/auth/verify-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, otp }),
+                body: JSON.stringify(body),
             });
 
             const data = await response.json();
 
             if (data.valid) {
                 setOtpVerified(true);
-                toast.success('Email verified successfully!');
+                const verified = otpMethod === 'phone' ? 'Phone' : 'Email';
+                toast.success(`${verified} verified successfully!`);
             } else {
                 toast.error(data.message || 'Invalid OTP');
             }
@@ -140,12 +155,18 @@ export function UnifiedAuthForm() {
         e.preventDefault();
 
         if (!otpVerified) {
-            toast.error('Please verify your email first');
+            const method = otpMethod === 'phone' ? 'phone number' : 'email';
+            toast.error(`Please verify your ${method} first`);
             return;
         }
 
-        if (!firstName || !lastName || !password) {
+        if (!firstName || !lastName || !password || !phone) {
             toast.error('Please fill in all fields');
+            return;
+        }
+
+        if (phone.length !== 10) {
+            toast.error('Please enter a valid 10-digit phone number');
             return;
         }
 
@@ -153,6 +174,7 @@ export function UnifiedAuthForm() {
         formData.append('email', email);
         formData.append('name', `${firstName} ${lastName}`);
         formData.append('password', password);
+        formData.append('phone', phone);
         formData.append('newsletter', newsletter.toString());
 
         const result = await register(undefined, formData);
@@ -170,49 +192,32 @@ export function UnifiedAuthForm() {
     };
 
     return (
-        <div className="w-full max-w-md mx-auto px-8 py-10 bg-white shadow-sm border border-stone-100">
+        <div className="w-full max-w-md mx-auto px-8 py-10 bg-background shadow-luxury border border-primary/5 rounded-sm animate-fade-in-up">
             <div className="text-center space-y-4 mb-8">
-                <h1 className="text-3xl font-serif text-primary tracking-wide">
-                    {step === "EMAIL" && "Login or Signup"}
+                <h1 className="text-3xl font-serif text-primary tracking-tight">
+                    {step === "EMAIL" && "Welcome"}
                     {step === "LOGIN" && "Welcome Back"}
-                    {step === "REGISTER" && "Welcome to M & H!"}
+                    {step === "REGISTER" && "Join Vastra Verse"}
                 </h1>
-                <p className="text-sm text-stone-500 font-sans leading-relaxed px-4">
-                    {step === "EMAIL" && "To quickly find your favourite items, saved addresses and payments."}
-                    {step === "LOGIN" && userName && `Welcome back ${userName.split(' ')[0]},`}
+                <p className="text-sm text-text-muted font-light leading-relaxed px-4">
+                    {step === "EMAIL" && "Sign in or create an account to continue."}
+                    {step === "LOGIN" && userName && `Hello, ${userName.split(' ')[0]}`}
                     {step === "LOGIN" && <br />}
-                    {step === "LOGIN" && `Please enter password for `}
-                    {step === "LOGIN" && <span className="text-stone-700 font-medium">{email}</span>}
-                    {step === "REGISTER" && "Let's know you better and make sure that you never lose access to your account"}
+                    {step === "LOGIN" && `Please enter your password for `}
+                    {step === "LOGIN" && <span className="text-primary font-medium">{email}</span>}
+                    {step === "REGISTER" && "Create an account to unlock exclusive benefits."}
                 </p>
             </div>
 
-            {step === "LOGIN" && (
-                <div className="mb-4">
+            {(step === "LOGIN" || step === "REGISTER") && (
+                <div className="mb-6">
                     <button
                         type="button"
                         onClick={() => setStep("EMAIL")}
-                        className="flex items-center gap-2 text-stone-600 hover:text-primary text-sm"
+                        className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-text-muted hover:text-primary transition-colors font-medium border-b border-transparent hover:border-primary/20 pb-0.5"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m15 18-6-6 6-6" />
-                        </svg>
-                        <span>Back</span>
-                    </button>
-                </div>
-            )}
-
-            {step === "REGISTER" && (
-                <div className="mb-4">
-                    <button
-                        type="button"
-                        onClick={() => setStep("EMAIL")}
-                        className="flex items-center gap-2 text-stone-600 hover:text-primary text-sm"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m15 18-6-6 6-6" />
-                        </svg>
-                        <span>Back</span>
+                        <ArrowRight className="w-3 h-3 rotate-180" />
+                        <span>Change Email</span>
                     </button>
                 </div>
             )}
@@ -220,32 +225,35 @@ export function UnifiedAuthForm() {
             {step === "EMAIL" && (
                 <form onSubmit={handleEmailSubmit} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-xs uppercase tracking-wide text-stone-500 font-medium">
-                            Email Id / Mobile number<span className="text-red-600">*</span>
+                        <label className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium">
+                            Email Address<span className="text-red-500">*</span>
                         </label>
-                        <Input
-                            type="email"
-                            placeholder=""
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="bg-white border-stone-300 focus:ring-primary h-12 rounded-sm text-stone-800"
-                            required
-                        />
+                        <div className="relative">
+                            <Mail className="absolute left-3 top-3.5 h-4 w-4 text-primary/40" />
+                            <Input
+                                type="email"
+                                placeholder="name@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="pl-9 bg-surface/30 border-primary/10 focus:border-primary rounded-sm h-11 transition-all"
+                                required
+                            />
+                        </div>
                     </div>
                     <Button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full h-12 bg-[#8B8B8B] hover:bg-[#757575] text-white uppercase tracking-widest text-sm font-medium rounded-sm"
+                        className="w-full h-12 bg-primary hover:bg-primary-dark text-white uppercase tracking-[0.2em] text-[10px] font-bold rounded-sm shadow-luxury hover:shadow-elevated transition-all"
                     >
-                        {isLoading ? "Checking..." : "Continue"}
+                        {isLoading ? <Loader2 className="animate-spin w-4 h-4" /> : "Continue"}
                     </Button>
 
-                    <div className="relative py-2">
+                    <div className="relative py-4">
                         <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t border-stone-200" />
+                            <span className="w-full border-t border-primary/10" />
                         </div>
                         <div className="relative flex justify-center text-xs">
-                            <span className="bg-white px-4 text-stone-500">Or Login With</span>
+                            <span className="bg-background px-4 text-text-muted uppercase tracking-wider text-[10px]">Or Continue With</span>
                         </div>
                     </div>
 
@@ -253,10 +261,10 @@ export function UnifiedAuthForm() {
                         variant="outline"
                         type="button"
                         onClick={() => googleSignIn()}
-                        className="w-full h-12 border-stone-200 text-stone-600 hover:bg-stone-50 flex items-center justify-center gap-3 rounded-sm font-medium"
+                        className="w-full h-12 border-primary/10 text-primary hover:bg-surface flex items-center justify-center gap-3 rounded-sm font-medium transition-all"
                     >
                         <GoogleLogo />
-                        <span className="text-stone-600">Google</span>
+                        <span className="text-primary text-sm">Google</span>
                     </Button>
                 </form>
             )}
@@ -267,57 +275,58 @@ export function UnifiedAuthForm() {
 
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                            <label className="text-xs uppercase tracking-wide text-stone-500 font-medium">
-                                Password<span className="text-red-600">*</span>
+                            <label className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium">
+                                Password<span className="text-red-500">*</span>
                             </label>
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="text-xs text-blue-600 hover:text-blue-700 uppercase"
+                                className="text-[10px] uppercase tracking-[0.2em] text-primary hover:text-secondary font-bold transition-colors"
                             >
-                                {showPassword ? 'HIDE' : 'SHOW'}
+                                {showPassword ? 'Hide' : 'Show'}
                             </button>
                         </div>
                         <Input
                             type={showPassword ? "text" : "password"}
                             name="password"
                             required
-                            className="bg-white border-stone-300 h-12 rounded-sm"
+                            className="bg-surface/30 border-primary/10 focus:border-primary rounded-sm h-11 transition-all"
                         />
                     </div>
 
                     <div className="flex justify-between items-center text-xs">
                         <button
                             type="button"
-                            className="text-red-600 hover:text-red-700 font-medium"
+                            className="text-text-muted hover:text-primary transition-colors font-light"
                         >
                             Forgot Password?
                         </button>
                         <button
                             type="button"
                             onClick={() => sendOTP('login')}
-                            className="text-blue-600 hover:text-blue-700 font-medium"
+                            className="text-primary hover:text-secondary transition-colors font-medium border-b border-primary/20 hover:border-secondary"
                         >
-                            Verify via OTP
+                            Login with OTP
                         </button>
                     </div>
 
                     <Button
                         type="submit"
-                        className="w-full h-12 bg-[#8B8B8B] hover:bg-[#757575] text-white uppercase tracking-widest text-sm font-medium rounded-sm"
+                        className="w-full h-12 bg-primary hover:bg-primary-dark text-white uppercase tracking-[0.2em] text-[10px] font-bold rounded-sm shadow-luxury hover:shadow-elevated transition-all"
                     >
-                        Continue
+                        Sign In
                     </Button>
 
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 pt-2">
                         <Checkbox
                             id="remember"
                             checked={rememberMe}
                             onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                            className="border-primary/20 data-[state=checked]:bg-primary data-[state=checked]:text-white rounded-sm"
                         />
                         <label
                             htmlFor="remember"
-                            className="text-sm text-stone-600 cursor-pointer"
+                            className="text-xs text-text-muted cursor-pointer select-none"
                         >
                             Remember me
                         </label>
@@ -329,55 +338,48 @@ export function UnifiedAuthForm() {
                 <form onSubmit={handleRegister} className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-xs uppercase tracking-wide text-stone-500 font-medium">
-                                First Name<span className="text-red-600">*</span>
+                            <label className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium">
+                                First Name<span className="text-red-500">*</span>
                             </label>
                             <Input
                                 type="text"
                                 value={firstName}
                                 onChange={(e) => setFirstName(e.target.value)}
                                 required
-                                className="bg-white border-stone-300 h-12 rounded-sm"
+                                className="bg-surface/30 border-primary/10 focus:border-primary rounded-sm h-11 transition-all"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-xs uppercase tracking-wide text-stone-500 font-medium">
-                                Last Name<span className="text-red-600">*</span>
+                            <label className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium">
+                                Last Name<span className="text-red-500">*</span>
                             </label>
                             <Input
                                 type="text"
                                 value={lastName}
                                 onChange={(e) => setLastName(e.target.value)}
                                 required
-                                className="bg-white border-stone-300 h-12 rounded-sm"
+                                className="bg-surface/30 border-primary/10 focus:border-primary rounded-sm h-11 transition-all"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                            <label className="text-xs text-stone-500 font-medium">
-                                Email<span className="text-red-600">*</span>
+                            <label className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium">
+                                Email<span className="text-red-500">*</span>
                             </label>
-                            <button
-                                type="button"
-                                onClick={() => setStep("EMAIL")}
-                                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                            >
-                                Change
-                            </button>
                         </div>
                         <Input
                             type="email"
                             value={email}
                             disabled
-                            className="bg-stone-50 border-stone-300 h-12 rounded-sm text-stone-600"
+                            className="bg-secondary/5 border-primary/5 rounded-sm h-11 text-text-muted"
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-xs uppercase tracking-wide text-stone-500 font-medium">
-                            Password<span className="text-red-600">*</span>
+                        <label className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium">
+                            Password<span className="text-red-500">*</span>
                         </label>
                         <Input
                             type="password"
@@ -385,90 +387,147 @@ export function UnifiedAuthForm() {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             minLength={6}
-                            className="bg-white border-stone-300 h-12 rounded-sm"
+                            className="bg-surface/30 border-primary/10 focus:border-primary rounded-sm h-11 transition-all"
                         />
                     </div>
 
-                    {otpSent && (
-                        <>
-                            <div className="space-y-2">
-                                <label className="text-xs text-stone-600 font-medium">
-                                    Please enter the OTP to verify your email
-                                </label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        type="text"
-                                        value={otp}
-                                        onChange={(e) => setOtp(e.target.value)}
-                                        placeholder="Enter OTP"
-                                        disabled={otpVerified}
-                                        className="bg-white border-stone-300 h-12 rounded-sm"
-                                        maxLength={6}
-                                    />
-                                    {!otpVerified && (
-                                        <Button
-                                            type="button"
-                                            onClick={verifyOTP}
-                                            variant="outline"
-                                            className="h-12 px-6"
-                                        >
-                                            Verify
-                                        </Button>
-                                    )}
-                                    {otpVerified && (
-                                        <Button
-                                            type="button"
-                                            disabled
-                                            variant="outline"
-                                            className="h-12 px-6 bg-green-50 border-green-300 text-green-700"
-                                        >
-                                            ✓ Verified
-                                        </Button>
-                                    )}
-                                </div>
-                                <div className="flex justify-between items-center text-xs">
-                                    <span className="text-stone-500">
-                                        {otpTimer > 0 ? formatTimer(otpTimer) : ""}
-                                    </span>
-                                    {otpTimer === 0 && !otpVerified && (
-                                        <button
-                                            type="button"
-                                            onClick={() => sendOTP('register')}
-                                            className="text-blue-600 hover:text-blue-700 font-medium"
-                                        >
-                                            Resend OTP
-                                        </button>
-                                    )}
-                                </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium">
+                            Phone Number <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => {
+                                // Allow only digits, max 10
+                                const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                setPhone(value);
+                            }}
+                            placeholder="10-digit mobile number"
+                            required
+                            maxLength={10}
+                            className="bg-surface/30 border-primary/10 focus:border-primary rounded-sm h-11 transition-all"
+                        />
+                        <p className="text-[10px] text-text-muted">For order updates and OTP verification</p>
+                    </div>
+
+                    {/* OTP Verification Method Toggle */}
+                    {!otpSent && (
+                        <div className="space-y-2 bg-surface/30 p-4 rounded-sm border border-primary/5">
+                            <label className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium mb-3 block">
+                                Verification Method
+                            </label>
+                            <div className="flex gap-2">
+                                <Button
+                                    type="button"
+                                    onClick={() => {
+                                        setOtpMethod('email');
+                                        sendOTP('register', 'email');
+                                    }}
+                                    variant={otpMethod === 'email' ? 'default' : 'outline'}
+                                    className={`flex-1 h-10 text-[10px] uppercase tracking-wider ${otpMethod === 'email' ? 'bg-primary text-white shadow-md' : 'border-primary/20 text-text-muted hover:text-primary hover:bg-white'}`}
+                                >
+                                    Email OTP
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => {
+                                        if (!phone || phone.length !== 10) {
+                                            toast.error('Please enter a valid 10-digit phone number first');
+                                            return;
+                                        }
+                                        setOtpMethod('phone');
+                                        sendOTP('register', 'phone');
+                                    }}
+                                    variant={otpMethod === 'phone' ? 'default' : 'outline'}
+                                    className={`flex-1 h-10 text-[10px] uppercase tracking-wider ${otpMethod === 'phone' ? 'bg-primary text-white shadow-md' : 'border-primary/20 text-text-muted hover:text-primary hover:bg-white'}`}
+                                >
+                                    SMS OTP
+                                </Button>
                             </div>
-                        </>
+                        </div>
                     )}
 
-                    <div className="flex items-center space-x-2">
+                    {otpSent && (
+                        <div className="space-y-2 bg-surface/30 p-4 rounded-sm border border-primary/5">
+                            <label className="text-xs text-text-muted font-medium mb-2 block">
+                                {otpMethod === 'phone'
+                                    ? 'Enter 6-digit OTP sent to your phone'
+                                    : 'Enter 6-digit OTP sent to your email'
+                                }
+                            </label>
+                            <div className="flex gap-2">
+                                <Input
+                                    type="text"
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value)}
+                                    placeholder="Enter OTP"
+                                    disabled={otpVerified}
+                                    className="bg-white border-primary/10 h-10 rounded-sm text-center tracking-[0.5em] font-medium"
+                                    maxLength={6}
+                                />
+                                {!otpVerified && (
+                                    <Button
+                                        type="button"
+                                        onClick={verifyOTP}
+                                        className="h-10 px-6 bg-primary text-white hover:bg-primary-dark uppercase tracking-wider text-[10px] font-bold"
+                                    >
+                                        Verify
+                                    </Button>
+                                )}
+                                {otpVerified && (
+                                    <Button
+                                        type="button"
+                                        disabled
+                                        variant="outline"
+                                        className="h-10 px-6 bg-green-50 border-green-200 text-green-700 uppercase tracking-wider text-[10px] font-bold"
+                                    >
+                                        Verified
+                                    </Button>
+                                )}
+                            </div>
+                            <div className="flex justify-between items-center text-[10px] mt-2">
+                                <span className="text-text-muted font-medium">
+                                    {otpTimer > 0 ? `Resend in ${formatTimer(otpTimer)}` : ""}
+                                </span>
+                                {otpTimer === 0 && !otpVerified && (
+                                    <button
+                                        type="button"
+                                        onClick={() => sendOTP('register')}
+                                        className="text-primary hover:text-secondary font-bold uppercase tracking-wider"
+                                    >
+                                        Resend OTP
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex items-center space-x-2 pt-2">
                         <Checkbox
                             id="newsletter"
                             checked={newsletter}
                             onCheckedChange={(checked) => setNewsletter(checked as boolean)}
+                            className="border-primary/20 data-[state=checked]:bg-primary data-[state=checked]:text-white rounded-sm"
                         />
                         <label
                             htmlFor="newsletter"
-                            className="text-sm text-stone-600 cursor-pointer"
+                            className="text-xs text-text-muted cursor-pointer select-none leading-tight"
                         >
-                            I would like to receive the Newsletter
+                            Subscribe to our newsletter for exclusive updates
                         </label>
                     </div>
 
                     <Button
                         type="submit"
                         disabled={!otpVerified}
-                        className="w-full h-12 bg-[#8B8B8B] hover:bg-[#757575] text-white uppercase tracking-widest text-sm font-medium rounded-sm disabled:opacity-50"
+                        className="w-full h-12 bg-primary hover:bg-primary-dark text-white uppercase tracking-[0.2em] text-[10px] font-bold rounded-sm shadow-luxury hover:shadow-elevated transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {otpVerified ? "Create Account" : "Verify Email First"}
                     </Button>
 
-                    <p className="text-xs text-center text-stone-400">
-                        Commerce cloud does not share or sell personal info. See{" "}
-                        <span className="text-stone-600 font-medium cursor-pointer">privacy policy</span>
+                    <p className="text-[10px] text-center text-text-muted/60">
+                        By continuing, you agree to our <span className="text-primary cursor-pointer hover:underline">Terms</span> and <span className="text-primary cursor-pointer hover:underline">Privacy Policy</span>.
                     </p>
                 </form>
             )}

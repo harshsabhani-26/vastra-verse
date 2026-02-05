@@ -8,7 +8,7 @@ import { useState, useRef } from "react";
 const STORES = [
     {
         id: 1,
-        name: "Vayana Heritage Surat",
+        name: "Vastra Verse Surat",
         address: "27-28 A Sk-2 Industrial, Sosyo Circle, Udhna Surat, Gandhi kutir, Surat, Gujrat, India",
         timing: "11am to 7:30pm",
         phone: "+91 9725714184",
@@ -81,8 +81,8 @@ export default function StoreLocatorPage() {
                                 <button
                                     onClick={() => setMapType("m")}
                                     className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-all flex items-center gap-2 ${mapType === "m"
-                                            ? "bg-white text-[#1C1917] shadow-sm"
-                                            : "text-stone-500 hover:text-stone-700"
+                                        ? "bg-white text-[#1C1917] shadow-sm"
+                                        : "text-stone-500 hover:text-stone-700"
                                         }`}
                                 >
                                     <MapIcon className="w-3 h-3" /> Map
@@ -90,8 +90,8 @@ export default function StoreLocatorPage() {
                                 <button
                                     onClick={() => setMapType("k")}
                                     className={`px-3 py-1.5 text-xs font-medium rounded-sm transition-all flex items-center gap-2 ${mapType === "k"
-                                            ? "bg-white text-[#1C1917] shadow-sm"
-                                            : "text-stone-500 hover:text-stone-700"
+                                        ? "bg-white text-[#1C1917] shadow-sm"
+                                        : "text-stone-500 hover:text-stone-700"
                                         }`}
                                 >
                                     <Satellite className="w-3 h-3" /> Satellite

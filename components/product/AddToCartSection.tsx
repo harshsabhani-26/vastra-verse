@@ -69,7 +69,7 @@ export function AddToCartSection({ product }: AddToCartProps) {
             {/* Actions */}
             <div className="flex gap-4 pt-4">
                 <Button
-                    className="flex-1 h-12 bg-[#1C1917] hover:bg-[#333333] text-white uppercase tracking-wider"
+                    className="flex-1 h-12 bg-primary hover:bg-primary-dark text-white uppercase tracking-wider"
                     onClick={handleAddToCart}
                     disabled={loading}
                 >

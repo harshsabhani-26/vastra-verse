@@ -224,7 +224,7 @@ export async function restoreBackup(filename: string): Promise<RestoreResult> {
         }
 
         // Use transaction to restore data
-        await prisma.$transaction(async (tx: Omit<typeof prisma, "$transaction">) => {
+        await prisma.$transaction(async (tx) => {
             // Delete existing data in reverse order of dependencies
             await tx.orderItem.deleteMany();
             await tx.productImage.deleteMany();

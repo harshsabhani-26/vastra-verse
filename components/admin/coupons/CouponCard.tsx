@@ -239,7 +239,11 @@ export function CouponCard({ coupon }: CouponCardProps) {
                             <span>Ends</span>
                         </div>
                         <p className="font-semibold">
-                            {new Date(coupon.endDate).toLocaleDateString()}
+                            {new Date(coupon.endDate).toLocaleDateString('en-GB', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit'
+                            })}
                         </p>
                     </div>
                 </div>

@@ -91,9 +91,9 @@ export async function PATCH(
             );
         }
 
-        // Get current order data if we are updating tracking or payment
+        // Get current order data if we are updating tracking, payment, or confirming order
         let order;
-        if (trackingNumber || paymentStatus === "PAID") {
+        if (trackingNumber || paymentStatus === "PAID" || status === "CONFIRMED") {
             order = await prisma.order.findUnique({
                 where: { id: params.id },
                 include: { user: true, payments: true }
@@ -141,6 +141,47 @@ export async function PATCH(
             }
         }
 
+        // Handle Order Status Change to CONFIRMED - Create Payment Record if needed
+        if (status === "CONFIRMED" && order) {
+            // Check if payment record already exists
+            const existingPayment = await prisma.payment.findFirst({
+                where: { orderId: order.id }
+            });
+
+            if (!existingPayment) {
+                // Determine payment method from order
+                const paymentMethod = order.paymentMethod?.toLowerCase().includes('cod')
+                    ? PaymentMethodEnum.COD
+                    : PaymentMethodEnum.UPI;
+
+                // For COD orders, payment is PENDING until delivery
+                // For online orders confirmed, payment should be COMPLETED
+                const paymentStatusValue = paymentMethod === PaymentMethodEnum.COD
+                    ? PaymentStatusEnum.PENDING
+                    : PaymentStatusEnum.COMPLETED;
+
+                await prisma.payment.create({
+                    data: {
+                        orderId: order.id,
+                        amount: order.total,
+                        currency: "INR",
+                        status: paymentStatusValue,
+                        method: paymentMethod,
+                        gatewayProvider: paymentMethod === PaymentMethodEnum.COD ? "cod" : "manual_confirmation",
+                        subtotal: order.subtotal,
+                        cgst: order.cgst,
+                        sgst: order.sgst,
+                        igst: order.igst,
+                        gstRate: order.gstRate,
+                        metadata: {
+                            confirmedBy: "admin",
+                            confirmedAt: new Date().toISOString()
+                        }
+                    }
+                });
+            }
+        }
+
         // Handle Payment Status Change to PAID (Manual Settlement)
         if (paymentStatus === "PAID") {
             // Check if we need to create a payment record
@@ -156,20 +197,50 @@ export async function PATCH(
                 });
 
                 if (!existingPayment) {
-                    await prisma.payment.create({
-                        data: {
+                    // Check if there's a PENDING payment to update
+                    const pendingPayment = await prisma.payment.findFirst({
+                        where: {
                             orderId: codOrder.id,
-                            amount: codOrder.total,
-                            currency: "INR",
-                            status: PaymentStatusEnum.COMPLETED,
-                            method: PaymentMethodEnum.COD, // Default to COD for manual settlement
-                            gatewayProvider: "manual_settlement",
-                            metadata: {
-                                settledBy: "admin",
-                                settledAt: new Date().toISOString()
-                            }
+                            status: PaymentStatusEnum.PENDING
                         }
                     });
+
+                    if (pendingPayment) {
+                        // Update existing PENDING payment to COMPLETED
+                        await prisma.payment.update({
+                            where: { id: pendingPayment.id },
+                            data: {
+                                status: PaymentStatusEnum.COMPLETED,
+                                verifiedAt: new Date(),
+                                metadata: {
+                                    ...(pendingPayment.metadata as any || {}),
+                                    settledBy: "admin",
+                                    settledAt: new Date().toISOString()
+                                }
+                            }
+                        });
+                    } else {
+                        // Create new payment record
+                        await prisma.payment.create({
+                            data: {
+                                orderId: codOrder.id,
+                                amount: codOrder.total,
+                                currency: "INR",
+                                status: PaymentStatusEnum.COMPLETED,
+                                method: PaymentMethodEnum.COD, // Default to COD for manual settlement
+                                gatewayProvider: "manual_settlement",
+                                subtotal: codOrder.subtotal,
+                                cgst: codOrder.cgst,
+                                sgst: codOrder.sgst,
+                                igst: codOrder.igst,
+                                gstRate: codOrder.gstRate,
+                                metadata: {
+                                    settledBy: "admin",
+                                    settledAt: new Date().toISOString()
+                                }
+                            }
+                        });
+                    }
                 }
             }
         }

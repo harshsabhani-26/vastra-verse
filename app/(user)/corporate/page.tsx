@@ -13,7 +13,7 @@ export default function CorporatePage() {
                     <p><strong>CIN:</strong> U17116MH1995PTC086449</p>
 
                     <p><strong>Contact:</strong><br />
-                        Email: care@vayanaheritage.com<br />
+                        Email: care@vastraverse.com<br />
                         Phone: +91 97257 14184</p>
                 </div>
             </div>

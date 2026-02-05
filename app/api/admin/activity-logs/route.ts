@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { startOfDay, endOfDay } from 'date-fns';
+import { requireAdmin, unauthorizedResponse } from '@/lib/auth-utils';
 
 export async function GET(request: NextRequest) {
     try {
-        const session = await auth();
-
-        if (!session?.user || session.user.role !== 'ADMIN') {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const adminCheck = await requireAdmin();
+        if (!adminCheck.authorized) {
+            return unauthorizedResponse(adminCheck.reason);
         }
 
         const searchParams = request.nextUrl.searchParams;

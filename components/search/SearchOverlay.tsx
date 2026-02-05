@@ -63,10 +63,10 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
             document.body.style.overflow = "hidden";
 
             // Fetch New Arrivals
-            fetch("/api/products?isNewArrival=true&take=4")
+            fetch("/api/products?isNewArrival=true&limit=4")
                 .then(res => res.json())
                 .then(data => {
-                    setNewArrivals(data);
+                    setNewArrivals(data.products || data);
                     setLoading((prev) => false); // Only stop loading if both done? Or separately? distinct loading states might be better but simple boolean works for now
                 })
                 .catch(err => console.error("Failed to fetch new arrivals", err));
@@ -95,9 +95,9 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
     useEffect(() => {
         const timer = setTimeout(() => {
             if (query.trim().length > 1) { // Only search if more than 1 char
-                fetch(`/api/products?search=${encodeURIComponent(query)}&take=5`)
+                fetch(`/api/products?search=${encodeURIComponent(query)}&limit=5`)
                     .then(res => res.json())
-                    .then(data => setSuggestions(data))
+                    .then(data => setSuggestions(data.products || data))
                     .catch(err => console.error("Search error", err));
             } else {
                 setSuggestions([]);

@@ -2,97 +2,97 @@ import nodemailer from 'nodemailer';
 import prisma from '@/lib/prisma';
 
 export interface EmailOptions {
-    to: string;
-    subject: string;
-    html: string;
-    text?: string;
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
 }
 
 /**
  * Get SMTP transport using EmailSettings
  */
 async function getTransporter() {
-    const settings = await prisma.emailSettings.findFirst();
+  const settings = await prisma.emailSettings.findFirst();
 
-    if (!settings || !settings.smtpEnabled) {
-        throw new Error('Email not configured or disabled');
-    }
+  if (!settings || !(settings as any).smtpEnabled) {
+    throw new Error('Email not configured or disabled');
+  }
 
-    // Create transporter
-    const transporter = nodemailer.createTransport({
-        host: settings.smtpHost,
-        port: settings.smtpPort,
-        secure: settings.smtpSecure, // true for 465, false for other ports
-        auth: {
-            user: settings.smtpUser,
-            pass: settings.smtpPassword,
-        },
-    });
+  // Create transporter
+  const transporter = nodemailer.createTransport({
+    host: settings.smtpHost,
+    port: settings.smtpPort,
+    secure: settings.smtpSecure, // true for 465, false for other ports
+    auth: {
+      user: settings.smtpUsername,
+      pass: settings.smtpPassword,
+    },
+  } as any);
 
-    return { transporter, fromEmail: settings.fromEmail, fromName: settings.fromName };
+  return { transporter, fromEmail: settings.fromEmail, fromName: settings.fromName };
 }
 
 /**
  * Send email using configured SMTP
  */
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
-    try {
-        const { transporter, fromEmail, fromName } = await getTransporter();
+  try {
+    const { transporter, fromEmail, fromName } = await getTransporter();
 
-        await transporter.sendMail({
-            from: `"${fromName}" <${fromEmail}>`,
-            to: options.to,
-            subject: options.subject,
-            text: options.text,
-            html: options.html,
-        });
+    await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: options.to,
+      subject: options.subject,
+      text: options.text,
+      html: options.html,
+    });
 
-        return true;
-    } catch (error) {
-        console.error('Email send error:', error);
-        return false;
-    }
+    return true;
+  } catch (error) {
+    console.error('Email send error:', error);
+    return false;
+  }
 }
 
 /**
  * Send notification email
  */
 export async function sendNotificationEmail(
-    to: string,
-    title: string,
-    message: string,
-    actionUrl?: string,
-    actionText?: string
+  to: string,
+  title: string,
+  message: string,
+  actionUrl?: string,
+  actionText?: string
 ): Promise<boolean> {
-    const html = generateEmailTemplate({
-        title,
-        message,
-        actionUrl,
-        actionText,
-    });
+  const html = generateEmailTemplate({
+    title,
+    message,
+    actionUrl,
+    actionText,
+  });
 
-    const text = `${title}\n\n${message}${actionUrl ? `\n\nView: ${actionUrl}` : ''}`;
+  const text = `${title}\n\n${message}${actionUrl ? `\n\nView: ${actionUrl}` : ''}`;
 
-    return sendEmail({
-        to,
-        subject: title,
-        html,
-        text,
-    });
+  return sendEmail({
+    to,
+    subject: title,
+    html,
+    text,
+  });
 }
 
 /**
  * Generate HTML email template
  */
 function generateEmailTemplate(params: {
-    title: string;
-    message: string;
-    actionUrl?: string;
-    actionText?: string;
+  title: string;
+  message: string;
+  actionUrl?: string;
+  actionText?: string;
 }): string {
-    const { title, message, actionUrl, actionText } = params;
+  const { title, message, actionUrl, actionText } = params;
 
-    return `
+  return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -183,12 +183,12 @@ function generateEmailTemplate(params: {
  * Send order confirmation email
  */
 export async function sendOrderConfirmationEmail(
-    to: string,
-    orderId: string,
-    total: string,
-    orderUrl: string
+  to: string,
+  orderId: string,
+  total: string,
+  orderUrl: string
 ): Promise<boolean> {
-    const html = `
+  const html = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -232,34 +232,34 @@ export async function sendOrderConfirmationEmail(
 </html>
   `.trim();
 
-    return sendEmail({
-        to,
-        subject: `Order Confirmed - #${orderId}`,
-        html,
-        text: `Your order #${orderId} for ₹${total} has been confirmed. Track: ${orderUrl}`,
-    });
+  return sendEmail({
+    to,
+    subject: `Order Confirmed - #${orderId}`,
+    html,
+    text: `Your order #${orderId} for ₹${total} has been confirmed. Track: ${orderUrl}`,
+  });
 }
 
 /**
  * Send low stock alert email
  */
 export async function sendLowStockEmail(
-    to: string,
-    productName: string,
-    currentStock: number,
-    productUrl: string
+  to: string,
+  productName: string,
+  currentStock: number,
+  productUrl: string
 ): Promise<boolean> {
-    const html = generateEmailTemplate({
-        title: '⚠️ Low Stock Alert',
-        message: `${productName} is running low on stock. Only ${currentStock} units remaining.`,
-        actionUrl: productUrl,
-        actionText: 'Update Stock',
-    });
+  const html = generateEmailTemplate({
+    title: '⚠️ Low Stock Alert',
+    message: `${productName} is running low on stock. Only ${currentStock} units remaining.`,
+    actionUrl: productUrl,
+    actionText: 'Update Stock',
+  });
 
-    return sendEmail({
-        to,
-        subject: `Low Stock Alert: ${productName}`,
-        html,
-        text: `${productName} is running low. ${currentStock} units left. Update: ${productUrl}`,
-    });
+  return sendEmail({
+    to,
+    subject: `Low Stock Alert: ${productName}`,
+    html,
+    text: `${productName} is running low. ${currentStock} units left. Update: ${productUrl}`,
+  });
 }

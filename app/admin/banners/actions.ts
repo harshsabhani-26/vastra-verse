@@ -5,19 +5,23 @@ import { revalidatePath } from "next/cache";
 
 export interface HeroBanner {
     id: string;
-    title: string;
-    subtitle: string;
-    ctaText: string;
     ctaLink: string;
+    mediaType: "IMAGE" | "VIDEO";
     imageUrl: string;
+    videoUrl?: string | null;
+    // Banner Type
+    bannerType: "HERO" | "MID_PAGE" | "BOTTOM_PAGE";
     displayOrder: number;
     isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
-// Get all banners
-export async function getBanners() {
+// Get all banners (optionally filter by type)
+export async function getBanners(bannerType?: "HERO" | "MID_PAGE" | "BOTTOM_PAGE") {
     try {
         const banners = await prisma.heroBanner.findMany({
+            where: bannerType ? { bannerType } : undefined,
             orderBy: { displayOrder: 'asc' }
         });
         return banners;
@@ -27,16 +31,53 @@ export async function getBanners() {
     }
 }
 
-// Get active banners only (for frontend)
+// Get active HERO banners only (for hero section)
 export async function getActiveBanners() {
     try {
         const banners = await prisma.heroBanner.findMany({
-            where: { isActive: true },
+            where: {
+                isActive: true,
+                bannerType: "HERO"
+            },
             orderBy: { displayOrder: 'asc' }
         });
         return banners;
     } catch (error) {
-        console.error("Failed to fetch active banners:", error);
+        console.error("Failed to fetch active hero banners:", error);
+        return [];
+    }
+}
+
+// Get active MID_PAGE banners only (for mid-page section)
+export async function getActiveMidPageBanners() {
+    try {
+        const banners = await prisma.heroBanner.findMany({
+            where: {
+                isActive: true,
+                bannerType: "MID_PAGE"
+            },
+            orderBy: { displayOrder: 'asc' }
+        });
+        return banners;
+    } catch (error) {
+        console.error("Failed to fetch active mid-page banners:", error);
+        return [];
+    }
+}
+
+// Get active BOTTOM_PAGE banners only (for bottom section)
+export async function getActiveBottomPageBanners() {
+    try {
+        const banners = await prisma.heroBanner.findMany({
+            where: {
+                isActive: true,
+                bannerType: "BOTTOM_PAGE"
+            },
+            orderBy: { displayOrder: 'asc' }
+        });
+        return banners;
+    } catch (error) {
+        console.error("Failed to fetch active bottom-page banners:", error);
         return [];
     }
 }
@@ -54,8 +95,8 @@ export async function getBanner(id: string) {
     }
 }
 
-// Create banner
-export async function createBanner(data: Omit<HeroBanner, 'id'>) {
+// Create banner - exclude id, createdAt, updatedAt (Prisma auto-manages timestamps)
+export async function createBanner(data: Omit<HeroBanner, 'id' | 'createdAt' | 'updatedAt'>) {
     try {
         const banner = await prisma.heroBanner.create({
             data
@@ -69,8 +110,8 @@ export async function createBanner(data: Omit<HeroBanner, 'id'>) {
     }
 }
 
-// Update banner
-export async function updateBanner(id: string, data: Partial<Omit<HeroBanner, 'id'>>) {
+// Update banner - exclude id, createdAt, updatedAt (Prisma auto-manages timestamps)
+export async function updateBanner(id: string, data: Partial<Omit<HeroBanner, 'id' | 'createdAt' | 'updatedAt'>>) {
     try {
         const banner = await prisma.heroBanner.update({
             where: { id },

@@ -9,8 +9,10 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { use } from "react";
 
-export default function EditCouponPage({ params }: { params: { id: string } }) {
+export default function EditCouponPage({ params }: { params: Promise<{ id: string }> }) {
+    const resolvedParams = use(params);
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [coupon, setCoupon] = useState<any>(null);
@@ -19,7 +21,7 @@ export default function EditCouponPage({ params }: { params: { id: string } }) {
     useEffect(() => {
         const loadCoupon = async () => {
             try {
-                const data = await getCoupon(params.id);
+                const data = await getCoupon(resolvedParams.id);
                 if (!data) {
                     toast.error("Coupon not found");
                     router.push("/admin/coupons");
@@ -35,12 +37,12 @@ export default function EditCouponPage({ params }: { params: { id: string } }) {
         };
 
         loadCoupon();
-    }, [params.id, router]);
+    }, [resolvedParams.id, router]);
 
     const handleSubmit = async (data: any) => {
         setIsLoading(true);
         try {
-            await updateCoupon(params.id, data);
+            await updateCoupon(resolvedParams.id, data);
             toast.success("Coupon updated successfully!");
             router.push("/admin/coupons");
             router.refresh();

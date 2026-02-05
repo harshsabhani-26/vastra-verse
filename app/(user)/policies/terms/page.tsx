@@ -2,11 +2,11 @@ import { FileText, ShoppingBag, CreditCard, UserCheck, AlertCircle, Package } fr
 
 export default function TermsConditionsPage() {
     return (
-        <div className="bg-[#FAF9F6] min-h-screen py-12">
+        <div className="bg-background min-h-screen py-12">
             <div className="container mx-auto px-4 md:px-8 max-w-4xl">
                 {/* Header */}
                 <div className="text-center mb-16">
-                    <h1 className="text-3xl md:text-4xl font-serif text-[#1C1917] mb-4">Terms & Conditions</h1>
+                    <h1 className="text-3xl md:text-4xl font-serif text-primary mb-4">Terms & Conditions</h1>
                     <div className="w-24 h-1 bg-[#1a4d3a] mx-auto mb-4"></div>
                     <p className="text-stone-600">Last Updated: {new Date().toLocaleDateString('en-IN', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
                 </div>
@@ -16,13 +16,13 @@ export default function TermsConditionsPage() {
                     {/* Introduction */}
                     <div>
                         <p className="text-stone-600 leading-relaxed">
-                            Welcome to M & H (Vayana Heritage). By accessing and using our website, you agree to be bound by these Terms and Conditions. Please read them carefully before making any purchase or using our services. If you do not agree with any part of these terms, please refrain from using our website.
+                            Welcome to Vastra Verse. By accessing and using our website, you agree to be bound by these Terms and Conditions. Please read them carefully before making any purchase or using our services. If you do not agree with any part of these terms, please refrain from using our website.
                         </p>
                     </div>
 
                     {/* General Terms */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">1. General Terms</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">1. General Terms</h2>
                         <div className="space-y-3 text-stone-600 leading-relaxed">
                             <ul className="list-disc list-inside space-y-2 ml-4">
                                 <li>You must be at least 18 years old to make a purchase on our website</li>
@@ -40,7 +40,7 @@ export default function TermsConditionsPage() {
                             <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center text-[#1a4d3a]">
                                 <ShoppingBag size={20} strokeWidth={1.5} />
                             </div>
-                            <h2 className="text-xl font-serif text-[#1C1917]">2. Products and Availability</h2>
+                            <h2 className="text-xl font-serif text-primary">2. Products and Availability</h2>
                         </div>
                         <div className="space-y-3 text-stone-600 leading-relaxed">
                             <ul className="list-disc list-inside space-y-2 ml-4">
@@ -55,7 +55,7 @@ export default function TermsConditionsPage() {
 
                     {/* Ordering and Pricing */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">3. Ordering and Pricing</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">3. Ordering and Pricing</h2>
                         <div className="space-y-3 text-stone-600 leading-relaxed">
                             <ul className="list-disc list-inside space-y-2 ml-4">
                                 <li>All orders are subject to acceptance and availability</li>
@@ -74,7 +74,7 @@ export default function TermsConditionsPage() {
                             <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center text-[#1a4d3a]">
                                 <CreditCard size={20} strokeWidth={1.5} />
                             </div>
-                            <h2 className="text-xl font-serif text-[#1C1917]">4. Payment Terms</h2>
+                            <h2 className="text-xl font-serif text-primary">4. Payment Terms</h2>
                         </div>
                         <div className="space-y-3 text-stone-600 leading-relaxed">
                             <ul className="list-disc list-inside space-y-2 ml-4">
@@ -94,7 +94,7 @@ export default function TermsConditionsPage() {
                             <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center text-[#1a4d3a]">
                                 <Package size={20} strokeWidth={1.5} />
                             </div>
-                            <h2 className="text-xl font-serif text-[#1C1917]">5. Shipping and Delivery</h2>
+                            <h2 className="text-xl font-serif text-primary">5. Shipping and Delivery</h2>
                         </div>
                         <div className="space-y-3 text-stone-600 leading-relaxed">
                             <ul className="list-disc list-inside space-y-2 ml-4">
@@ -109,7 +109,7 @@ export default function TermsConditionsPage() {
 
                     {/* Returns and Refunds */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">6. Returns and Refunds</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">6. Returns and Refunds</h2>
                         <div className="space-y-3 text-stone-600 leading-relaxed">
                             <ul className="list-disc list-inside space-y-2 ml-4">
                                 <li>We accept returns within 7 days of delivery for manufacturing defects or incorrect items</li>
@@ -128,7 +128,7 @@ export default function TermsConditionsPage() {
                             <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center text-[#1a4d3a]">
                                 <UserCheck size={20} strokeWidth={1.5} />
                             </div>
-                            <h2 className="text-xl font-serif text-[#1C1917]">7. User Account</h2>
+                            <h2 className="text-xl font-serif text-primary">7. User Account</h2>
                         </div>
                         <div className="space-y-3 text-stone-600 leading-relaxed">
                             <ul className="list-disc list-inside space-y-2 ml-4">
@@ -143,7 +143,7 @@ export default function TermsConditionsPage() {
 
                     {/* Intellectual Property */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">8. Intellectual Property Rights</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">8. Intellectual Property Rights</h2>
                         <div className="space-y-3 text-stone-600 leading-relaxed">
                             <p>All content on this website, including but not limited to:</p>
                             <ul className="list-disc list-inside space-y-2 ml-4">
@@ -152,14 +152,14 @@ export default function TermsConditionsPage() {
                                 <li>Trademarks and brand names</li>
                             </ul>
                             <p className="mt-3">
-                                are the property of M & H (Vayana Heritage) and protected by Indian and international copyright laws. Unauthorized use, reproduction, or distribution is strictly prohibited.
+                                are the property of Vastra Verse and protected by Indian and international copyright laws. Unauthorized use, reproduction, or distribution is strictly prohibited.
                             </p>
                         </div>
                     </div>
 
                     {/* Limitation of Liability */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">9. Limitation of Liability</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">9. Limitation of Liability</h2>
                         <div className="space-y-3 text-stone-600 leading-relaxed">
                             <p>To the fullest extent permitted by law:</p>
                             <ul className="list-disc list-inside space-y-2 ml-4">
@@ -173,7 +173,7 @@ export default function TermsConditionsPage() {
 
                     {/* Prohibited Uses */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">10. Prohibited Uses</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">10. Prohibited Uses</h2>
                         <div className="space-y-3 text-stone-600 leading-relaxed">
                             <p>You may not use our website to:</p>
                             <ul className="list-disc list-inside space-y-2 ml-4">
@@ -189,7 +189,7 @@ export default function TermsConditionsPage() {
 
                     {/* Governing Law */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">11. Governing Law and Jurisdiction</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">11. Governing Law and Jurisdiction</h2>
                         <p className="text-stone-600 leading-relaxed">
                             These Terms and Conditions are governed by the laws of India. Any disputes arising from these terms or your use of our website shall be subject to the exclusive jurisdiction of the courts in [Your City], India.
                         </p>
@@ -197,7 +197,7 @@ export default function TermsConditionsPage() {
 
                     {/* Modifications */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">12. Modifications to Terms</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">12. Modifications to Terms</h2>
                         <p className="text-stone-600 leading-relaxed">
                             We reserve the right to modify these Terms and Conditions at any time. Changes will be effective immediately upon posting on this page. Your continued use of the website after changes are posted constitutes acceptance of the modified terms.
                         </p>
@@ -205,7 +205,7 @@ export default function TermsConditionsPage() {
 
                     {/* Severability */}
                     <div>
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">13. Severability</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">13. Severability</h2>
                         <p className="text-stone-600 leading-relaxed">
                             If any provision of these Terms and Conditions is found to be invalid or unenforceable, the remaining provisions shall continue in full force and effect.
                         </p>
@@ -213,12 +213,12 @@ export default function TermsConditionsPage() {
 
                     {/* Contact */}
                     <div className="pt-8 border-t border-stone-100">
-                        <h2 className="text-xl font-serif text-[#1C1917] mb-4">Contact Information</h2>
+                        <h2 className="text-xl font-serif text-primary mb-4">Contact Information</h2>
                         <p className="text-stone-600 leading-relaxed mb-4">
                             For questions about these Terms and Conditions, please contact us:
                         </p>
                         <div className="bg-stone-50 p-6 rounded-lg text-stone-700 space-y-2">
-                            <p><span className="font-semibold">Email:</span> support@vayanaheritage.com</p>
+                            <p><span className="font-semibold">Email:</span> support@vastraverse.com</p>
                             <p><span className="font-semibold">Phone:</span> +91 XXX XXX XXXX</p>
                             <p><span className="font-semibold">Address:</span> M & H, [Your Business Address], India</p>
                         </div>

@@ -3,28 +3,27 @@ import prisma from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
     try {
-        const { email, otp } = await request.json();
+        const { email, phone, otp } = await request.json();
 
-        if (!email || !otp) {
+        // Must provide either email or phone
+        if ((!email && !phone) || !otp) {
             return NextResponse.json(
-                { error: 'Email and OTP are required' },
+                { error: 'Email or phone and OTP are required' },
                 { status: 400 }
             );
         }
 
         // Find the OTP record
-        const verification = await prisma.emailVerification.findFirst({
+        const otpRecord = await prisma.emailVerification.findFirst({
             where: {
-                email,
+                ...(email ? { email } : { phone }),
                 otp,
                 verified: false,
             },
-            orderBy: {
-                createdAt: 'desc',
-            },
         });
 
-        if (!verification) {
+        // Check if OTP exists
+        if (!otpRecord) {
             return NextResponse.json(
                 { success: false, valid: false, message: 'Invalid OTP' },
                 { status: 400 }
@@ -32,7 +31,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if OTP has expired
-        if (new Date() > verification.expiresAt) {
+        if (new Date() > otpRecord.expiresAt) {
             return NextResponse.json(
                 { success: false, valid: false, message: 'OTP has expired' },
                 { status: 400 }
@@ -41,7 +40,7 @@ export async function POST(request: NextRequest) {
 
         // Mark OTP as verified
         await prisma.emailVerification.update({
-            where: { id: verification.id },
+            where: { id: otpRecord.id },
             data: { verified: true },
         });
 
@@ -50,7 +49,6 @@ export async function POST(request: NextRequest) {
                 success: true,
                 valid: true,
                 message: 'OTP verified successfully',
-                type: verification.type,
             },
             { status: 200 }
         );

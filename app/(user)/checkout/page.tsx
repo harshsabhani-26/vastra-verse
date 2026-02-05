@@ -1,8 +1,10 @@
 "use client";
 
+
 import { createOrder } from "@/app/actions/checkout";
 import { applyCoupon, getAutoApplyCoupons } from "@/app/admin/coupons/actions";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Tag, X, Loader2, Check, Gift, ChevronDown } from "lucide-react";
@@ -32,6 +34,8 @@ export default function CheckoutPage() {
     const [shippingCharges] = useState(0);
     const [step, setStep] = useState<'shipping' | 'payment'>('shipping');
     const [mounted, setMounted] = useState(false);
+    const [processing, setProcessing] = useState(false); // Prevent double payments
+    const { toast } = useToast();
 
     // Form Stats
     const [formData, setFormData] = useState({
@@ -106,91 +110,149 @@ export default function CheckoutPage() {
             if (validateForm()) {
                 setStep('payment');
                 window.scrollTo(0, 0);
-            } else {
-                // Scroll to top or first error?
             }
         } else {
-            // Place Order Logic
-            const payload = new FormData();
-            Object.entries(formData).forEach(([key, value]) => payload.append(key, value));
-            payload.append("cartItems", JSON.stringify(cartItems));
-            payload.append("subtotal", subtotal.toString());
-            payload.append("shippingCharges", shippingCharges.toString());
-            payload.append("payment", paymentMethod);
-
-            // Re-calc totals for safety or use state
-            payload.append("discount", "0"); // Placeholder
-            payload.append("total", subtotal.toString()); // Placeholder
+            // FIX: Prevent double submission
+            if (processing) return;
+            setProcessing(true);
 
             try {
-                const result = await createOrder(payload);
+                // FIX: Validate cart before creating order
+                const { validateCartBeforeCheckout } = await import('@/app/actions/validate-cart');
+                const validationResult = await validateCartBeforeCheckout(
+                    cartItems.map(item => ({
+                        id: item.id,
+                        quantity: item.quantity,
+                        price: item.price
+                    }))
+                );
 
-                if (result.success && result.orderId) {
-                    if (paymentMethod === "prepaid") {
-                        // Initialize Razorpay Payment
-                        const response = await fetch("/api/payment/razorpay", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                amount: subtotal,
-                                currency: "INR",
-                                receipt: result.orderId,
-                            }),
-                        });
+                if (!validationResult.valid) {
+                    validationResult.errors.forEach(err => toast({ variant: "destructive", title: "Cart Error", description: err }));
+                    setProcessing(false);
+                    return;
+                }
 
-                        const orderData = await response.json();
+                if (validationResult.warnings && validationResult.warnings.length > 0) {
+                    validationResult.warnings.forEach(warn => toast({ title: "Note", description: warn }));
+                }
 
-                        if (!orderData.id) {
-                            alert("Failed to create payment order");
-                            return;
-                        }
+                // Place Order Logic
+                const payload = new FormData();
+                Object.entries(formData).forEach(([key, value]) => payload.append(key, value));
+                payload.append("cartItems", JSON.stringify(cartItems));
+                payload.append("subtotal", subtotal.toString());
+                payload.append("shippingCharges", shippingCharges.toString());
+                payload.append("payment", paymentMethod);
 
-                        const options = {
-                            key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-                            amount: orderData.amount,
-                            currency: orderData.currency,
-                            name: "Vayana Heritage",
-                            description: "Order Payment",
-                            order_id: orderData.id,
-                            handler: async function (response: any) {
-                                const verifyRes = await fetch("/api/payment/verify", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({
-                                        razorpay_order_id: response.razorpay_order_id,
-                                        razorpay_payment_id: response.razorpay_payment_id,
-                                        razorpay_signature: response.razorpay_signature,
-                                        orderId: result.orderId,
-                                    }),
-                                });
+                // Include discount and coupon if applied
+                const discount = appliedCoupon?.discount || 0;
+                payload.append("discount", discount.toString());
+                const finalTotal = subtotal - discount + shippingCharges;
+                payload.append("total", finalTotal.toString());
 
-                                const verifyData = await verifyRes.json();
-                                if (verifyData.success) {
-                                    window.location.href = "/checkout/success";
-                                } else {
-                                    alert("Payment verification failed");
-                                }
-                            },
-                            prefill: {
-                                name: `${formData.firstName} ${formData.lastName}`,
-                                email: session?.user?.email || "",
-                                contact: formData.phone,
-                            },
-                            theme: {
-                                color: "#1C1917",
-                            },
-                        };
-
-                        const rzp1 = new (window as any).Razorpay(options);
-                        rzp1.open();
-                    } else {
-                        // COD
-                        window.location.href = "/checkout/success";
+                if (appliedCoupon) {
+                    payload.append("couponCode", appliedCoupon.code);
+                    if (appliedCoupon.type) {
+                        // Pass validation if needed
                     }
                 }
-            } catch (error) {
-                console.error("Order creation failed", error);
-                alert("Something went wrong. Please try again.");
+
+                try {
+                    const result = await createOrder(payload);
+
+                    if (result.success && result.orderId) {
+                        if (paymentMethod === "prepaid") {
+                            // Initialize Razorpay Payment
+                            const response = await fetch("/api/payment/razorpay", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    amount: finalTotal,
+                                    currency: "INR",
+                                    receipt: result.orderId,
+                                }),
+                            });
+
+                            const orderData = await response.json();
+
+                            if (!orderData.id) {
+                                toast({ variant: "destructive", title: "Error", description: "Failed to create payment order" });
+                                setProcessing(false);
+                                return;
+                            }
+
+                            const options = {
+                                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                                amount: orderData.amount,
+                                currency: orderData.currency,
+                                name: "Vastra Verse",
+                                description: "Order Payment",
+                                order_id: orderData.id,
+                                handler: async function (response: any) {
+                                    const verifyRes = await fetch("/api/payment/verify", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                            razorpay_order_id: response.razorpay_order_id,
+                                            razorpay_payment_id: response.razorpay_payment_id,
+                                            razorpay_signature: response.razorpay_signature,
+                                            orderId: result.orderId,
+                                        }),
+                                    });
+
+                                    const verifyData = await verifyRes.json();
+                                    if (verifyData.success) {
+                                        window.location.href = "/checkout/success";
+                                    } else {
+                                        toast({ variant: "destructive", title: "Error", description: "Payment verification failed" });
+                                        setProcessing(false);
+                                    }
+                                },
+                                prefill: {
+                                    name: `${formData.firstName} ${formData.lastName}`,
+                                    email: session?.user?.email || "",
+                                    contact: formData.phone,
+                                },
+                                theme: {
+                                    color: "#1C1917",
+                                },
+                                // FIX: Add payment failure and cancellation handlers
+                                modal: {
+                                    ondismiss: function () {
+                                        toast({ title: "Payment Cancelled", description: "You can try again processing your order." });
+                                        setProcessing(false);
+                                    }
+                                }
+                            };
+
+                            const rzp1 = new (window as any).Razorpay(options);
+
+                            // FIX: Handle payment failures
+                            rzp1.on('payment.failed', function (response: any) {
+                                console.error('Payment failed:', response.error);
+                                toast({ variant: "destructive", title: "Payment Failed", description: response.error.description || 'Unknown error' });
+                                setProcessing(false);
+                            });
+
+                            rzp1.open();
+                        } else {
+                            // COD
+                            window.location.href = "/checkout/success";
+                        }
+                    } else {
+                        toast({ variant: "destructive", title: "Error", description: (result as any).error || "Failed to create order" });
+                        setProcessing(false);
+                    }
+                } catch (error) {
+                    console.error("Order creation failed", error);
+                    toast({ variant: "destructive", title: "Error", description: "Something went wrong. Please try again." });
+                    setProcessing(false);
+                }
+            } catch (validationError) {
+                console.error("Cart validation error:", validationError);
+                toast({ variant: "destructive", title: "Validation Error", description: "Failed to validate cart. Please refresh and try again." });
+                setProcessing(false);
             }
         }
     };
@@ -541,9 +603,10 @@ export default function CheckoutPage() {
 
                             <Button
                                 onClick={handleNext}
-                                className="w-full h-12 bg-[#1C1917] hover:bg-[#333333] text-white rounded-none uppercase tracking-widest text-xs font-bold"
+                                disabled={processing}
+                                className="w-full h-12 bg-[#1C1917] hover:bg-[#333333] disabled:opacity-50 text-white rounded-none uppercase tracking-widest text-xs font-bold"
                             >
-                                {step === 'shipping' ? 'Next: Payment' : 'Place Order'}
+                                {processing ? 'PROCESSING...' : (step === 'shipping' ? 'Next: Payment' : 'Place Order')}
                             </Button>
                         </div>
                     </div>

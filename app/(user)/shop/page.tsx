@@ -102,27 +102,27 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
     // Determine grid columns based on view parameter
     const gridCols = view === '2'
-        ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2'
-        : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
+        ? 'grid-cols-2 lg:grid-cols-2'
+        : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
 
     return (
-        <div className="min-h-screen bg-[#FAF9F6]">
+        <div className="min-h-screen bg-background">
             {/* Top Banner / Breadcrumbs Area */}
-            <div className="container mx-auto px-4 md:px-8 pt-8 pb-4">
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-stone-500 mb-8">
+            <div className="container mx-auto px-4 md:px-8 pt-4 pb-2">
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-text-muted mb-4">
                     <Link href="/">Home</Link>
                     <span>|</span>
                     <Link href="/shop">Shop</Link>
                     {category && (
                         <>
                             <span>|</span>
-                            <span className="text-[#1C1917]">{category}</span>
+                            <span className="text-primary">{category}</span>
                         </>
                     )}
                     {sort === 'newest' && !category && (
                         <>
                             <span>|</span>
-                            <span className="text-[#1C1917]">New Arrivals</span>
+                            <span className="text-primary">New Arrivals</span>
                         </>
                     )}
                 </div>
@@ -131,28 +131,39 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 <FilterBar categories={categories} totalCount={products.length} />
             </div>
 
-            <div className="border-t border-stone-200">
+            <div className="border-t border-primary/10">
                 <div className="container mx-auto px-4 md:px-8 py-12">
                     {products.length === 0 ? (
-                        <div className="text-center py-20">
-                            <h2 className="text-xl text-stone-600 font-serif">No products found.</h2>
-                            <p className="text-stone-500 mt-2">Try adjusting your filters.</p>
+                        <div className="text-center py-32 animate-fade-in">
+                            <div className="max-w-md mx-auto space-y-6">
+                                <h2 className="text-2xl md:text-3xl text-primary font-serif font-medium">No treasures found</h2>
+                                <p className="text-text-muted font-light leading-relaxed">It seems we current don't have pieces matching your specific criteria.</p>
+                                <Link href="/shop">
+                                    <button className="bg-primary text-white px-8 py-3.5 uppercase text-xs tracking-[0.2em] font-medium hover:bg-primary/90 hover:shadow-lg transition-all duration-300">
+                                        View All Collections
+                                    </button>
+                                </Link>
+                            </div>
                         </div>
                     ) : (
-                        <div className={`grid ${gridCols} gap-x-6 gap-y-12`}>
-                            {products.map((product) => (
-                                <ProductCard
+                        <div className={`grid ${gridCols} gap-4 md:gap-x-6 md:gap-y-12`}>
+                            {products.map((product, index) => (
+                                <div
                                     key={product.id}
-                                    id={product.id}
-                                    name={product.name}
-                                    price={product.finalPrice ? parseFloat(product.finalPrice.toString()) : parseFloat(product.price.toString())}
-                                    originalPrice={product.finalPrice ? parseFloat(product.price.toString()) : undefined}
-                                    discountPercentage={product.discount && product.discountType === 'PERCENTAGE' ? parseFloat(product.discount.toString()) : undefined}
-                                    image={product.images[0]?.url || "/images/placeholder.jpg"}
-                                    category={product.category.name}
-                                    isNew={(product as any).isNewArrival}
-                                    isWishlisted={wishlistedProductIds.has(product.id)}
-                                />
+                                    className={`animate-fade-in-up stagger-${Math.min(index % 6 + 1, 6)}`}
+                                >
+                                    <ProductCard
+                                        id={product.id}
+                                        name={product.name}
+                                        price={product.finalPrice ? parseFloat(product.finalPrice.toString()) : parseFloat(product.price.toString())}
+                                        originalPrice={product.finalPrice ? parseFloat(product.price.toString()) : undefined}
+                                        discountPercentage={product.discount && product.discountType === 'PERCENTAGE' ? parseFloat(product.discount.toString()) : undefined}
+                                        image={product.images[0]?.url || "/images/placeholder.jpg"}
+                                        category={product.category.name}
+                                        isNew={(product as any).isNewArrival}
+                                        isWishlisted={wishlistedProductIds.has(product.id)}
+                                    />
+                                </div>
                             ))}
                         </div>
                     )}
