@@ -14,10 +14,10 @@ export async function isAdmin(session: Session | null): Promise<boolean> {
 
     const adminEmail = process.env.ADMIN_EMAIL;
 
-    // Strict verification: must have ADMIN role AND match admin email
+    // Strict verification: must have ADMIN role AND match admin email (case-insensitive)
     return (
         session.user.role === "ADMIN" &&
-        session.user.email === adminEmail
+        session.user.email?.toLowerCase() === adminEmail?.toLowerCase()
     );
 }
 
@@ -49,7 +49,7 @@ export async function requireAdmin(request?: Request): Promise<{
     }
 
     const adminEmail = process.env.ADMIN_EMAIL;
-    if (session.user.email !== adminEmail) {
+    if (session.user.email?.toLowerCase() !== adminEmail?.toLowerCase()) {
         return {
             authorized: false,
             session,

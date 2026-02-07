@@ -38,11 +38,11 @@ export const authConfig = {
         async jwt({ token, user, trigger }) {
             // When user first logs in, add role and phone to token
             if (user) {
-                // Strict admin email validation
+                // Strict admin email validation (case-insensitive)
                 const adminEmail = process.env.ADMIN_EMAIL;
 
-                // Grant ADMIN role if email matches exactly (regardless of DB role)
-                if (user.email === adminEmail) {
+                // Grant ADMIN role if email matches (case-insensitive comparison)
+                if (user.email?.toLowerCase() === adminEmail?.toLowerCase()) {
                     token.role = "ADMIN";
                 } else {
                     // Force USER role for everyone else

@@ -32,7 +32,7 @@ export default async function middleware(request: NextRequest) {
 
     // Get admin email from environment
     const adminEmail = process.env.ADMIN_EMAIL;
-    const isAdminUser = session?.user?.email === adminEmail;
+    const isAdminUser = session?.user?.email?.toLowerCase() === adminEmail?.toLowerCase();
 
     // STRICT ADMIN PANEL PROTECTION
     // Completely hide admin panel from non-admin users

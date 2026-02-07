@@ -39,7 +39,7 @@ export default async function AdminLayout({
 
     // Strict admin verification: role AND email must match
     const adminEmail = process.env.ADMIN_EMAIL;
-    const isAdminUser = session?.user?.role === "ADMIN" && session?.user?.email === adminEmail;
+    const isAdminUser = session?.user?.role === "ADMIN" && session?.user?.email?.toLowerCase() === adminEmail?.toLowerCase();
 
     // Redirect non-admin users to homepage (makes admin panel invisible)
     if (!session || !isAdminUser) {
