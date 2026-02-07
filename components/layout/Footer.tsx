@@ -115,7 +115,7 @@ export function Footer({ categories = [] }: FooterProps) {
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/appointments" className="hover:text-secondary transition-colors duration-300">
+                                <Link href="/appointment" className="hover:text-secondary transition-colors duration-300">
                                     Book Appointment
                                 </Link>
                             </li>
