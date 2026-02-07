@@ -68,10 +68,12 @@ export default function CategoryForm({ category, mode }: CategoryFormProps) {
                     setIcon(data.url);
                 }
             } else {
-                alert("Failed to upload image");
+                const data = await response.json();
+                alert(`Failed to upload image: ${data.details || data.error || 'Unknown error'}`);
             }
         } catch (error) {
-            alert("Failed to upload image");
+            console.error('Upload error:', error);
+            alert("Failed to upload image. Please check your network connection.");
         } finally {
             setter(false);
         }
