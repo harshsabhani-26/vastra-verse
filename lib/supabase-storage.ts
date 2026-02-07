@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 // Supabase Storage Configuration
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
@@ -10,7 +11,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
     );
 }
 
+// Standard client (for client-side or public operations)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Admin client (for server-side operations bypassing RLS)
+export const supabaseAdmin = supabaseServiceRoleKey
+    ? createClient(supabaseUrl, supabaseServiceRoleKey)
+    : null;
 
 // Storage bucket names
 export const STORAGE_BUCKETS = {
@@ -33,7 +40,10 @@ export async function uploadToSupabase(
     file: Buffer,
     contentType: string
 ): Promise<string> {
-    const { data, error } = await supabase.storage
+    // Use admin client if available (bypasses RLS), otherwise fall back to anon client
+    const client = supabaseAdmin || supabase;
+
+    const { data, error } = await client.storage
         .from(bucket)
         .upload(filepath, file, {
             contentType,
@@ -46,7 +56,7 @@ export async function uploadToSupabase(
     }
 
     // Get public URL
-    const { data: publicUrlData } = supabase.storage
+    const { data: publicUrlData } = client.storage
         .from(bucket)
         .getPublicUrl(filepath);
 
@@ -62,7 +72,8 @@ export async function deleteFromSupabase(
     bucket: string,
     filepath: string
 ): Promise<void> {
-    const { error } = await supabase.storage.from(bucket).remove([filepath]);
+    const client = supabaseAdmin || supabase;
+    const { error } = await client.storage.from(bucket).remove([filepath]);
 
     if (error) {
         console.error('Supabase delete error:', error);
