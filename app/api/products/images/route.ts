@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, unlink } from "fs/promises";
-import { join } from "path";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
 import prisma from "@/lib/prisma";
+import { uploadToSupabase, deleteFromSupabase, getStoragePathFromUrl, STORAGE_BUCKETS } from "@/lib/supabase-storage";
 
 // POST - Upload product images
 export async function POST(req: NextRequest) {
@@ -50,30 +49,49 @@ export async function POST(req: NextRequest) {
             // Generate unique filename
             const ext = file.name.split(".").pop();
             const filename = `${uuidv4()}.${ext}`;
-            const filepath = join(process.cwd(), "public", "uploads", "products", filename);
 
             // Convert file to buffer
             const bytes = await file.arrayBuffer();
             const buffer = Buffer.from(bytes);
 
             // Process image with sharp (resize, optimize)
-            const processedBuffer = await sharp(buffer)
-                .resize(1200, 1200, {
-                    fit: "inside",
-                    withoutEnlargement: true,
-                })
-                .jpeg({ quality: 85 })
-                .toBuffer();
+            // Maintain original format instead of forcing JPEG
+            let processedBuffer;
+            const sharpInstance = sharp(buffer).resize(1200, 1200, {
+                fit: "inside",
+                withoutEnlargement: true,
+            });
+
+            // Apply format-specific optimization
+            if (file.type === "image/png") {
+                processedBuffer = await sharpInstance
+                    .png({ quality: 85, compressionLevel: 9 })
+                    .toBuffer();
+            } else if (file.type === "image/webp") {
+                processedBuffer = await sharpInstance
+                    .webp({ quality: 85 })
+                    .toBuffer();
+            } else {
+                // JPEG/JPG - convert to JPEG
+                processedBuffer = await sharpInstance
+                    .jpeg({ quality: 85 })
+                    .toBuffer();
+            }
 
             // Get image metadata
             const metadata = await sharp(processedBuffer).metadata();
 
-            // Save file
-            await writeFile(filepath, processedBuffer);
+            // Upload to Supabase Storage
+            const publicUrl = await uploadToSupabase(
+                STORAGE_BUCKETS.PRODUCTS,
+                filename,
+                processedBuffer,
+                file.type
+            );
 
             // Create image object
             uploadedImages.push({
-                url: `/uploads/products/${filename}`,
+                url: publicUrl,
                 width: metadata.width,
                 height: metadata.height,
                 fileSize: processedBuffer.length,
@@ -86,8 +104,9 @@ export async function POST(req: NextRequest) {
         });
     } catch (error) {
         console.error("Error uploading images:", error);
+        const errorMessage = error instanceof Error ? error.message : "Failed to upload images";
         return NextResponse.json(
-            { error: "Failed to upload images" },
+            { error: "Failed to upload images", details: errorMessage },
             { status: 500 }
         );
     }
@@ -120,13 +139,15 @@ export async function DELETE(req: NextRequest) {
                 );
             }
 
-            // Delete file from filesystem
-            const filepath = join(process.cwd(), "public", image.url);
-            try {
-                await unlink(filepath);
-            } catch (err) {
-                console.error("Error deleting file:", err);
-                // Continue even if file deletion fails
+            // Delete file from Supabase Storage
+            const filepath = getStoragePathFromUrl(image.url);
+            if (filepath) {
+                try {
+                    await deleteFromSupabase(STORAGE_BUCKETS.PRODUCTS, filepath);
+                } catch (err) {
+                    console.error("Error deleting file from Supabase:", err);
+                    // Continue even if file deletion fails
+                }
             }
 
             // Delete from database
@@ -135,11 +156,13 @@ export async function DELETE(req: NextRequest) {
             });
         } else if (imageUrl) {
             // Just delete file if only URL provided (for temp uploads)
-            const filepath = join(process.cwd(), "public", imageUrl);
-            try {
-                await unlink(filepath);
-            } catch (err) {
-                console.error("Error deleting file:", err);
+            const filepath = getStoragePathFromUrl(imageUrl);
+            if (filepath) {
+                try {
+                    await deleteFromSupabase(STORAGE_BUCKETS.PRODUCTS, filepath);
+                } catch (err) {
+                    console.error("Error deleting file from Supabase:", err);
+                }
             }
         }
 

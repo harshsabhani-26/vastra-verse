@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import { join } from "path";
 import { v4 as uuidv4 } from "uuid";
 import sharp from "sharp";
+import { uploadToSupabase, STORAGE_BUCKETS } from "@/lib/supabase-storage";
 
 export async function POST(request: NextRequest) {
     try {
@@ -37,32 +36,51 @@ export async function POST(request: NextRequest) {
         // Generate unique filename
         const ext = file.name.split(".").pop();
         const filename = `${uuidv4()}.${ext}`;
-        const filepath = join(process.cwd(), "public", "uploads", "collections", filename);
 
         // Convert file to buffer
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
         // Process image with sharp (resize, optimize)
-        const processedBuffer = await sharp(buffer)
-            .resize(1200, 1200, {
-                fit: "inside",
-                withoutEnlargement: true,
-            })
-            .jpeg({ quality: 85 })
-            .toBuffer();
+        // Maintain original format instead of forcing JPEG
+        let processedBuffer;
+        const sharpInstance = sharp(buffer).resize(1200, 1200, {
+            fit: "inside",
+            withoutEnlargement: true,
+        });
 
-        // Save file
-        await writeFile(filepath, processedBuffer);
+        // Apply format-specific optimization
+        if (file.type === "image/png") {
+            processedBuffer = await sharpInstance
+                .png({ quality: 85, compressionLevel: 9 })
+                .toBuffer();
+        } else if (file.type === "image/webp") {
+            processedBuffer = await sharpInstance
+                .webp({ quality: 85 })
+                .toBuffer();
+        } else {
+            // JPEG/JPG - convert to JPEG
+            processedBuffer = await sharpInstance
+                .jpeg({ quality: 85 })
+                .toBuffer();
+        }
+
+        // Upload to Supabase Storage
+        const publicUrl = await uploadToSupabase(
+            STORAGE_BUCKETS.COLLECTIONS,
+            filename,
+            processedBuffer,
+            file.type
+        );
 
         // Return the public URL
-        const url = `/uploads/collections/${filename}`;
-
-        return NextResponse.json({ url }, { status: 200 });
+        return NextResponse.json({ url: publicUrl }, { status: 200 });
     } catch (error) {
         console.error("Upload error:", error);
+        // Return more detailed error for debugging
+        const errorMessage = error instanceof Error ? error.message : "Failed to upload file";
         return NextResponse.json(
-            { error: "Failed to upload file" },
+            { error: "Failed to upload file", details: errorMessage },
             { status: 500 }
         );
     }
