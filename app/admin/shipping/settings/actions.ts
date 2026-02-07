@@ -2,6 +2,7 @@
 
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { auth } from '@/auth'
 
 export interface ShippingSettingsData {
     freeShippingEnabled: boolean
@@ -63,6 +64,12 @@ export async function getShippingSettings() {
 }
 
 export async function updateShippingSettings(data: ShippingSettingsData) {
+    const session = await auth();
+
+    if (!session?.user || session.user.role !== 'ADMIN') {
+        return { success: false, error: 'Unauthorized' };
+    }
+
     try {
         // Get existing settings or create new
         let settings = await prisma.shippingSettings.findFirst()

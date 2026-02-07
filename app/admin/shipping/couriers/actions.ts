@@ -2,6 +2,7 @@
 
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { auth } from '@/auth'
 
 export interface CourierPartnerData {
     name: string
@@ -42,6 +43,12 @@ export async function getCourierPartner(id: string) {
 }
 
 export async function createCourierPartner(data: CourierPartnerData) {
+    const session = await auth();
+
+    if (!session?.user || session.user.role !== 'ADMIN') {
+        return { success: false, error: 'Unauthorized' };
+    }
+
     try {
         const partner = await prisma.courierPartner.create({
             data: {
@@ -61,6 +68,12 @@ export async function createCourierPartner(data: CourierPartnerData) {
 }
 
 export async function updateCourierPartner(id: string, data: CourierPartnerData) {
+    const session = await auth();
+
+    if (!session?.user || session.user.role !== 'ADMIN') {
+        return { success: false, error: 'Unauthorized' };
+    }
+
     try {
         const partner = await prisma.courierPartner.update({
             where: { id },
@@ -81,6 +94,12 @@ export async function updateCourierPartner(id: string, data: CourierPartnerData)
 }
 
 export async function toggleCourierPartner(id: string) {
+    const session = await auth();
+
+    if (!session?.user || session.user.role !== 'ADMIN') {
+        return { success: false, error: 'Unauthorized' };
+    }
+
     try {
         const partner = await prisma.courierPartner.findUnique({ where: { id } })
         if (!partner) {
@@ -100,6 +119,12 @@ export async function toggleCourierPartner(id: string) {
 }
 
 export async function deleteCourierPartner(id: string) {
+    const session = await auth();
+
+    if (!session?.user || session.user.role !== 'ADMIN') {
+        return { success: false, error: 'Unauthorized' };
+    }
+
     try {
         await prisma.courierPartner.delete({
             where: { id }
@@ -113,6 +138,12 @@ export async function deleteCourierPartner(id: string) {
 }
 
 export async function reorderCouriers(updates: { id: string; displayOrder: number }[]) {
+    const session = await auth();
+
+    if (!session?.user || session.user.role !== 'ADMIN') {
+        return { success: false, error: 'Unauthorized' };
+    }
+
     try {
         await Promise.all(
             updates.map(({ id, displayOrder }) =>

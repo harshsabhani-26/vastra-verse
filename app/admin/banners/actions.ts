@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
 
 export interface HeroBanner {
     id: string;
@@ -97,6 +98,12 @@ export async function getBanner(id: string) {
 
 // Create banner - exclude id, createdAt, updatedAt (Prisma auto-manages timestamps)
 export async function createBanner(data: Omit<HeroBanner, 'id' | 'createdAt' | 'updatedAt'>) {
+    const session = await auth();
+
+    if (!session || session.user?.role !== "ADMIN") {
+        return { success: false, error: "Unauthorized" };
+    }
+
     try {
         const banner = await prisma.heroBanner.create({
             data
@@ -112,6 +119,12 @@ export async function createBanner(data: Omit<HeroBanner, 'id' | 'createdAt' | '
 
 // Update banner - exclude id, createdAt, updatedAt (Prisma auto-manages timestamps)
 export async function updateBanner(id: string, data: Partial<Omit<HeroBanner, 'id' | 'createdAt' | 'updatedAt'>>) {
+    const session = await auth();
+
+    if (!session || session.user?.role !== "ADMIN") {
+        return { success: false, error: "Unauthorized" };
+    }
+
     try {
         const banner = await prisma.heroBanner.update({
             where: { id },
@@ -128,6 +141,12 @@ export async function updateBanner(id: string, data: Partial<Omit<HeroBanner, 'i
 
 // Delete banner
 export async function deleteBanner(id: string) {
+    const session = await auth();
+
+    if (!session || session.user?.role !== "ADMIN") {
+        return { success: false, error: "Unauthorized" };
+    }
+
     try {
         await prisma.heroBanner.delete({
             where: { id }
@@ -143,6 +162,12 @@ export async function deleteBanner(id: string) {
 
 // Toggle banner active status
 export async function toggleBannerStatus(id: string, isActive: boolean) {
+    const session = await auth();
+
+    if (!session || session.user?.role !== "ADMIN") {
+        return { success: false, error: "Unauthorized" };
+    }
+
     try {
         await prisma.heroBanner.update({
             where: { id },
@@ -159,6 +184,12 @@ export async function toggleBannerStatus(id: string, isActive: boolean) {
 
 // Reorder banners
 export async function reorderBanners(bannerIds: string[]) {
+    const session = await auth();
+
+    if (!session || session.user?.role !== "ADMIN") {
+        return { success: false, error: "Unauthorized" };
+    }
+
     try {
         await Promise.all(
             bannerIds.map((id, index) =>

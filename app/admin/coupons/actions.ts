@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { Decimal } from "@prisma/client/runtime/library";
+import { auth } from "@/auth";
 
 // Helper to generate random coupon code
 export async function generateCouponCode(): Promise<string> {
@@ -139,6 +140,12 @@ export async function createCoupon(data: {
     autoApply?: boolean;
     priority?: number;
 }) {
+    const session = await auth();
+
+    if (!session || session.user?.role !== "ADMIN") {
+        throw new Error("Unauthorized");
+    }
+
     // Check if code already exists
     const existing = await prisma.coupon.findUnique({
         where: { code: data.code },
@@ -202,6 +209,12 @@ export async function updateCoupon(
         priority: number;
     }>
 ) {
+    const session = await auth();
+
+    if (!session || session.user?.role !== "ADMIN") {
+        throw new Error("Unauthorized");
+    }
+
     // If code is being changed, check for duplicates
     if (data.code) {
         const existing = await prisma.coupon.findFirst({
@@ -256,6 +269,12 @@ export async function updateCoupon(
 
 // Delete coupon
 export async function deleteCoupon(id: string) {
+    const session = await auth();
+
+    if (!session || session.user?.role !== "ADMIN") {
+        throw new Error("Unauthorized");
+    }
+
     await prisma.coupon.delete({
         where: { id },
     });
@@ -267,6 +286,12 @@ export async function deleteCoupon(id: string) {
 
 // Toggle coupon active status
 export async function toggleCoupon(id: string) {
+    const session = await auth();
+
+    if (!session || session.user?.role !== "ADMIN") {
+        throw new Error("Unauthorized");
+    }
+
     const coupon = await prisma.coupon.findUnique({
         where: { id },
         select: { isActive: true },

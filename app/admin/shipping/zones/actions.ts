@@ -2,6 +2,7 @@
 
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { auth } from '@/auth'
 
 export type ShippingZoneType = 'LOCAL' | 'METRO' | 'REST_OF_INDIA' | 'INTERNATIONAL'
 
@@ -61,6 +62,12 @@ export async function getShippingZone(id: string) {
 }
 
 export async function createShippingZone(data: ShippingZoneData) {
+    const session = await auth();
+
+    if (!session?.user || session.user.role !== 'ADMIN') {
+        return { success: false, error: 'Unauthorized' };
+    }
+
     try {
         const zone = await prisma.shippingZone.create({
             data: {
@@ -90,6 +97,12 @@ export async function createShippingZone(data: ShippingZoneData) {
 }
 
 export async function updateShippingZone(id: string, data: ShippingZoneData) {
+    const session = await auth();
+
+    if (!session?.user || session.user.role !== 'ADMIN') {
+        return { success: false, error: 'Unauthorized' };
+    }
+
     try {
         const zone = await prisma.shippingZone.update({
             where: { id },
@@ -120,6 +133,12 @@ export async function updateShippingZone(id: string, data: ShippingZoneData) {
 }
 
 export async function toggleShippingZone(id: string) {
+    const session = await auth();
+
+    if (!session?.user || session.user.role !== 'ADMIN') {
+        return { success: false, error: 'Unauthorized' };
+    }
+
     try {
         const zone = await prisma.shippingZone.findUnique({ where: { id } })
         if (!zone) {
@@ -146,6 +165,12 @@ export async function toggleShippingZone(id: string) {
 }
 
 export async function deleteShippingZone(id: string) {
+    const session = await auth();
+
+    if (!session?.user || session.user.role !== 'ADMIN') {
+        return { success: false, error: 'Unauthorized' };
+    }
+
     try {
         await prisma.shippingZone.delete({
             where: { id }

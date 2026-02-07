@@ -18,10 +18,9 @@ function generateSlug(name: string): string {
 export async function createCategory(formData: FormData) {
     const session = await auth();
 
-    // Temporarily disabled for testing
-    // if (!session || session.user?.role !== "ADMIN") {
-    //     throw new Error("Unauthorized");
-    // }
+    if (!session || session.user?.role !== "ADMIN") {
+        throw new Error("Unauthorized");
+    }
 
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
@@ -50,10 +49,9 @@ export async function createCategory(formData: FormData) {
 export async function updateCategory(categoryId: string, formData: FormData) {
     const session = await auth();
 
-    // Temporarily disabled for testing
-    // if (!session || session.user?.role !== "ADMIN") {
-    //     throw new Error("Unauthorized");
-    // }
+    if (!session || session.user?.role !== "ADMIN") {
+        throw new Error("Unauthorized");
+    }
 
     const name = formData.get("name") as string;
     const description = formData.get("description") as string;
@@ -78,10 +76,9 @@ export async function updateCategory(categoryId: string, formData: FormData) {
 export async function deleteCategory(categoryId: string) {
     const session = await auth();
 
-    // Temporarily disabled for testing
-    // if (!session || session.user?.role !== "ADMIN") {
-    //     throw new Error("Unauthorized");
-    // }
+    if (!session || session.user?.role !== "ADMIN") {
+        throw new Error("Unauthorized");
+    }
 
     try {
         // Check if category has products
