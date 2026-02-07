@@ -145,8 +145,9 @@ export async function createOrder(formData: FormData) {
         });
     }
 
-    // CRITICAL: Create order WITHOUT reducing stock
-    // Stock will be reduced only after payment verification
+    // CRITICAL: Stock Reduction Timing
+    // - COD orders: Stock reduced immediately during order creation (to prevent overselling)
+    // - Prepaid orders: Stock will be reduced only after payment verification
     const orderId = await prisma.$transaction(async (tx) => {
         // Validate stock availability BEFORE creating order
         for (const item of items) {
@@ -208,6 +209,41 @@ export async function createOrder(formData: FormData) {
                 createdBy: session.user.id,
             },
         });
+
+        // CRITICAL: For COD orders, reduce stock immediately
+        // Prepaid orders will reduce stock after payment verification
+        if (paymentMethod === "COD") {
+            // Reduce stock for each item
+            for (const item of items) {
+                await tx.product.update({
+                    where: { id: item.id },
+                    data: {
+                        stock: {
+                            decrement: item.quantity
+                        }
+                    }
+                });
+            }
+
+            // Update order status to CONFIRMED for COD
+            await tx.order.update({
+                where: { id: order.id },
+                data: {
+                    status: "CONFIRMED",
+                    paymentStatus: "PENDING", // Still pending until delivery
+                }
+            });
+
+            // Add timeline event for stock reduction
+            await tx.orderTimeline.create({
+                data: {
+                    orderId: order.id,
+                    event: "Stock Reduced",
+                    details: `Stock reduced for ${items.length} items (COD order)`,
+                    createdBy: "system"
+                }
+            });
+        }
 
         // Track coupon usage if a coupon was applied
         if (couponCode && discount > 0) {
