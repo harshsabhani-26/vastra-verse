@@ -29,18 +29,9 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         updateAge: 24 * 60 * 60, // 24 hours
     },
     // Explicitly configure secure cookies for production
-    useSecureCookies: process.env.NODE_ENV === "production",
-    cookies: {
-        sessionToken: {
-            name: `${process.env.NODE_ENV === "production" ? "__Secure-" : ""}next-auth.session-token`,
-            options: {
-                httpOnly: true,
-                sameSite: "lax",
-                path: "/",
-                secure: process.env.NODE_ENV === "production",
-            },
-        },
-    },
+    // Simplified configuration - let NextAuth handle secure cookies automatically
+    debug: process.env.NODE_ENV === "production",
+    trustHost: true,
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,
