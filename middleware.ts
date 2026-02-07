@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import NextAuth from "next-auth";
-import { authConfig } from "./auth.config";
-
-const { auth } = NextAuth(authConfig);
+import { auth } from "@/auth";
 
 export default async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
