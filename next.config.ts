@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+// Deployment trigger: Mobile fix verification V2
 
 const nextConfig: NextConfig = {
   images: {
