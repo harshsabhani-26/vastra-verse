@@ -1,21 +1,36 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase Storage Configuration
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Supabase Storage Configuration
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-        'Missing Supabase credentials. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your .env file.'
-    );
+// Helper to get Supabase client safely
+function getSupabase() {
+    if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error(
+            'Missing Supabase credentials. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your .env file.'
+        );
+    }
+    return createClient(supabaseUrl, supabaseAnonKey);
 }
 
-// Standard client (for client-side or public operations)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Helper to get Admin client safely
+function getSupabaseAdmin() {
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+        return null;
+    }
+    return createClient(supabaseUrl, supabaseServiceRoleKey);
+}
 
-// Admin client (for server-side operations bypassing RLS)
-export const supabaseAdmin = supabaseServiceRoleKey
+// Standard client (lazy initialized to avoid build errors)
+export const supabase = supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey)
+    : {} as ReturnType<typeof createClient>; // Fallback interactions will fail at runtime if keys missing
+
+// Admin client (lazy initialized)
+export const supabaseAdmin = supabaseUrl && supabaseServiceRoleKey
     ? createClient(supabaseUrl, supabaseServiceRoleKey)
     : null;
 
@@ -40,8 +55,16 @@ export async function uploadToSupabase(
     file: Buffer,
     contentType: string
 ): Promise<string> {
+    // Ensure credentials exist before attempting upload
+    if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Missing Supabase credentials');
+    }
+
     // Use admin client if available (bypasses RLS), otherwise fall back to anon client
-    const client = supabaseAdmin || supabase;
+    // Re-initialize locally to ensure we have a valid client at runtime
+    const adminClient = getSupabaseAdmin();
+    const standardClient = getSupabase();
+    const client = adminClient || standardClient;
 
     const { data, error } = await client.storage
         .from(bucket)
@@ -72,7 +95,14 @@ export async function deleteFromSupabase(
     bucket: string,
     filepath: string
 ): Promise<void> {
-    const client = supabaseAdmin || supabase;
+    if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Missing Supabase credentials');
+    }
+
+    const adminClient = getSupabaseAdmin();
+    const standardClient = getSupabase();
+    const client = adminClient || standardClient;
+
     const { error } = await client.storage.from(bucket).remove([filepath]);
 
     if (error) {
