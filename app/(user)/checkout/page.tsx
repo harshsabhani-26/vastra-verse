@@ -63,7 +63,7 @@ export default function CheckoutPage() {
     // Initial Cart Logic (omitted for brevity, keep existing)
     useEffect(() => {
         setMounted(true);
-        const cartStorage = localStorage.getItem("vayana-cart-storage");
+        const cartStorage = localStorage.getItem("vastra-verse-cart-storage");
         if (cartStorage) {
             try {
                 const storage = JSON.parse(cartStorage);
