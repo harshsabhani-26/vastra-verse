@@ -2,14 +2,17 @@
   "name": "vastra-verse",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=18.17.0"
+  },
   "scripts": {
-    "dev": "node \"node_modules/next/dist/bin/next\" dev",
-    "build": "node \"node_modules/next/dist/bin/next\" build",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "generate": "node \"node_modules/prisma/build/index.js\" generate",
-    "db:push": "node \"node_modules/prisma/build/index.js\" db push",
-    "db:migrate": "node \"node_modules/prisma/build/index.js\" migrate dev --name add_appointment_model",
+    "lint": "next lint",
+    "generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
     "postinstall": "prisma generate"
   },
   "dependencies": {
