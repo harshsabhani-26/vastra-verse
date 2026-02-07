@@ -108,7 +108,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     return (
         <div className="min-h-screen bg-background">
             {/* Top Banner / Breadcrumbs Area */}
-            <div className="container mx-auto px-4 md:px-8 pt-4 pb-2">
+            <div className="container mx-auto px-4 md:px-6 lg:px-8 pt-4 pb-2">
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-text-muted mb-4">
                     <Link href="/">Home</Link>
                     <span>|</span>
@@ -146,7 +146,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                             </div>
                         </div>
                     ) : (
-                        <div className={`grid ${gridCols} gap-4 md:gap-x-6 md:gap-y-12`}>
+                        <div className={`grid ${gridCols} gap-3 md:gap-4 lg:gap-x-6 lg:gap-y-12`}>
                             {products.map((product, index) => (
                                 <div
                                     key={product.id}

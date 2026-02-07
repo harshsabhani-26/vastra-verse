@@ -278,7 +278,7 @@ export default function CheckoutPage() {
                 id="razorpay-checkout-js"
                 src="https://checkout.razorpay.com/v1/checkout.js"
             />
-            <div className="container mx-auto px-4 max-w-6xl">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
 
                     {/* LEFT COLUMN */}
@@ -329,7 +329,7 @@ export default function CheckoutPage() {
                                 <div className="space-y-6">
                                     <h2 className="text-[10px] uppercase tracking-widest text-[#1C1917]">SHIPPING ADDRESS</h2>
 
-                                    <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-x-8 sm:gap-y-6">
                                         <div>
                                             <label className="text-[10px] uppercase tracking-widest text-red-700 mb-1 block">First Name *</label>
                                             <input
@@ -562,7 +562,7 @@ export default function CheckoutPage() {
 
                     {/* RIGHT COLUMN - SUMMARY */}
                     <div className="lg:col-span-5">
-                        <div className="bg-[#FAF9F6] border border-stone-200 p-8 sticky top-8">
+                        <div className="bg-[#FAF9F6] border border-stone-200 p-6 sm:p-8 lg:sticky lg:top-8">
                             <h3 className="text-[10px] uppercase tracking-widest text-[#1C1917] font-bold mb-6">ORDER SUMMARY</h3>
 
                             <div className="space-y-6 mb-8">

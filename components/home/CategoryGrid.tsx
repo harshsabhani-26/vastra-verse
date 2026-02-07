@@ -17,7 +17,7 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
     const displayCategories = categories.slice(0, 4);
 
     return (
-        <section className="py-12 md:py-16 bg-background">
+        <section className="py-10 md:py-12 lg:py-16 bg-background">
             <div className="mx-auto px-4 max-w-[1440px] w-full">
                 {/* Section Header */}
                 <div className="text-center mb-10 animate-fade-in-up">
@@ -51,7 +51,7 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
                                 </div>
 
                                 {/* Category Name */}
-                                <h3 className="text-lg md:text-xl font-serif text-primary uppercase tracking-[0.2em] group-hover:text-secondary transition-all duration-300">
+                                <h3 className="text-lg md:text-xl font-serif text-primary uppercase tracking-wide md:tracking-[0.2em] group-hover:text-secondary transition-all duration-300">
                                     {cat.name}
                                 </h3>
                                 <div className="mt-3 w-0 group-hover:w-16 h-[1px] bg-secondary transition-all duration-500 ease-out" />
@@ -65,7 +65,7 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
                     <Link href="/collections">
                         <Button
                             variant="outline"
-                            className="h-12 px-12 border-primary/20 text-primary hover:bg-primary hover:text-white hover:border-primary uppercase tracking-[0.2em] text-xs min-w-[240px] transition-all duration-300 font-medium rounded-sm"
+                            className="h-12 px-8 sm:px-12 border-primary/20 text-primary hover:bg-primary hover:text-white hover:border-primary uppercase tracking-wide md:tracking-[0.2em] text-xs min-w-[200px] sm:min-w-[240px] transition-all duration-300 font-medium rounded-sm"
                         >
                             View All Categories
                         </Button>

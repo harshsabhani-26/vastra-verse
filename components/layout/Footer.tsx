@@ -15,7 +15,7 @@ export function Footer({ categories = [] }: FooterProps) {
             {/* Main Footer Section */}
             <div className="container mx-auto px-4 md:px-12 max-w-[1400px]">
                 {/* Links Section */}
-                <div className="pb-16 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 md:gap-12">
+                <div className="pb-16 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 md:gap-8 lg:gap-12">
                     {/* Column 1: Shop */}
                     <div>
                         <h4 className="text-sm font-serif font-bold uppercase tracking-[0.15em] text-primary mb-8">

@@ -65,7 +65,7 @@ export function Header() {
 
                             {/* Center - Logo (Absolutely Positioned) */}
                             <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex-shrink-0 flex items-center gap-2 group">
-                                <h1 className="text-3xl md:text-4xl font-serif text-primary tracking-[0.15em] whitespace-nowrap group-hover:text-primary-light transition-colors duration-300">
+                                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-serif text-primary tracking-normal sm:tracking-[0.1em] md:tracking-[0.15em] whitespace-nowrap group-hover:text-primary-light transition-colors duration-300">
                                     VASTRA <span className="font-light text-secondary">VERSE</span>
                                 </h1>
                             </Link>
@@ -308,6 +308,36 @@ export function Header() {
                             >
                                 Contact
                             </Link>
+
+                            {/* Profile Section - Only for Authenticated Users */}
+                            {status === "authenticated" && (
+                                <>
+                                    <div className="pt-4 pb-2">
+                                        <h3 className="text-sm font-sans font-semibold text-primary uppercase tracking-wider px-2">My Account</h3>
+                                    </div>
+                                    <Link
+                                        href="/profile"
+                                        className="block text-lg font-serif text-primary-dark py-4 border-b border-secondary/10 hover:text-primary hover:pl-2 transition-all"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        Profile
+                                    </Link>
+                                    <Link
+                                        href="/orders"
+                                        className="block text-lg font-serif text-primary-dark py-4 border-b border-secondary/10 hover:text-primary hover:pl-2 transition-all"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        My Orders
+                                    </Link>
+                                    <Link
+                                        href="/wishlist"
+                                        className="block text-lg font-serif text-primary-dark py-4 border-b border-secondary/10 hover:text-primary hover:pl-2 transition-all"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        Wishlist
+                                    </Link>
+                                </>
+                            )}
                         </nav>
                         <div className="p-8 border-t border-secondary/20 bg-primary/5">
                             {status === "authenticated" ? (

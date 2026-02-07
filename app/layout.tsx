@@ -19,6 +19,13 @@ export const metadata: Metadata = {
     description: "Experience the elegance of traditional Indian heritage with our curated collection of premium sarees.",
 };
 
+export const viewport = {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+};
+
 import { auth } from "@/auth";
 
 export default async function RootLayout({

@@ -6,11 +6,21 @@
     --font-judson: "Judson", serif;
     --font-teachers: "Teachers", sans-serif;
 
-    /* Spacing scale for sections */
-    --section-padding-sm: 2.5rem;
-    --section-padding-md: 4rem;
-    --section-padding-lg: 6rem;
-    --section-padding-xl: 8rem;
+    /* Spacing scale for sections - Mobile first */
+    --section-padding-sm: 2rem;
+    --section-padding-md: 3rem;
+    --section-padding-lg: 4rem;
+    --section-padding-xl: 5rem;
+}
+
+/* Desktop section padding */
+@media (min-width: 768px) {
+    :root {
+        --section-padding-sm: 2.5rem;
+        --section-padding-md: 4rem;
+        --section-padding-lg: 6rem;
+        --section-padding-xl: 8rem;
+    }
 }
 
 @layer base {

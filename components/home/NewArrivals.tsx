@@ -60,7 +60,7 @@ export async function NewArrivals() {
     }
 
     return (
-        <section className="py-12 md:py-16 bg-background">
+        <section className="py-10 md:py-12 lg:py-16 bg-background">
             <div className="container mx-auto px-4 max-w-[1440px]">
                 {/* Editorial Section Header */}
                 <div className="flex flex-col items-center text-center mb-10 space-y-4">
@@ -119,7 +119,7 @@ export async function NewArrivals() {
 
                             {/* Refined Product Info */}
                             <div className="text-center space-y-2">
-                                <p className="text-[10px] text-text-muted uppercase tracking-[0.2em] font-medium">
+                                <p className="text-xs md:text-[10px] text-text-muted uppercase tracking-[0.2em] font-medium">
                                     {product.category.name}
                                 </p>
                                 <h3 className="font-serif text-lg text-primary group-hover:text-secondary transition-colors duration-300">
