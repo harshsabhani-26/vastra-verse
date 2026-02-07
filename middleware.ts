@@ -34,6 +34,18 @@ export default async function middleware(request: NextRequest) {
     const adminEmail = process.env.ADMIN_EMAIL;
     const isAdminUser = session?.user?.email?.toLowerCase() === adminEmail?.toLowerCase();
 
+    // 🐛 TEMPORARY DEBUG LOGGING (REMOVE AFTER FIXING)
+    if (pathname.startsWith("/admin")) {
+        console.log("🔍 [ADMIN ACCESS DEBUG]", {
+            pathname,
+            userEmail: session?.user?.email,
+            userRole: session?.user?.role,
+            adminEmailFromEnv: adminEmail,
+            isAdminUser,
+            sessionExists: !!session,
+        });
+    }
+
     // STRICT ADMIN PANEL PROTECTION
     // Completely hide admin panel from non-admin users
     if (pathname.startsWith("/admin")) {
