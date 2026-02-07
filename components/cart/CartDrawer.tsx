@@ -30,8 +30,13 @@ export function CartDrawer() {
                     {/* Header */}
                     <div className="flex items-center justify-between p-6 border-b border-primary/10 bg-surface/50 backdrop-blur-sm">
                         <h2 className="text-xl font-serif text-primary tracking-tight">Shopping Bag ({items.length})</h2>
-                        {/* Close button is handled by Sheet automatically usually, but we can add explicit one if desired or rely on Sheet's X */}
-                        {/* Shadcn Sheet usually includes a close button, but we can have our own header control */}
+                        <button
+                            onClick={closeCart}
+                            className="p-2 -mr-2 text-primary hover:text-red-500 transition-colors rounded-full hover:bg-primary/5"
+                            aria-label="Close cart"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
                     </div>
 
                     {/* Items */}
