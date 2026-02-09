@@ -10,6 +10,8 @@ interface ShopPageProps {
 
 import { auth } from "@/auth";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ShopPage({ searchParams }: ShopPageProps) {
     const params = await searchParams;
     const query = typeof params.q === 'string' ? params.q : undefined;
@@ -64,6 +66,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             hasSome: colors
         };
     }
+    console.log('ShopPage where clause:', JSON.stringify(where, null, 2));
 
     let orderBy: Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[] = {};
     if (sort === 'newest') {

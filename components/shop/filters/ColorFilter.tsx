@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Check } from "lucide-react"
 
 const colors = [
@@ -30,6 +30,16 @@ export function ColorFilter() {
     const initialSelected = selectedColorsParam ? selectedColorsParam.split(',') : []
 
     const [selectedbase, setSelected] = useState<string[]>(initialSelected)
+
+    // Sync state with URL params
+    useEffect(() => {
+        const selectedColorsParam = searchParams.get('colors')
+        if (selectedColorsParam) {
+            setSelected(selectedColorsParam.split(','))
+        } else {
+            setSelected([])
+        }
+    }, [searchParams])
 
     const toggleColor = (name: string) => {
         let newSelected: string[]
