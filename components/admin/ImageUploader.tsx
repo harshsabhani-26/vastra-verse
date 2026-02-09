@@ -88,35 +88,80 @@ export default function ImageUploader({
         setUploading(true);
 
         try {
-            const formData = new FormData();
-            files.forEach((file) => {
-                formData.append("files", file);
-            });
+            // Helper to get image dimensions
+            const getImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
+                return new Promise((resolve, reject) => {
+                    const img = document.createElement('img');
+                    img.onload = () => {
+                        URL.revokeObjectURL(img.src);
+                        resolve({ width: img.width, height: img.height });
+                    };
+                    img.onerror = reject;
+                    img.src = URL.createObjectURL(file);
+                });
+            };
 
-            const response = await fetch("/api/products/images", {
-                method: "POST",
-                body: formData,
-            });
+            // Upload all files directly to Supabase Storage
+            const uploadPromises = files.map(async (file, index) => {
+                // Validate file type
+                const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+                if (!allowedTypes.includes(file.type)) {
+                    throw new Error(`Invalid file type: ${file.name}. Only JPG, PNG, and WebP are allowed.`);
+                }
 
-            const data = await response.json();
+                // Validate file size (max 10MB)
+                const maxSize = 10 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    throw new Error(`File ${file.name} is too large. Maximum size is 10MB.`);
+                }
 
-            if (!response.ok) {
-                throw new Error(data.error || "Upload failed");
-            }
+                // Generate unique filename
+                const ext = file.name.split(".").pop();
+                const filename = `${self.crypto.randomUUID()}.${ext}`;
+                const filepath = `products/${filename}`;
 
-            // Add uploaded images to the list
-            const newImages: ProductImageData[] = data.images.map(
-                (img: any, index: number) => ({
-                    url: img.url,
-                    type: images.length === 0 && index === 0 ? "MAIN" : "FRONT_VIEW",
+                // Get dimensions
+                const dimensions = await getImageDimensions(file);
+
+                // Direct upload to Supabase Storage
+                const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+                const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+                if (!supabaseUrl || !supabaseKey) {
+                    throw new Error("Supabase configuration missing");
+                }
+
+                const { createClient } = await import("@supabase/supabase-js");
+                const supabase = createClient(supabaseUrl, supabaseKey);
+
+                const { error: uploadError } = await supabase.storage
+                    .from("collections")
+                    .upload(filepath, file, {
+                        cacheControl: "31536000",
+                        upsert: false,
+                    });
+
+                if (uploadError) {
+                    throw new Error(`Upload failed: ${uploadError.message}`);
+                }
+
+                // Get public URL
+                const { data: urlData } = supabase.storage
+                    .from("collections")
+                    .getPublicUrl(filepath);
+
+                return {
+                    url: urlData.publicUrl,
+                    type: (images.length === 0 && index === 0 ? "MAIN" : "FRONT_VIEW") as ProductImageData["type"],
                     position: images.length + index,
-                    width: img.width,
-                    height: img.height,
-                    fileSize: img.fileSize,
+                    width: dimensions.width,
+                    height: dimensions.height,
+                    fileSize: file.size,
                     rotation: 0,
-                })
-            );
+                };
+            });
 
+            const newImages = await Promise.all(uploadPromises);
             onChange([...images, ...newImages]);
         } catch (err: any) {
             setError(err.message || "Failed to upload images");
@@ -198,8 +243,8 @@ export default function ImageUploader({
             {/* Upload Zone */}
             <div
                 className={`border-2 border-dashed rounded-lg p-8 transition-colors ${isDragging
-                        ? "border-primary bg-primary/5"
-                        : "border-stone-200 hover:border-primary/50"
+                    ? "border-primary bg-primary/5"
+                    : "border-stone-200 hover:border-primary/50"
                     } ${images.length >= maxImages ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
