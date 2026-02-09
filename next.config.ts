@@ -11,10 +11,7 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
-      {
-        protocol: 'https',
-        hostname: 'www.anitadongre.com',
-      },
+      // Domain removed
       {
         protocol: 'https',
         hostname: '*.supabase.co',

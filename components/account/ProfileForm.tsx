@@ -216,7 +216,7 @@ export function ProfileForm({ user }: { user: UserData }) {
                     <div>
                         <p className="mb-1">To change your email address, please contact our support team:</p>
                         <div className="font-medium flex flex-wrap gap-x-4 gap-y-1 text-primary">
-                            <a href="mailto:care@anitadongre.com" className="hover:text-secondary underline underline-offset-4 transition-colors">care@anitadongre.com</a>
+                            <a href="mailto:care@vastraverse.com" className="hover:text-secondary underline underline-offset-4 transition-colors">care@vastraverse.com</a>
                             <span className="text-primary/20">|</span>
                             <span>+91 99993 13366</span>
                         </div>

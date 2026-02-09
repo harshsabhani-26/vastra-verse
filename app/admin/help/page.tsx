@@ -95,10 +95,10 @@ export default function HelpPage() {
                                     Get help via email
                                 </p>
                                 <a
-                                    href="mailto:care@anitadongre.com"
+                                    href="mailto:care@vastraverse.com"
                                     className="text-sm text-blue-600 hover:underline"
                                 >
-                                    care@anitadongre.com
+                                    care@vastraverse.com
                                 </a>
                             </div>
                         </div>
@@ -170,8 +170,8 @@ export default function HelpPage() {
                 <button
                     onClick={() => setActiveTab("getting-started")}
                     className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === "getting-started"
-                            ? "border-[#1C1917] text-[#1C1917]"
-                            : "border-transparent text-stone-600 hover:text-[#1C1917]"
+                        ? "border-[#1C1917] text-[#1C1917]"
+                        : "border-transparent text-stone-600 hover:text-[#1C1917]"
                         }`}
                 >
                     Getting Started
@@ -179,8 +179,8 @@ export default function HelpPage() {
                 <button
                     onClick={() => setActiveTab("features")}
                     className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === "features"
-                            ? "border-[#1C1917] text-[#1C1917]"
-                            : "border-transparent text-stone-600 hover:text-[#1C1917]"
+                        ? "border-[#1C1917] text-[#1C1917]"
+                        : "border-transparent text-stone-600 hover:text-[#1C1917]"
                         }`}
                 >
                     Features
@@ -188,8 +188,8 @@ export default function HelpPage() {
                 <button
                     onClick={() => setActiveTab("faq")}
                     className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === "faq"
-                            ? "border-[#1C1917] text-[#1C1917]"
-                            : "border-transparent text-stone-600 hover:text-[#1C1917]"
+                        ? "border-[#1C1917] text-[#1C1917]"
+                        : "border-transparent text-stone-600 hover:text-[#1C1917]"
                         }`}
                 >
                     FAQs

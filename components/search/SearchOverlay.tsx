@@ -7,32 +7,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 // Mock data for "New Arrivals" - in a real app this would be fetched
-const NEW_ARRIVALS = [
-    {
-        id: "1",
-        name: "Artemis Embroidered Silk Jacket Set - Ivory",
-        price: "₹ 12,000",
-        image: "https://www.anitadongre.com/on/demandware.static/-/Sites-AD-INDIA-Library/default/dw1d960762/images/Artemis_Embroidered_Silk_Jacket_Set_Ivory.jpg" // Placeholder or use random image if this fails
-    },
-    {
-        id: "2",
-        name: "Artemis Woven Banarasi Jacket Set - Black",
-        price: "₹ 15,500",
-        image: "https://www.anitadongre.com/on/demandware.static/-/Sites-AD-INDIA-Library/default/dw8d495763/images/Artemis_Woven_Banarasi_Jacket_Set_Black.jpg"
-    },
-    {
-        id: "3",
-        name: "Xylandra Broderie & Macrame Jacket Set",
-        price: "₹ 18,900",
-        image: "https://www.anitadongre.com/on/demandware.static/-/Sites-AD-INDIA-Library/default/dw6f625b5a/images/Xylandra_Broderie_Macrame_Jacket_Set.jpg"
-    },
-    {
-        id: "4",
-        name: "Ophrys Embroidered Macrame Gown - Gold",
-        price: "₹ 22,000",
-        image: "https://www.anitadongre.com/on/demandware.static/-/Sites-AD-INDIA-Library/default/dwc6591358/images/Ophrys_Embroidered_Macrame_Gown_Gold.jpg"
-    }
-];
+// Mock data removed
 
 
 
