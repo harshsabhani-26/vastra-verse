@@ -24,7 +24,14 @@ export async function GET() {
             orderBy: { name: 'asc' }
         });
 
-        return NextResponse.json(categories);
+        return NextResponse.json(
+            categories,
+            {
+                headers: {
+                    "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+                }
+            }
+        );
     } catch (error) {
         console.error("[CATEGORIES_GET]", error);
         return new NextResponse("Internal Error", { status: 500 });

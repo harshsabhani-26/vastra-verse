@@ -5,7 +5,8 @@ import { auth } from "@/auth";
 import { ProductImageGallery } from "@/components/product/ProductImageGallery";
 import { ProductDetails } from "@/components/product/ProductDetails";
 
-export const dynamic = 'force-dynamic';
+// Cache product pages and revalidate every 5 minutes
+export const revalidate = 300;
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;

@@ -7,6 +7,9 @@ export const metadata = {
     description: "Explore our exclusive collections of heritage weaves and contemporary designs.",
 };
 
+// Cache collections page and revalidate every 5 minutes
+export const revalidate = 300;
+
 async function getProducts() {
     try {
         const products = await prisma.product.findMany({
