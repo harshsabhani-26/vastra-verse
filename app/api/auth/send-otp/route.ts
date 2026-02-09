@@ -1,9 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import crypto from 'crypto';
+import { getAuthRateLimiter } from '@/lib/rate-limit';
+import { logError, logRateLimitViolation, logSecurityEvent } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
     try {
+        // SECURITY: Rate limiting for OTP endpoint to prevent abuse
+        const limiter = getAuthRateLimiter();
+        const ip = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "127.0.0.1";
+        const { success, limit, reset, remaining } = await limiter.limit(ip);
+
+        if (!success) {
+            logRateLimitViolation("/api/auth/send-otp", ip, ip);
+            return new NextResponse("Too Many Requests - Please try again later", {
+                status: 429,
+                headers: {
+                    "X-RateLimit-Limit": limit.toString(),
+                    "X-RateLimit-Remaining": remaining.toString(),
+                    "X-RateLimit-Reset": reset.toString(),
+                },
+            });
+        }
+
         const { email, type } = await request.json();
 
         if (!email || !type) {
@@ -46,6 +65,13 @@ export async function POST(request: NextRequest) {
             },
         });
 
+        // Log OTP generation for security audit
+        logSecurityEvent("OTP_GENERATED", {
+            email,
+            type,
+            ipAddress: ip,
+        });
+
         // TODO: Send OTP via email
         // For now, log it to console (in development only)
         if (process.env.NODE_ENV === 'development') {
@@ -66,7 +92,7 @@ export async function POST(request: NextRequest) {
             { status: 200 }
         );
     } catch (error) {
-        console.error('Send OTP error:', error);
+        logError("SEND_OTP", error);
         return NextResponse.json(
             { error: 'Failed to send OTP' },
             { status: 500 }

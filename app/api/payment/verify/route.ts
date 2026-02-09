@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { generateInvoicePDF } from "@/lib/invoice";
 import { sendInvoiceEmail } from "@/lib/email";
 import { getPaymentRateLimiter } from "@/lib/rate-limit";
+import { logError, logPaymentEvent, logRateLimitViolation } from "@/lib/logger";
 
 /**
  * CRITICAL FIX: Payment Verification with Stock Reduction
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
         const { success } = await rateLimiter.limit(ip);
 
         if (!success) {
+            logRateLimitViolation("/api/payment/verify", ip, ip);
             return NextResponse.json({ error: 'Too many payment requests. Please wait.' }, { status: 429 });
         }
         const body = await req.json();
@@ -35,6 +37,7 @@ export async function POST(req: Request) {
         }
 
         if (!process.env.RAZORPAY_KEY_SECRET) {
+            logError("PAYMENT_VERIFY_CONFIG", new Error("Razorpay secret missing"));
             return NextResponse.json({ error: "Razorpay secret missing" }, { status: 500 });
         }
 
@@ -67,7 +70,11 @@ export async function POST(req: Request) {
             .digest("hex");
 
         if (generated_signature !== razorpay_signature) {
-            console.error("Invalid payment signature");
+            logPaymentEvent("PAYMENT_VERIFICATION_FAILED", orderId, {
+                reason: "Invalid signature",
+                razorpayOrderId: razorpay_order_id,
+                ipAddress: ip,
+            });
             return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
         }
 
@@ -217,14 +224,23 @@ export async function POST(req: Request) {
                 }
             }
         } catch (invError) {
-            console.error("Failed to generate/send invoice:", invError);
+            logError("INVOICE_GENERATION", invError);
             // Don't fail the request - payment was successful
         }
+
+        // Log successful payment
+        logPaymentEvent("PAYMENT_SUCCESS", orderId, {
+            razorpayPaymentId: razorpay_payment_id,
+            razorpayOrderId: razorpay_order_id,
+        });
 
         return NextResponse.json({ success: true });
 
     } catch (error: any) {
-        console.error("Payment Verification Error:", error);
+        logError("PAYMENT_VERIFICATION", error, {
+            message: error.message,
+            stack: error.stack,
+        });
 
         // Provide specific error messages
         if (error.message?.includes("Insufficient stock")) {
