@@ -56,6 +56,44 @@ export async function PATCH(
     }
 }
 
+export async function PUT(
+    req: Request,
+    context: { params: Promise<{ id: string }> }
+) {
+    try {
+        const session = await auth();
+        const { id } = await context.params;
+
+        // Admin check
+        if (!session || session.user?.role !== "ADMIN") {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        const body = await req.json();
+        const { name, slug, description, image, icon, isFeatured, isActive } = body;
+
+        // Update category
+        const category = await prisma.category.update({
+            where: { id },
+            data: {
+                name,
+                slug,
+                description,
+                image,
+                icon,
+                isFeatured,
+                isActive
+            }
+        });
+
+        return NextResponse.json(category);
+    } catch (error) {
+        console.error("[CATEGORY_PUT]", error);
+        const errorMessage = error instanceof Error ? error.message : "Internal Error";
+        return new NextResponse(`Failed to update category: ${errorMessage}`, { status: 500 });
+    }
+}
+
 export async function DELETE(
     req: Request,
     context: { params: Promise<{ id: string }> }
