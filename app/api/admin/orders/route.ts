@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
                 },
                 orderBy: { createdAt: 'desc' },
                 skip,
-                take: limit,
+                take: Math.min(limit, 50), // Protect against loading too many orders
             }),
             prisma.order.count({ where }),
         ]);
