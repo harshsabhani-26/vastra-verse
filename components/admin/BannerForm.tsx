@@ -30,7 +30,7 @@ export function BannerForm({ banner }: BannerFormProps) {
         isActive: banner?.isActive !== undefined ? banner.isActive : true
     });
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -46,17 +46,34 @@ export function BannerForm({ banner }: BannerFormProps) {
             return;
         }
 
-        // For now, we'll use a data URL. In production, upload to cloud storage
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const dataUrl = reader.result as string;
-            setImagePreview(dataUrl);
-            setFormData(prev => ({ ...prev, imageUrl: dataUrl }));
-        };
-        reader.readAsDataURL(file);
+        setLoading(true);
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const response = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Upload failed");
+            }
+
+            const data = await response.json();
+            setImagePreview(data.url);
+            setFormData(prev => ({ ...prev, imageUrl: data.url }));
+            toast.success("Image uploaded successfully");
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error(error instanceof Error ? error.message : "Failed to upload image");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleVideoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -72,14 +89,31 @@ export function BannerForm({ banner }: BannerFormProps) {
             return;
         }
 
-        // For now, we'll use a data URL. In production, upload to cloud storage
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const dataUrl = reader.result as string;
-            setVideoPreview(dataUrl);
-            setFormData(prev => ({ ...prev, videoUrl: dataUrl }));
-        };
-        reader.readAsDataURL(file);
+        setLoading(true);
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const response = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Upload failed");
+            }
+
+            const data = await response.json();
+            setVideoPreview(data.url);
+            setFormData(prev => ({ ...prev, videoUrl: data.url }));
+            toast.success("Video uploaded successfully");
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error(error instanceof Error ? error.message : "Failed to upload video");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {

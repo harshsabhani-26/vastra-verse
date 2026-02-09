@@ -11,9 +11,6 @@ interface HeroWrapperProps {
         videoUrl?: string | null;
         bannerType: "HERO" | "MID_PAGE" | "BOTTOM_PAGE";
         displayOrder: number;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
 }
 

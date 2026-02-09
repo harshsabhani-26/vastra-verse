@@ -16,19 +16,25 @@ export async function POST(request: NextRequest) {
         }
 
         // Validate file type
-        const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+        const allowedImageTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+        const allowedVideoTypes = ["video/mp4", "video/webm"];
+        const allowedTypes = [...allowedImageTypes, ...allowedVideoTypes];
+
         if (!allowedTypes.includes(file.type)) {
             return NextResponse.json(
-                { error: "Only JPG, PNG, and WebP images are allowed" },
+                { error: "Only JPG, PNG, WebP images and MP4, WebM videos are allowed" },
                 { status: 400 }
             );
         }
 
-        // Validate file size (max 5MB)
-        const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+        // Validate file size
+        // 5MB for images, 50MB for videos
+        const isVideo = file.type.startsWith('video/');
+        const MAX_SIZE = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+
         if (file.size > MAX_SIZE) {
             return NextResponse.json(
-                { error: "File size must be less than 5MB" },
+                { error: `File size must be less than ${isVideo ? '50MB' : '5MB'}` },
                 { status: 400 }
             );
         }
@@ -43,33 +49,41 @@ export async function POST(request: NextRequest) {
 
         // Process image with sharp (resize, optimize)
         // Maintain original format instead of forcing JPEG
-        let processedBuffer;
-        const sharpInstance = sharp(buffer).resize(1200, 1200, {
-            fit: "inside",
-            withoutEnlargement: true,
-        });
+        let processedBuffer: any = buffer;
 
-        // Apply format-specific optimization
-        if (file.type === "image/png") {
-            processedBuffer = await sharpInstance
-                .png({ quality: 85, compressionLevel: 9 })
-                .toBuffer();
-        } else if (file.type === "image/webp") {
-            processedBuffer = await sharpInstance
-                .webp({ quality: 85 })
-                .toBuffer();
-        } else {
-            // JPEG/JPG - convert to JPEG
-            processedBuffer = await sharpInstance
-                .jpeg({ quality: 85 })
-                .toBuffer();
+        if (!isVideo) {
+            try {
+                const sharpInstance = sharp(buffer).resize(1200, 1200, {
+                    fit: "inside",
+                    withoutEnlargement: true,
+                });
+
+                // Apply format-specific optimization
+                if (file.type === "image/png") {
+                    processedBuffer = await sharpInstance
+                        .png({ quality: 85, compressionLevel: 9 })
+                        .toBuffer();
+                } else if (file.type === "image/webp") {
+                    processedBuffer = await sharpInstance
+                        .webp({ quality: 85 })
+                        .toBuffer();
+                } else {
+                    // JPEG/JPG - convert to JPEG
+                    processedBuffer = await sharpInstance
+                        .jpeg({ quality: 85 })
+                        .toBuffer();
+                }
+            } catch (error) {
+                console.error("Image processing failed:", error);
+                // Fallback to original buffer if processing fails
+            }
         }
 
         // Upload to Supabase Storage
         const publicUrl = await uploadToSupabase(
             STORAGE_BUCKETS.COLLECTIONS,
             filename,
-            processedBuffer,
+            processedBuffer as any,
             file.type
         );
 

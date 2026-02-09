@@ -20,6 +20,8 @@ import Link from "next/link";
 import Image from "next/image";
 import NotificationBell from "@/components/notifications/NotificationBell";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDashboard() {
     const session = await auth();
 

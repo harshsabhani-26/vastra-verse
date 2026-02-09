@@ -8,8 +8,8 @@ import { MidPageBanner } from "@/components/home/MidPageBanner";
 import { getCategories } from "@/app/actions/category";
 import { getActiveBanners, getActiveMidPageBanners, getActiveBottomPageBanners } from "@/app/admin/banners/actions";
 
-// Cache this page and revalidate every 3 minutes
-export const revalidate = 180;
+// Cache this page and revalidate every 5 minutes
+export const revalidate = 300;
 
 export default async function Home() {
     const [categories, heroBanners, midPageBanners, bottomPageBanners] = await Promise.all([
