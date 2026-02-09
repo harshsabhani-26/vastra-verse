@@ -12,10 +12,9 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url);
 
-        // Pagination
-        const page = parseInt(searchParams.get("page") || "1");
-        const limit = parseInt(searchParams.get("limit") || "50");
-        const skip = (page - 1) * limit;
+        // Cursor-based pagination (FASTER than skip/take)
+        const cursor = searchParams.get("cursor");
+        const PAGE_SIZE = 20;
 
         // Filters
         const status = searchParams.get("status");
@@ -41,64 +40,72 @@ export async function GET(request: NextRequest) {
             where.createdAt.lte = new Date(endDate);
         }
 
-        const [orders, total] = await Promise.all([
-            prisma.order.findMany({
-                where,
-                select: {
-                    id: true,
-                    status: true,
-                    total: true,
-                    subtotal: true,
-                    cgst: true,
-                    sgst: true,
-                    igst: true,
-                    shippingCharges: true,
-                    gstRate: true,
-                    discount: true,
-                    giftWrapCharge: true,
-                    paymentStatus: true,
-                    paymentMethod: true,
-                    customerName: true,
-                    customerPhone: true,
-                    shippingAddress: true,
-                    trackingNumber: true,
-                    createdAt: true,
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                            phone: true,
-                        }
-                    },
-                    items: {
-                        select: {
-                            id: true,
-                            quantity: true,
-                            price: true,
-                            product: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    price: true,
-                                    images: {
-                                        where: { type: 'MAIN' },
-                                        take: 1,
-                                        select: { url: true }
-                                    }
+        // Fetch PAGE_SIZE + 1 to determine if there's a next page
+        const orders = await prisma.order.findMany({
+            where,
+            select: {
+                id: true,
+                status: true,
+                total: true,
+                subtotal: true,
+                cgst: true,
+                sgst: true,
+                igst: true,
+                shippingCharges: true,
+                gstRate: true,
+                discount: true,
+                giftWrapCharge: true,
+                paymentStatus: true,
+                paymentMethod: true,
+                customerName: true,
+                customerPhone: true,
+                shippingAddress: true,
+                trackingNumber: true,
+                createdAt: true,
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        phone: true,
+                    }
+                },
+                items: {
+                    select: {
+                        id: true,
+                        quantity: true,
+                        price: true,
+                        product: {
+                            select: {
+                                id: true,
+                                name: true,
+                                price: true,
+                                images: {
+                                    where: { type: 'MAIN' },
+                                    take: 1,
+                                    select: { url: true }
                                 }
                             }
                         }
                     }
-                },
-                orderBy: { createdAt: 'desc' },
-                skip,
-                take: Math.min(limit, 50), // Protect against loading too many orders
+                }
+            },
+            ...(cursor && {
+                cursor: { id: cursor },
+                skip: 1, // Skip the cursor itself
             }),
-            prisma.order.count({ where }),
-        ]);
+            take: PAGE_SIZE + 1,
+            orderBy: { createdAt: 'desc' },
+        });
 
-        const serializedOrders = orders.map(order => ({
+        // Check if there are more results
+        const hasNextPage = orders.length > PAGE_SIZE;
+        const data = hasNextPage ? orders.slice(0, -1) : orders;
+
+        // Get total count for backwards compatibility (optional, can be removed if not needed)
+        const total = await prisma.order.count({ where });
+
+        const serializedOrders = data.map(order => ({
             ...order,
             total: order.total.toString(),
             subtotal: order.subtotal?.toString() || "0",
@@ -121,13 +128,9 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             orders: serializedOrders,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
-                hasMore: page * limit < total,
-            }
+            nextCursor: hasNextPage ? data[data.length - 1].id : null,
+            hasNextPage,
+            total, // For display purposes
         });
     } catch (error) {
         console.error("Error fetching orders:", error);
