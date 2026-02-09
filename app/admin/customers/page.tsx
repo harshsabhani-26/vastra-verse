@@ -12,6 +12,9 @@ export default async function AdminCustomersPage({
     const blockedOnly = params.blockedOnly === 'true';
     const minOrders = parseInt((params.minOrders as string) || '0');
     const minSpent = parseFloat((params.minSpent as string) || '0');
+    const page = parseInt((params.page as string) || '1');
+    const limit = 20;
+    const skip = (page - 1) * limit;
 
     // Build where clause
     const where: any = { role: 'USER' };
@@ -32,47 +35,69 @@ export default async function AdminCustomersPage({
         where.isBlocked = true;
     }
 
-    // Fetch customers with order statistics
-    const users = await prisma.user.findMany({
-        where,
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            phoneVerified: true,
-            isVIP: true,
-            isBlocked: true,
-            blockedReason: true,
-            blockedAt: true,
-            createdAt: true,
-            orders: {
-                select: {
-                    id: true,
-                    total: true,
-                    createdAt: true,
-                    status: true,
+    // Fetch customers with aggregated order statistics (not full orders)
+    const [users, total] = await Promise.all([
+        prisma.user.findMany({
+            where,
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                phoneVerified: true,
+                isVIP: true,
+                isBlocked: true,
+                blockedReason: true,
+                blockedAt: true,
+                createdAt: true,
+                _count: {
+                    select: {
+                        orders: true,
+                        addresses: true,
+                    }
                 },
+                orders: {
+                    select: {
+                        total: true,
+                        createdAt: true,
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
+                    take: 1 // Only get last order for date
+                }
             },
-            addresses: {
-                select: {
-                    id: true,
-                },
+            orderBy: {
+                createdAt: 'desc',
             },
+            skip,
+            take: limit,
+        }),
+        prisma.user.count({ where })
+    ]);
+
+    // Get total spent for each user (separate query for performance)
+    const userIds = users.map(u => u.id);
+    const orderAggregates = await prisma.order.groupBy({
+        by: ['userId'],
+        where: {
+            userId: { in: userIds }
         },
-        orderBy: {
-            createdAt: 'desc',
-        },
+        _sum: {
+            total: true
+        }
     });
+
+    // Map order aggregates by userId
+    const orderTotalsByUser = new Map(
+        orderAggregates.map(agg => [agg.userId, Number(agg._sum.total || 0)])
+    );
 
     // Calculate statistics and filter by minOrders and minSpent
     const customers = users
         .map((customer) => {
-            const orderCount = customer.orders.length;
-            const totalSpent = customer.orders.reduce(
-                (sum, order) => sum + Number(order.total),
-                0
-            );
+            const orderCount = customer._count.orders;
+            const totalSpent = orderTotalsByUser.get(customer.id) || 0;
             const lastOrder = customer.orders[0]?.createdAt || null;
 
             return {
@@ -89,7 +114,7 @@ export default async function AdminCustomersPage({
                 orderCount,
                 totalSpent,
                 lastOrder: lastOrder ? lastOrder.toISOString() : null,
-                addressCount: customer.addresses.length,
+                addressCount: customer._count.addresses,
             };
         })
         .filter(
@@ -97,10 +122,17 @@ export default async function AdminCustomersPage({
                 customer.orderCount >= minOrders && customer.totalSpent >= minSpent
         );
 
+    const pagination = {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <h1 className="text-3xl font-serif text-[#1C1917]">Customers</h1>
-            <CustomersListClient customers={customers} />
+            <CustomersListClient customers={customers} pagination={pagination} />
         </div>
     );
 }

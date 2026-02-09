@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
     Plus, Search, Filter, Download, Trash2, Copy, Eye,
-    ChevronDown, MoreHorizontal, Package, Calendar, CheckSquare, Square
+    ChevronDown, Package, Calendar, CheckSquare, Square
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface Product {
     id: string;
@@ -30,22 +30,51 @@ interface Product {
     lowStockThreshold: number | null;
 }
 
-export default function ProductsListClient({ initialProducts }: { initialProducts: Product[] }) {
+interface Category {
+    id: string;
+    name: string;
+}
+
+interface Pagination {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
+
+interface Filters {
+    search: string;
+    status: string;
+    category: string;
+}
+
+interface Props {
+    initialProducts: Product[];
+    pagination: Pagination;
+    categories: Category[];
+    initialFilters: Filters;
+}
+
+export default function ProductsListClient({
+    initialProducts,
+    pagination,
+    categories,
+    initialFilters
+}: Props) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [products, setProducts] = useState<Product[]>(initialProducts);
-    const [filteredProducts, setFilteredProducts] = useState<Product[]>(initialProducts);
     const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
-    const [searchQuery, setSearchQuery] = useState("");
-    const [statusFilter, setStatusFilter] = useState<string>("all");
-    const [categoryFilter, setCategoryFilter] = useState<string>("all");
-    const [sortBy, setSortBy] = useState<string>("date-desc");
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(10);
+    const [searchQuery, setSearchQuery] = useState(initialFilters.search);
+    const [statusFilter, setStatusFilter] = useState(initialFilters.status);
+    const [categoryFilter, setCategoryFilter] = useState(initialFilters.category);
     const [showFilters, setShowFilters] = useState(false);
     const [isMobileView, setIsMobileView] = useState(false);
 
-    // Get unique categories
-    const categories = Array.from(new Set(products.map(p => p.category.name)));
+    // Update products when initialProducts changes
+    useEffect(() => {
+        setProducts(initialProducts);
+    }, [initialProducts]);
 
     // Check if mobile view
     useEffect(() => {
@@ -55,66 +84,56 @@ export default function ProductsListClient({ initialProducts }: { initialProduct
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    // Filter and sort products
-    useEffect(() => {
-        let filtered = [...products];
+    // Handle filter changes - update URL
+    const updateFilters = (newFilters: Partial<Filters>) => {
+        const params = new URLSearchParams(searchParams?.toString() || "");
 
-        // Search filter
-        if (searchQuery) {
-            filtered = filtered.filter(p =>
-                p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                p.sku?.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-        }
-
-        // Status filter
-        if (statusFilter !== "all") {
-            filtered = filtered.filter(p => p.status === statusFilter);
-        }
-
-        // Category filter
-        if (categoryFilter !== "all") {
-            filtered = filtered.filter(p => p.category.name === categoryFilter);
-        }
-
-        // Sorting
-        filtered.sort((a, b) => {
-            switch (sortBy) {
-                case "name-asc":
-                    return a.name.localeCompare(b.name);
-                case "name-desc":
-                    return b.name.localeCompare(a.name);
-                case "price-asc":
-                    return a.price - b.price;
-                case "price-desc":
-                    return b.price - a.price;
-                case "stock-asc":
-                    return a.stock - b.stock;
-                case "stock-desc":
-                    return b.stock - a.stock;
-                case "date-asc":
-                    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-                case "date-desc":
-                default:
-                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        if (newFilters.search !== undefined) {
+            if (newFilters.search) {
+                params.set("search", newFilters.search);
+            } else {
+                params.delete("search");
             }
-        });
+        }
 
-        setFilteredProducts(filtered);
-        setCurrentPage(1);
-    }, [products, searchQuery, statusFilter, categoryFilter, sortBy]);
+        if (newFilters.status !== undefined) {
+            if (newFilters.status !== "all") {
+                params.set("status", newFilters.status);
+            } else {
+                params.delete("status");
+            }
+        }
 
-    // Pagination
-    const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedProducts = filteredProducts.slice(startIndex, startIndex + itemsPerPage);
+        if (newFilters.category !== undefined) {
+            if (newFilters.category !== "all") {
+                params.set("category", newFilters.category);
+            } else {
+                params.delete("category");
+            }
+        }
+
+        // Reset to page 1 when filters change
+        params.delete("page");
+
+        router.push(`?${params.toString()}`);
+    };
+
+    const handleSearch = () => {
+        updateFilters({ search: searchQuery });
+    };
+
+    const handlePageChange = (page: number) => {
+        const params = new URLSearchParams(searchParams?.toString() || "");
+        params.set("page", page.toString());
+        router.push(`?${params.toString()}`);
+    };
 
     // Select all toggle
     const toggleSelectAll = () => {
-        if (selectedProducts.size === paginatedProducts.length) {
+        if (selectedProducts.size === products.length) {
             setSelectedProducts(new Set());
         } else {
-            setSelectedProducts(new Set(paginatedProducts.map(p => p.id)));
+            setSelectedProducts(new Set(products.map(p => p.id)));
         }
     };
 
@@ -139,7 +158,6 @@ export default function ProductsListClient({ initialProducts }: { initialProduct
                     fetch(`/api/products/${id}`, { method: 'DELETE' })
                 )
             );
-            setProducts(products.filter(p => !selectedProducts.has(p.id)));
             setSelectedProducts(new Set());
             router.refresh();
         } catch (error) {
@@ -150,7 +168,7 @@ export default function ProductsListClient({ initialProducts }: { initialProduct
     // Export CSV
     const exportCSV = () => {
         const headers = ["Name", "SKU", "Category", "Price", "Stock", "Status", "Date Added"];
-        const rows = filteredProducts.map(p => [
+        const rows = products.map(p => [
             p.name,
             p.sku || "",
             p.category.name,
@@ -179,7 +197,6 @@ export default function ProductsListClient({ initialProducts }: { initialProduct
 
         try {
             await fetch(`/api/products/${id}`, { method: 'DELETE' });
-            setProducts(products.filter(p => p.id !== id));
             router.refresh();
         } catch (error) {
             alert("Failed to delete product");
@@ -192,7 +209,6 @@ export default function ProductsListClient({ initialProducts }: { initialProduct
             const response = await fetch(`/api/products/${id}/duplicate`, { method: 'POST' });
             if (response.ok) {
                 router.refresh();
-                window.location.reload(); // Reload to show new product
             }
         } catch (error) {
             alert("Failed to duplicate product");
@@ -206,7 +222,7 @@ export default function ProductsListClient({ initialProducts }: { initialProduct
                 <div>
                     <h1 className="text-3xl font-serif text-[#1C1917]">Products</h1>
                     <p className="text-sm text-stone-500 mt-1">
-                        {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
+                        {pagination.total} {pagination.total === 1 ? 'product' : 'products'}
                         {selectedProducts.size > 0 && ` • ${selectedProducts.size} selected`}
                     </p>
                 </div>
@@ -221,14 +237,18 @@ export default function ProductsListClient({ initialProducts }: { initialProduct
             <div className="bg-white p-4 rounded-lg border border-stone-200 space-y-4">
                 <div className="flex flex-col md:flex-row gap-3">
                     {/* Search */}
-                    <div className="flex-1 relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
-                        <Input
-                            placeholder="Search by name or SKU..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10"
-                        />
+                    <div className="flex-1 flex gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+                            <Input
+                                placeholder="Search by name or SKU..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                                className="pl-10"
+                            />
+                        </div>
+                        <Button onClick={handleSearch}>Search</Button>
                     </div>
 
                     {/* Filter Toggle */}
@@ -251,12 +271,15 @@ export default function ProductsListClient({ initialProducts }: { initialProduct
 
                 {/* Filter Panel */}
                 {showFilters && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 border-t">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t">
                         <div>
                             <label className="text-xs text-stone-500 mb-1 block">Status</label>
                             <select
                                 value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
+                                onChange={(e) => {
+                                    setStatusFilter(e.target.value);
+                                    updateFilters({ status: e.target.value });
+                                }}
                                 className="w-full h-10 rounded-md border border-stone-200 px-3 text-sm"
                             >
                                 <option value="all">All Status</option>
@@ -269,31 +292,16 @@ export default function ProductsListClient({ initialProducts }: { initialProduct
                             <label className="text-xs text-stone-500 mb-1 block">Category</label>
                             <select
                                 value={categoryFilter}
-                                onChange={(e) => setCategoryFilter(e.target.value)}
+                                onChange={(e) => {
+                                    setCategoryFilter(e.target.value);
+                                    updateFilters({ category: e.target.value });
+                                }}
                                 className="w-full h-10 rounded-md border border-stone-200 px-3 text-sm"
                             >
                                 <option value="all">All Categories</option>
                                 {categories.map(cat => (
-                                    <option key={cat} value={cat}>{cat}</option>
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="text-xs text-stone-500 mb-1 block">Sort By</label>
-                            <select
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value)}
-                                className="w-full h-10 rounded-md border border-stone-200 px-3 text-sm"
-                            >
-                                <option value="date-desc">Newest First</option>
-                                <option value="date-asc">Oldest First</option>
-                                <option value="name-asc">Name (A-Z)</option>
-                                <option value="name-desc">Name (Z-A)</option>
-                                <option value="price-asc">Price (Low-High)</option>
-                                <option value="price-desc">Price (High-Low)</option>
-                                <option value="stock-asc">Stock (Low-High)</option>
-                                <option value="stock-desc">Stock (High-Low)</option>
                             </select>
                         </div>
                     </div>
@@ -326,7 +334,7 @@ export default function ProductsListClient({ initialProducts }: { initialProduct
                                 <tr>
                                     <th className="text-left p-4 w-12">
                                         <button onClick={toggleSelectAll}>
-                                            {selectedProducts.size === paginatedProducts.length && paginatedProducts.length > 0 ? (
+                                            {selectedProducts.size === products.length && products.length > 0 ? (
                                                 <CheckSquare className="h-5 w-5 text-primary" />
                                             ) : (
                                                 <Square className="h-5 w-5 text-stone-400" />
@@ -340,21 +348,20 @@ export default function ProductsListClient({ initialProducts }: { initialProduct
                                     <th className="text-left p-4 text-xs font-medium text-stone-500 uppercase tracking-wider">Price</th>
                                     <th className="text-left p-4 text-xs font-medium text-stone-500 uppercase tracking-wider">Stock</th>
                                     <th className="text-left p-4 text-xs font-medium text-stone-500 uppercase tracking-wider">Status</th>
-                                    <th className="text-left p-4 text-xs font-medium text-stone-500 uppercase tracking-wider">Date Added</th>
                                     <th className="text-right p-4 text-xs font-medium text-stone-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-stone-200">
-                                {paginatedProducts.length === 0 ? (
+                                {products.length === 0 ? (
                                     <tr>
-                                        <td colSpan={10} className="text-center py-12">
+                                        <td colSpan={9} className="text-center py-12">
                                             <Package className="h-12 w-12 text-stone-300 mx-auto mb-3" />
                                             <p className="text-stone-500">No products found</p>
                                             <p className="text-sm text-stone-400 mt-1">Try adjusting your filters</p>
                                         </td>
                                     </tr>
                                 ) : (
-                                    paginatedProducts.map((product) => (
+                                    products.map((product) => (
                                         <tr key={product.id} className="hover:bg-stone-50 transition-colors">
                                             <td className="p-4">
                                                 <button onClick={() => toggleProduct(product.id)}>
@@ -416,12 +423,6 @@ export default function ProductsListClient({ initialProducts }: { initialProduct
                                                 </span>
                                             </td>
                                             <td className="p-4">
-                                                <div className="flex items-center gap-2 text-sm text-stone-600" suppressHydrationWarning>
-                                                    <Calendar className="h-4 w-4 text-stone-400" />
-                                                    {new Date(product.createdAt).toLocaleDateString()}
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
                                                 <div className="flex items-center justify-end gap-2">
                                                     <Link href={`/shop/${product.id}`} target="_blank">
                                                         <Button variant="ghost" size="sm" title="Preview">
@@ -466,13 +467,13 @@ export default function ProductsListClient({ initialProducts }: { initialProduct
             {/* Mobile Card View */}
             {isMobileView && (
                 <div className="space-y-3">
-                    {paginatedProducts.length === 0 ? (
+                    {products.length === 0 ? (
                         <div className="bg-white rounded-lg border border-stone-200 p-12 text-center">
                             <Package className="h-12 w-12 text-stone-300 mx-auto mb-3" />
                             <p className="text-stone-500">No products found</p>
                         </div>
                     ) : (
-                        paginatedProducts.map((product) => (
+                        products.map((product) => (
                             <div key={product.id} className="bg-white rounded-lg border border-stone-200 p-4">
                                 <div className="flex gap-3">
                                     <button onClick={() => toggleProduct(product.id)} className="flex-shrink-0">
@@ -503,14 +504,6 @@ export default function ProductsListClient({ initialProducts }: { initialProduct
                                                 Stock: {product.stock}
                                             </span>
                                         </div>
-                                        <div className="flex items-center gap-2 mt-2">
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${product.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' : 'bg-stone-200 text-stone-700'}`}>
-                                                {product.status === 'PUBLISHED' ? 'Published' : 'Draft'}
-                                            </span>
-                                            {product.sku && (
-                                                <span className="text-xs text-stone-500 font-mono">{product.sku}</span>
-                                            )}
-                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex gap-2 mt-3 pt-3 border-t">
@@ -540,48 +533,25 @@ export default function ProductsListClient({ initialProducts }: { initialProduct
             )}
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {pagination.totalPages > 1 && (
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-lg border border-stone-200">
                     <p className="text-sm text-stone-600">
-                        Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredProducts.length)} of {filteredProducts.length}
+                        Page {pagination.page} of {pagination.totalPages} • {pagination.total} total products
                     </p>
                     <div className="flex gap-2">
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
+                            onClick={() => handlePageChange(pagination.page - 1)}
+                            disabled={pagination.page === 1}
                         >
                             Previous
                         </Button>
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                            let pageNum;
-                            if (totalPages <= 5) {
-                                pageNum = i + 1;
-                            } else if (currentPage <= 3) {
-                                pageNum = i + 1;
-                            } else if (currentPage >= totalPages - 2) {
-                                pageNum = totalPages - 4 + i;
-                            } else {
-                                pageNum = currentPage - 2 + i;
-                            }
-                            return (
-                                <Button
-                                    key={i}
-                                    variant={currentPage === pageNum ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => setCurrentPage(pageNum)}
-                                    className="hidden md:inline-flex"
-                                >
-                                    {pageNum}
-                                </Button>
-                            );
-                        })}
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
+                            onClick={() => handlePageChange(pagination.page + 1)}
+                            disabled={pagination.page >= pagination.totalPages}
                         >
                             Next
                         </Button>

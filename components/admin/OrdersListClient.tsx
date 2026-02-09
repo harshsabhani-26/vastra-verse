@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { OrderStatus, PaymentStatus } from "@prisma/client";
 import {
     Table,
@@ -56,6 +56,7 @@ interface Order {
 
 interface OrdersListClientProps {
     initialOrders: Order[];
+    loading?: boolean;
 }
 
 const ORDER_STATUS_FLOW: OrderStatus[] = [
@@ -85,10 +86,15 @@ const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
     FAILED: "bg-red-200 text-red-900 border border-red-400",
 };
 
-export default function OrdersListClient({ initialOrders }: OrdersListClientProps) {
+export default function OrdersListClient({ initialOrders, loading = false }: OrdersListClientProps) {
     const router = useRouter();
     const [orders, setOrders] = useState(initialOrders);
     const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+
+    // Update orders when initialOrders changes
+    useEffect(() => {
+        setOrders(initialOrders);
+    }, [initialOrders]);
 
     const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
         setUpdatingOrderId(orderId);
@@ -219,10 +225,17 @@ M & H Team`;
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {orders.length === 0 ? (
+                        {loading ? (
                             <TableRow>
                                 <TableCell colSpan={8} className="text-center py-8 text-stone-500">
-                                    No orders yet.
+                                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                                    <p className="mt-2">Loading orders...</p>
+                                </TableCell>
+                            </TableRow>
+                        ) : orders.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={8} className="text-center py-8 text-stone-500">
+                                    No orders found. Try adjusting your filters.
                                 </TableCell>
                             </TableRow>
                         ) : (

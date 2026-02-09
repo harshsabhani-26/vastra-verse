@@ -17,6 +17,7 @@ import {
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import Link from "next/link";
+import Image from "next/image";
 import NotificationBell from "@/components/notifications/NotificationBell";
 
 export default async function AdminDashboard() {
@@ -134,7 +135,19 @@ export default async function AdminDashboard() {
         prisma.order.findMany({
             take: 5,
             orderBy: { createdAt: 'desc' },
-            include: { user: true }
+            select: {
+                id: true,
+                total: true,
+                status: true,
+                createdAt: true,
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true
+                    }
+                }
+            }
         }),
         // Best sellers
         prisma.orderItem.groupBy({
@@ -165,7 +178,18 @@ export default async function AdminDashboard() {
     // Get product details for best sellers
     const bestSellerProducts = await prisma.product.findMany({
         where: { id: { in: bestSellers.map(bs => bs.productId) } },
-        select: { id: true, name: true, images: true, price: true }
+        select: {
+            id: true,
+            name: true,
+            price: true,
+            images: {
+                orderBy: { position: 'asc' },
+                take: 1,
+                select: {
+                    url: true
+                }
+            }
+        }
     });
 
     // Get category details for most popular
@@ -425,12 +449,14 @@ export default async function AdminDashboard() {
 
                                 return (
                                     <div key={product.id} className="flex items-center gap-3 p-2 hover:bg-stone-50 rounded transition-colors">
-                                        <div className="flex-shrink-0 w-12 h-12 bg-stone-100 rounded overflow-hidden">
+                                        <div className="flex-shrink-0 w-12 h-12 bg-stone-100 rounded overflow-hidden relative">
                                             {product.images[0] && (
-                                                <img
+                                                <Image
                                                     src={product.images[0].url}
                                                     alt={product.name}
-                                                    className="w-full h-full object-cover"
+                                                    fill
+                                                    className="object-cover"
+                                                    sizes="48px"
                                                 />
                                             )}
                                         </div>

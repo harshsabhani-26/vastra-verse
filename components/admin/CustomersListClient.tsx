@@ -42,10 +42,19 @@ interface Customer {
     addressCount: number;
 }
 
+interface Pagination {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+}
+
 export default function CustomersListClient({
     customers: initialCustomers,
+    pagination,
 }: {
     customers: Customer[];
+    pagination: Pagination;
 }) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -287,8 +296,8 @@ export default function CustomersListClient({
                                             onClick={(e) => handleToggleVIP(e, customer.id, customer.isVIP)}
                                             disabled={isPending}
                                             className={`p-1 rounded ${customer.isVIP
-                                                    ? 'text-yellow-500 hover:text-yellow-600'
-                                                    : 'text-stone-300 hover:text-stone-400'
+                                                ? 'text-yellow-500 hover:text-yellow-600'
+                                                : 'text-stone-300 hover:text-stone-400'
                                                 }`}
                                         >
                                             <Star className={`h-5 w-5 ${customer.isVIP ? 'fill-yellow-500' : ''}`} />
@@ -312,6 +321,41 @@ export default function CustomersListClient({
                     </TableBody>
                 </Table>
             </div>
+
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between bg-white p-4 rounded-lg border border-stone-200">
+                    <p className="text-sm text-stone-600">
+                        Page {pagination.page} of {pagination.totalPages} • {pagination.total} total customers
+                    </p>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                                const params = new URLSearchParams(window.location.search);
+                                params.set('page', (pagination.page - 1).toString());
+                                router.push(`?${params.toString()}`);
+                            }}
+                            disabled={pagination.page === 1}
+                        >
+                            Previous
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                                const params = new URLSearchParams(window.location.search);
+                                params.set('page', (pagination.page + 1).toString());
+                                router.push(`?${params.toString()}`);
+                            }}
+                            disabled={pagination.page >= pagination.totalPages}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Dialogs */}
             {showExportDialog && (
