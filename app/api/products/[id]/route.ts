@@ -11,10 +11,50 @@ export async function GET(
 
         const product = await prisma.product.findUnique({
             where: { id },
-            include: {
-                category: true,
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                price: true,
+                stock: true,
+                categoryId: true,
+                sku: true,
+                discount: true,
+                discountType: true,
+                finalPrice: true,
+                lowStockThreshold: true,
+                status: true,
+                isNewArrival: true,
+                isBestSeller: true,
+                shortDescription: true,
+                fabricType: true,
+                weaveType: true,
+                borderDescription: true,
+                palluDescription: true,
+                hasBlousePiece: true,
+                blouseFabric: true,
+                sareeLength: true,
+                blouseLength: true,
+                colors: true,
+                occasions: true,
+                careInstructions: true,
+                category: {
+                    select: {
+                        id: true,
+                        name: true,
+                    }
+                },
                 images: {
-                    orderBy: { position: 'asc' }
+                    orderBy: { position: 'asc' },
+                    select: {
+                        id: true,
+                        url: true,
+                        type: true,
+                        position: true,
+                        width: true,
+                        height: true,
+                        fileSize: true,
+                    }
                 }
             }
         });
