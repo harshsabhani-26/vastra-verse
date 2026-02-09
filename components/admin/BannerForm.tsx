@@ -104,7 +104,6 @@ export function BannerForm({ banner }: BannerFormProps) {
                 if (result.success) {
                     toast.success("Banner updated successfully!");
                     router.push("/admin/banners");
-                    router.refresh();
                 } else {
                     toast.error(result.error || "Failed to update banner");
                 }
@@ -114,7 +113,6 @@ export function BannerForm({ banner }: BannerFormProps) {
                 if (result.success) {
                     toast.success("Banner created successfully!");
                     router.push("/admin/banners");
-                    router.refresh();
                 } else {
                     toast.error(result.error || "Failed to create banner");
                 }

@@ -33,7 +33,6 @@ export function BannersList({ initialBanners }: BannersListProps) {
         if (result.success) {
             setBanners(prev => prev.filter(b => b.id !== id));
             toast.success("Banner deleted successfully");
-            router.refresh();
         } else {
             toast.error("Failed to delete banner");
         }

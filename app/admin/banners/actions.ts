@@ -1,9 +1,9 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { auth } from "@/auth";
-import { cache } from "react";
+
 
 export interface HeroBanner {
     id: string;
@@ -33,93 +33,107 @@ export async function getBanners(bannerType?: "HERO" | "MID_PAGE" | "BOTTOM_PAGE
     }
 }
 
+
+
 // PERFORMANCE: Cache wrapper to deduplicate requests across renders
 // Reduces DB calls from 2,710 → ~50 per deployment
-export const getActiveBanners = cache(async () => {
-    try {
-        const banners = await prisma.heroBanner.findMany({
-            where: {
-                isActive: true,
-                bannerType: "HERO"
-            },
-            orderBy: { displayOrder: 'asc' },
-            select: {
-                id: true,
-                ctaLink: true,
-                mediaType: true,
-                imageUrl: true,
-                videoUrl: true,
-                bannerType: true,
-                displayOrder: true,
-                isActive: true,
-                createdAt: true,
-                updatedAt: true,
-            }
-        });
-        return banners;
-    } catch (error) {
-        console.error("Failed to fetch active hero banners:", error);
-        return [];
-    }
-});
+export const getActiveBanners = unstable_cache(
+    async () => {
+        try {
+            const banners = await prisma.heroBanner.findMany({
+                where: {
+                    isActive: true,
+                    bannerType: "HERO"
+                },
+                orderBy: { displayOrder: 'asc' },
+                select: {
+                    id: true,
+                    ctaLink: true,
+                    mediaType: true,
+                    imageUrl: true,
+                    videoUrl: true,
+                    bannerType: true,
+                    displayOrder: true,
+                    isActive: true,
+                    createdAt: true,
+                    updatedAt: true,
+                }
+            });
+            return banners;
+        } catch (error) {
+            console.error("Failed to fetch active hero banners:", error);
+            return [];
+        }
+    },
+    ['active-hero-banners'],
+    { revalidate: 3600, tags: ['hero-banners'] }
+);
 
 // Get active MID_PAGE banners only (for mid-page section)
-export const getActiveMidPageBanners = cache(async () => {
-    try {
-        const banners = await prisma.heroBanner.findMany({
-            where: {
-                isActive: true,
-                bannerType: "MID_PAGE"
-            },
-            orderBy: { displayOrder: 'asc' },
-            select: {
-                id: true,
-                ctaLink: true,
-                mediaType: true,
-                imageUrl: true,
-                videoUrl: true,
-                bannerType: true,
-                displayOrder: true,
-                isActive: true,
-                createdAt: true,
-                updatedAt: true,
-            }
-        });
-        return banners;
-    } catch (error) {
-        console.error("Failed to fetch active mid-page banners:", error);
-        return [];
-    }
-});
+export const getActiveMidPageBanners = unstable_cache(
+    async () => {
+        try {
+            const banners = await prisma.heroBanner.findMany({
+                where: {
+                    isActive: true,
+                    bannerType: "MID_PAGE"
+                },
+                orderBy: { displayOrder: 'asc' },
+                select: {
+                    id: true,
+                    ctaLink: true,
+                    mediaType: true,
+                    imageUrl: true,
+                    videoUrl: true,
+                    bannerType: true,
+                    displayOrder: true,
+                    isActive: true,
+                    createdAt: true,
+                    updatedAt: true,
+                }
+            });
+            return banners;
+        } catch (error) {
+            console.error("Failed to fetch active mid-page banners:", error);
+            return [];
+        }
+    },
+    ['active-mid-page-banners'],
+    { revalidate: 3600, tags: ['hero-banners'] }
+);
 
 // Get active BOTTOM_PAGE banners only (for bottom section)
-export const getActiveBottomPageBanners = cache(async () => {
-    try {
-        const banners = await prisma.heroBanner.findMany({
-            where: {
-                isActive: true,
-                bannerType: "BOTTOM_PAGE"
-            },
-            orderBy: { displayOrder: 'asc' },
-            select: {
-                id: true,
-                ctaLink: true,
-                mediaType: true,
-                imageUrl: true,
-                videoUrl: true,
-                bannerType: true,
-                displayOrder: true,
-                isActive: true,
-                createdAt: true,
-                updatedAt: true,
-            }
-        });
-        return banners;
-    } catch (error) {
-        console.error("Failed to fetch active bottom-page banners:", error);
-        return [];
-    }
-});
+export const getActiveBottomPageBanners = unstable_cache(
+    async () => {
+        try {
+            const banners = await prisma.heroBanner.findMany({
+                where: {
+                    isActive: true,
+                    bannerType: "BOTTOM_PAGE"
+                },
+                orderBy: { displayOrder: 'asc' },
+                select: {
+                    id: true,
+                    ctaLink: true,
+                    mediaType: true,
+                    imageUrl: true,
+                    videoUrl: true,
+                    bannerType: true,
+                    displayOrder: true,
+                    isActive: true,
+                    createdAt: true,
+                    updatedAt: true,
+                }
+            });
+            return banners;
+        } catch (error) {
+            console.error("Failed to fetch active bottom-page banners:", error);
+            return [];
+        }
+    },
+    ['active-bottom-page-banners'],
+    { revalidate: 3600, tags: ['hero-banners'] }
+);
 
 // Get single banner
 export async function getBanner(id: string) {
@@ -148,6 +162,7 @@ export async function createBanner(data: Omit<HeroBanner, 'id' | 'createdAt' | '
         });
         revalidatePath('/admin/banners');
         revalidatePath('/');
+        revalidateTag('hero-banners', {} as any);
         return { success: true, banner };
     } catch (error) {
         console.error("Failed to create banner:", error);
@@ -170,6 +185,7 @@ export async function updateBanner(id: string, data: Partial<Omit<HeroBanner, 'i
         });
         revalidatePath('/admin/banners');
         revalidatePath('/');
+        revalidateTag('hero-banners', {} as any);
         return { success: true, banner };
     } catch (error) {
         console.error("Failed to update banner:", error);
@@ -191,6 +207,7 @@ export async function deleteBanner(id: string) {
         });
         revalidatePath('/admin/banners');
         revalidatePath('/');
+        revalidateTag('hero-banners', {} as any);
         return { success: true };
     } catch (error) {
         console.error("Failed to delete banner:", error);
@@ -213,6 +230,7 @@ export async function toggleBannerStatus(id: string, isActive: boolean) {
         });
         revalidatePath('/admin/banners');
         revalidatePath('/');
+        revalidateTag('hero-banners', {} as any);
         return { success: true };
     } catch (error) {
         console.error("Failed to toggle banner status:", error);
@@ -239,6 +257,7 @@ export async function reorderBanners(bannerIds: string[]) {
         );
         revalidatePath('/admin/banners');
         revalidatePath('/');
+        revalidateTag('hero-banners', {} as any);
         return { success: true };
     } catch (error) {
         console.error("Failed to reorder banners:", error);

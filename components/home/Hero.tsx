@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -52,12 +53,14 @@ export function Hero({ banners }: HeroProps) {
             image: b.imageUrl,
             videoUrl: b.videoUrl || null,
             buttonLink: b.ctaLink,
+            title: b.title,
         }))
         : defaultSlides.map(s => ({
             ...s,
             mediaType: "IMAGE" as const,
             videoUrl: null,
-            buttonLink: s.link
+            buttonLink: s.link,
+            title: s.title,
         }));
 
     const [currentSlide, setCurrentSlide] = useState(0);
@@ -107,12 +110,16 @@ export function Hero({ banners }: HeroProps) {
                         </>
                     ) : (
                         <>
-                            <div
-                                className="absolute inset-0 bg-cover bg-center"
-                                style={{
-                                    backgroundImage: `url(${slides[currentSlide].image})`,
-                                }}
-                            />
+                            <div className="absolute inset-0">
+                                <Image
+                                    src={slides[currentSlide].image}
+                                    alt={slides[currentSlide].title || "Hero Banner"}
+                                    fill
+                                    priority={currentSlide === 0}
+                                    className="object-cover"
+                                    sizes="100vw"
+                                />
+                            </div>
                             {/* Lighter, warmer overlay for Light Luxury feel */}
                             <div className="absolute inset-0 bg-gradient-to-r from-primary/60 via-primary/20 to-transparent" />
                             <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent opacity-80" />

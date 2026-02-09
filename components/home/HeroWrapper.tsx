@@ -1,19 +1,6 @@
 "use client";
 
-import dynamic from "next/dynamic";
-
-// Dynamically import Hero with client-side only rendering to prevent hydration issues
-const Hero = dynamic(
-    () => import("@/components/home/Hero").then((mod) => ({ default: mod.Hero })),
-    {
-        ssr: false,
-        loading: () => (
-            <div className="relative w-full h-screen overflow-hidden bg-luxury-black">
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-950/40 via-purple-900/30 to-rose-900/35 animate-pulse" />
-            </div>
-        )
-    }
-);
+import { Hero } from "@/components/home/Hero";
 
 interface HeroWrapperProps {
     banners?: Array<{
