@@ -30,7 +30,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
     },
     // Explicitly configure secure cookies for production
     // Simplified configuration - let NextAuth handle secure cookies automatically
-    debug: process.env.NODE_ENV === "production",
+    debug: false,
     trustHost: true,
     providers: [
         Google({
