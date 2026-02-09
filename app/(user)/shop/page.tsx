@@ -88,10 +88,26 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     const products = await prisma.product.findMany({
         where,
         orderBy,
-        include: {
-            category: true,
+        select: {
+            id: true,
+            name: true,
+            price: true,
+            finalPrice: true,
+            discount: true,
+            discountType: true,
+            isNewArrival: true,
+            category: {
+                select: {
+                    name: true
+                }
+            },
             images: {
-                orderBy: { position: 'asc' }
+                where: { type: 'MAIN' },
+                take: 1,
+                select: {
+                    url: true,
+                    alt: true
+                }
             }
         }
     });

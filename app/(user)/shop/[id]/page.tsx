@@ -14,10 +14,36 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
 
     const product = await prisma.product.findUnique({
         where: { id },
-        include: {
-            category: true,
+        select: {
+            id: true,
+            name: true,
+            description: true,
+            price: true,
+            finalPrice: true,
+            discount: true,
+            stock: true,
+            sku: true,
+            fabricType: true,
+            weaveType: true,
+            careInstructions: true,
+            isNewArrival: true,
+            isBestSeller: true,
+            categoryId: true,
+            category: {
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true
+                }
+            },
             images: {
-                orderBy: { position: 'asc' }
+                orderBy: { position: 'asc' },
+                select: {
+                    id: true,
+                    url: true,
+                    alt: true,
+                    type: true
+                }
             }
         }
     });
