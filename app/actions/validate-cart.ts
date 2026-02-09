@@ -1,3 +1,5 @@
+"use server";
+
 /**
  * Server Action: Validate Cart Before Checkout
  * 
