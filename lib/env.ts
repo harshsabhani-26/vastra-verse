@@ -34,6 +34,13 @@ const SUPABASE_OPTIONAL = [
     "SUPABASE_SERVICE_ROLE_KEY",
 ] as const;
 
+// ─── Cloudinary ────────────────────────────────────────
+const CLOUDINARY_REQUIRED = [
+    "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME",
+    "CLOUDINARY_API_KEY",
+    "CLOUDINARY_API_SECRET",
+] as const;
+
 // ─── App ──────────────────────────────────────────────
 const APP_REQUIRED = [
     "DATABASE_URL",
@@ -45,6 +52,7 @@ const ALL_REQUIRED = [
     ...AUTH_REQUIRED,
     ...RAZORPAY_REQUIRED,
     ...SUPABASE_REQUIRED,
+    ...CLOUDINARY_REQUIRED,
     ...APP_REQUIRED,
 ] as const;
 
@@ -62,6 +70,7 @@ const REQUIRED_GROUPS: EnvGroup[] = [
     { name: "Auth", vars: AUTH_REQUIRED },
     { name: "Razorpay", vars: RAZORPAY_REQUIRED },
     { name: "Supabase", vars: SUPABASE_REQUIRED },
+    { name: "Cloudinary", vars: CLOUDINARY_REQUIRED },
     { name: "App", vars: APP_REQUIRED },
 ];
 
