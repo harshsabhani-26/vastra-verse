@@ -12,7 +12,13 @@ export async function getCart() {
         where: { userId: session.user.id },
         include: {
             items: {
-                include: { product: true }
+                include: {
+                    product: {
+                        include: {
+                            images: true
+                        }
+                    }
+                }
             }
         }
     });
