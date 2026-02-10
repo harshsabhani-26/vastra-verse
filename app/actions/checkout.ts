@@ -6,17 +6,14 @@ import { auth } from "@/auth";
 import { Decimal } from "@prisma/client/runtime/library";
 
 /**
- * CRITICAL FIX: Stock Reduction Timing
+ * CRITICAL FIX: Payment-First Order Creation
  * 
- * BEFORE: Stock was reduced immediately upon order creation (WRONG)
- * AFTER: Stock is reserved during order creation, only reduced after payment verification
+ * NEW BEHAVIOR:
+ * - PREPAID: Do NOT create Order. Only validate cart and return order data.
+ *   Order will be created in /api/payment/verify AFTER successful payment.
+ * - COD: Create Order immediately with stock reduction (existing behavior).
  * 
- * Order Flow:
- * 1. Create order with status = PENDING
- * 2. Do NOT reduce stock yet
- * 3. Wait for payment verification
- * 4. On payment success -> reduce stock via `/api/payment/verify`
- * 5. On payment failure -> order remains PENDING, stock untouched
+ * This ensures failed/cancelled prepaid payments never create orphaned orders.
  */
 
 export async function createOrder(formData: FormData) {
@@ -78,27 +75,85 @@ export async function createOrder(formData: FormData) {
         redirect("/login?callbackUrl=/cart&error=session_expired");
     }
 
-    // Check for existing pending orders to prevent duplicates
-    const existingPendingOrder = await prisma.order.findFirst({
-        where: {
-            userId: session.user.id,
-            status: { in: ["PENDING", "CONFIRMED"] },
-            createdAt: {
-                gte: new Date(Date.now() - 5 * 60 * 1000), // Within last 5 minutes
-            },
-        },
-    });
+    // Calculate GST (18% default rate)
+    const gstRate = 18;
+    const storeState = process.env.STORE_STATE || "Gujarat";
+    const isIntraState = state.toLowerCase() === storeState.toLowerCase();
 
-    if (existingPendingOrder) {
-        if (process.env.NODE_ENV === "development") {
-            console.log("Found existing pending order:", existingPendingOrder.id);
-        }
-        // Return existing order instead of creating duplicate
-        return { success: true, orderId: existingPendingOrder.id };
+    // GST is already included in the subtotal, so we need to extract it
+    const gstAmount = (subtotal * gstRate) / (100 + gstRate);
+
+    let cgst = 0;
+    let sgst = 0;
+    let igst = 0;
+
+    if (isIntraState) {
+        cgst = gstAmount / 2;
+        sgst = gstAmount / 2;
+    } else {
+        igst = gstAmount;
     }
 
+    // CRITICAL: Different flows for PREPAID vs COD
+    if (paymentMethod === "prepaid") {
+        // PREPAID: Do NOT create Order record yet
+        // Just validate stock and return order data for Razorpay
+
+        // Validate stock availability
+        for (const item of items) {
+            const product = await prisma.product.findUnique({
+                where: { id: item.id },
+                select: { stock: true, name: true, status: true },
+            });
+
+            if (!product) {
+                throw new Error(`Product ${item.id} not found`);
+            }
+
+            if (product.status !== "PUBLISHED") {
+                throw new Error(`Product "${product.name}" is no longer available`);
+            }
+
+            if (product.stock < item.quantity) {
+                throw new Error(
+                    `Insufficient stock for "${product.name}". Available: ${product.stock}, Requested: ${item.quantity}`
+                );
+            }
+        }
+
+        if (process.env.NODE_ENV === "development") {
+            console.log("[PREPAID] Stock validated, returning order data WITHOUT creating Order record");
+        }
+
+        // Return order data for Razorpay payment
+        // Order will be created in /api/payment/verify after successful payment
+        return {
+            success: true,
+            isPrepaid: true,
+            orderData: {
+                userId: session.user.id,
+                items,
+                total,
+                subtotal,
+                discount,
+                shippingCharges,
+                cgst,
+                sgst,
+                igst,
+                gstRate,
+                customerName,
+                customerPhone: recipientPhone || phone || "",
+                shippingAddress: fullAddress,
+                shippingState: state,
+                couponCode,
+                couponId,
+            }
+        };
+    }
+
+    // COD: Create Order immediately (existing behavior)
     if (process.env.NODE_ENV === "development") {
-        console.log("Creating order with:", {
+        console.log("Creating COD order with:", {
             userId: session.user.id,
             total,
             subtotal,
@@ -111,43 +166,6 @@ export async function createOrder(formData: FormData) {
         });
     }
 
-    // Calculate GST (18% default rate)
-    const gstRate = 18;
-    const storeState = process.env.STORE_STATE || "Gujarat";
-    const isIntraState = state.toLowerCase() === storeState.toLowerCase();
-
-    // GST is already included in the subtotal, so we need to extract it
-    // Formula: GST Amount = (Subtotal * GST Rate) / (100 + GST Rate)
-    const gstAmount = (subtotal * gstRate) / (100 + gstRate);
-
-    let cgst = 0;
-    let sgst = 0;
-    let igst = 0;
-
-    if (isIntraState) {
-        // For intrastate: CGST + SGST (both 9% each for 18% total)
-        cgst = gstAmount / 2;
-        sgst = gstAmount / 2;
-    } else {
-        // For interstate: IGST (18%)
-        igst = gstAmount;
-    }
-
-    if (process.env.NODE_ENV === "development") {
-        console.log("GST Calculation:", {
-            subtotal,
-            gstRate,
-            isIntraState,
-            cgst,
-            sgst,
-            igst,
-            totalGst: cgst + sgst + igst,
-        });
-    }
-
-    // CRITICAL: Stock Reduction Timing
-    // - COD orders: Stock reduced immediately during order creation (to prevent overselling)
-    // - Prepaid orders: Stock will be reduced only after payment verification
     const orderId = await prisma.$transaction(async (tx) => {
         // Validate stock availability BEFORE creating order
         for (const item of items) {
@@ -183,9 +201,9 @@ export async function createOrder(formData: FormData) {
                 sgst: new Decimal(sgst),
                 igst: new Decimal(igst),
                 gstRate: new Decimal(gstRate),
-                status: "PENDING",
-                paymentStatus: "PENDING",
-                paymentMethod: paymentMethod || "prepaid",
+                status: "CONFIRMED", // COD orders are confirmed immediately
+                paymentStatus: "PENDING", // Will be paid on delivery
+                paymentMethod: "COD",
                 customerName: customerName,
                 customerPhone: recipientPhone || phone || "",
                 shippingAddress: fullAddress,
@@ -205,45 +223,32 @@ export async function createOrder(formData: FormData) {
             data: {
                 orderId: order.id,
                 event: "Order Placed",
-                details: `Order placed by ${customerName}. Payment pending.`,
+                details: `COD order placed by ${customerName}. Payment on delivery.`,
                 createdBy: session.user.id,
             },
         });
 
-        // CRITICAL: For COD orders, reduce stock immediately
-        // Prepaid orders will reduce stock after payment verification
-        if (paymentMethod === "COD") {
-            // Reduce stock for each item
-            for (const item of items) {
-                await tx.product.update({
-                    where: { id: item.id },
-                    data: {
-                        stock: {
-                            decrement: item.quantity
-                        }
+        // COD: Reduce stock immediately to prevent overselling
+        for (const item of items) {
+            await tx.product.update({
+                where: { id: item.id },
+                data: {
+                    stock: {
+                        decrement: item.quantity
                     }
-                });
-            }
-
-            // Update order status to CONFIRMED for COD
-            await tx.order.update({
-                where: { id: order.id },
-                data: {
-                    status: "CONFIRMED",
-                    paymentStatus: "PENDING", // Still pending until delivery
-                }
-            });
-
-            // Add timeline event for stock reduction
-            await tx.orderTimeline.create({
-                data: {
-                    orderId: order.id,
-                    event: "Stock Reduced",
-                    details: `Stock reduced for ${items.length} items (COD order)`,
-                    createdBy: "system"
                 }
             });
         }
+
+        // Add timeline event for stock reduction
+        await tx.orderTimeline.create({
+            data: {
+                orderId: order.id,
+                event: "Stock Reduced",
+                details: `Stock reduced for ${items.length} items (COD order)`,
+                createdBy: "system"
+            }
+        });
 
         // Track coupon usage if a coupon was applied
         if (couponCode && discount > 0) {
@@ -283,8 +288,178 @@ export async function createOrder(formData: FormData) {
         return order.id;
     });
 
-    return { success: true, orderId };
+    return { success: true, orderId, isCOD: true };
 }
+
+/**
+ * NEW FUNCTION: Create Order After Payment Verification
+ * 
+ * Called ONLY from /api/payment/verify after successful Razorpay signature verification.
+ * This ensures orders are created only for successful payments.
+ */
+export async function createOrderAfterPayment(data: {
+    userId: string;
+    items: any[];
+    total: number;
+    subtotal: number;
+    discount: number;
+    shippingCharges: number;
+    cgst: number;
+    sgst: number;
+    igst: number;
+    gstRate: number;
+    customerName: string;
+    customerPhone: string;
+    shippingAddress: string;
+    shippingState: string;
+    couponCode?: string | null;
+    couponId?: string | null;
+    razorpayOrderId: string;
+    razorpayPaymentId: string;
+    razorpaySignature: string;
+}) {
+    const orderId = await prisma.$transaction(async (tx) => {
+        // Final stock validation (in case stock changed during payment)
+        for (const item of data.items) {
+            const product = await tx.product.findUnique({
+                where: { id: item.id },
+                select: { stock: true, name: true, status: true },
+            });
+
+            if (!product) {
+                throw new Error(`Product ${item.id} not found during payment verification`);
+            }
+
+            if (product.status !== "PUBLISHED") {
+                throw new Error(`Product "${product.name}" is no longer available`);
+            }
+
+            if (product.stock < item.quantity) {
+                throw new Error(
+                    `Insufficient stock for "${product.name}". Available: ${product.stock}, Required: ${item.quantity}`
+                );
+            }
+        }
+
+        // Create the order with PAID status
+        const order = await tx.order.create({
+            data: {
+                userId: data.userId,
+                total: new Decimal(data.total),
+                subtotal: new Decimal(data.subtotal),
+                discount: new Decimal(data.discount),
+                shippingCharges: new Decimal(data.shippingCharges),
+                cgst: new Decimal(data.cgst),
+                sgst: new Decimal(data.sgst),
+                igst: new Decimal(data.igst),
+                gstRate: new Decimal(data.gstRate),
+                status: "CONFIRMED", // Order is confirmed
+                paymentStatus: "PAID", // Payment already verified
+                paymentMethod: "Prepaid (Razorpay)",
+                customerName: data.customerName,
+                customerPhone: data.customerPhone,
+                shippingAddress: data.shippingAddress,
+                shippingState: data.shippingState,
+                items: {
+                    create: data.items.map((item: any) => ({
+                        productId: item.id,
+                        quantity: item.quantity,
+                        price: new Decimal(item.price),
+                    })),
+                },
+            },
+        });
+
+        // Reduce stock for each item
+        for (const item of data.items) {
+            await tx.product.update({
+                where: { id: item.id },
+                data: {
+                    stock: {
+                        decrement: item.quantity
+                    }
+                }
+            });
+        }
+
+        // Create Payment Record
+        await tx.payment.create({
+            data: {
+                orderId: order.id,
+                amount: new Decimal(data.total),
+                currency: "INR",
+                status: "COMPLETED",
+                method: "UPI", // Default - could be determined from Razorpay response
+                gatewayProvider: "razorpay",
+                gatewayOrderId: data.razorpayOrderId,
+                gatewayPaymentId: data.razorpayPaymentId,
+                gatewaySignature: data.razorpaySignature,
+                subtotal: new Decimal(data.subtotal),
+                cgst: new Decimal(data.cgst),
+                sgst: new Decimal(data.sgst),
+                igst: new Decimal(data.igst),
+                gstRate: new Decimal(data.gstRate),
+                verifiedAt: new Date(),
+            }
+        });
+
+        // Create Timeline Events
+        await tx.orderTimeline.createMany({
+            data: [
+                {
+                    orderId: order.id,
+                    event: "Order Placed",
+                    details: `Prepaid order placed by ${data.customerName}`,
+                    createdBy: data.userId
+                },
+                {
+                    orderId: order.id,
+                    event: "Payment Received",
+                    details: `Payment ID: ${data.razorpayPaymentId}, Order ID: ${data.razorpayOrderId}`,
+                    createdBy: "system"
+                },
+                {
+                    orderId: order.id,
+                    event: "Stock Reduced",
+                    details: `Stock reduced for ${data.items.length} items`,
+                    createdBy: "system"
+                }
+            ]
+        });
+
+        // Track coupon usage if a coupon was applied
+        if (data.couponCode && data.discount > 0) {
+            const coupon = await tx.coupon.findUnique({
+                where: { code: data.couponCode },
+            });
+
+            if (coupon) {
+                await tx.couponUsage.create({
+                    data: {
+                        couponId: coupon.id,
+                        userId: data.userId,
+                        orderId: order.id,
+                        discountAmount: new Decimal(data.discount),
+                    },
+                });
+
+                await tx.coupon.update({
+                    where: { id: coupon.id },
+                    data: {
+                        currentUses: { increment: 1 },
+                        totalRevenue: { increment: new Decimal(data.total) },
+                        totalDiscount: { increment: new Decimal(data.discount) },
+                    },
+                });
+            }
+        }
+
+        return order.id;
+    });
+
+    return orderId;
+}
+
 
 export async function checkUserPhoneVerification(phone: string) {
     const session = await auth();

@@ -161,26 +161,26 @@ export default function CheckoutPage() {
                 try {
                     const result = await createOrder(payload);
 
-                    if (result.success && result.orderId) {
-                        if (paymentMethod === "prepaid") {
-                            // Initialize Razorpay Payment
+                    if (result.success) {
+                        if (result.isPrepaid && result.orderData) {
+                            // PREPAID: No Order created yet, proceed with Razorpay payment
                             const response = await fetch("/api/payment/razorpay", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({
                                     amount: finalTotal,
                                     currency: "INR",
-                                    receipt: result.orderId,
+                                    receipt: `temp_${Date.now()}`,
                                     notes: {
-                                        address: `${formData.address1}, ${formData.city}, ${formData.state}, ${formData.zip}`,
-                                        customer_name: `${formData.firstName} ${formData.lastName}`
+                                        // Store minimal data in Razorpay notes
+                                        userId: result.orderData.userId,
                                     }
                                 }),
                             });
 
-                            const orderData = await response.json();
+                            const razorpayOrder = await response.json();
 
-                            if (!orderData.id) {
+                            if (!razorpayOrder.id) {
                                 toast({ variant: "destructive", title: "Error", description: "Failed to create payment order" });
                                 setProcessing(false);
                                 return;
@@ -188,13 +188,14 @@ export default function CheckoutPage() {
 
                             const options = {
                                 key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-                                amount: orderData.amount,
-                                currency: orderData.currency,
+                                amount: razorpayOrder.amount,
+                                currency: razorpayOrder.currency,
                                 name: "Vastra Verse",
                                 description: "Order Payment",
-                                image: "https://vastra-verse.vercel.app/logo.png", // Placeholder - replace with actual logo URL
-                                order_id: orderData.id,
+                                image: "https://vastra-verse.vercel.app/logo.png",
+                                order_id: razorpayOrder.id,
                                 handler: async function (response: any) {
+                                    // Send orderData along with payment details to verification
                                     const verifyRes = await fetch("/api/payment/verify", {
                                         method: "POST",
                                         headers: { "Content-Type": "application/json" },
@@ -202,7 +203,7 @@ export default function CheckoutPage() {
                                             razorpay_order_id: response.razorpay_order_id,
                                             razorpay_payment_id: response.razorpay_payment_id,
                                             razorpay_signature: response.razorpay_signature,
-                                            orderId: result.orderId,
+                                            orderData: result.orderData, // Pass order data from createOrder
                                         }),
                                     });
 
@@ -210,14 +211,14 @@ export default function CheckoutPage() {
                                     if (verifyData.success) {
                                         window.location.href = "/checkout/success";
                                     } else {
-                                        toast({ variant: "destructive", title: "Error", description: "Payment verification failed" });
+                                        toast({ variant: "destructive", title: "Error", description: verifyData.error || "Payment verification failed" });
                                         setProcessing(false);
                                     }
                                 },
                                 prefill: {
                                     name: `${formData.firstName} ${formData.lastName}`,
                                     email: session?.user?.email || "",
-                                    contact: `+91${formData.phone}`, // Ensure E.164 format
+                                    contact: `+91${formData.phone}`,
                                 },
                                 notes: {
                                     address: `${formData.address1}, ${formData.city}, ${formData.zip}`
@@ -225,10 +226,9 @@ export default function CheckoutPage() {
                                 theme: {
                                     color: "#1C1917",
                                 },
-                                // FIX: Add payment failure and cancellation handlers
                                 modal: {
                                     ondismiss: function () {
-                                        toast({ title: "Payment Cancelled", description: "You can try again processing your order." });
+                                        toast({ title: "Payment Cancelled", description: "You cancelled the payment. No order was created." });
                                         setProcessing(false);
                                     }
                                 }
@@ -236,17 +236,19 @@ export default function CheckoutPage() {
 
                             const rzp1 = new (window as any).Razorpay(options);
 
-                            // FIX: Handle payment failures
                             rzp1.on('payment.failed', function (response: any) {
                                 console.error('Payment failed:', response.error);
-                                toast({ variant: "destructive", title: "Payment Failed", description: response.error.description || 'Unknown error' });
+                                toast({ variant: "destructive", title: "Payment Failed", description: response.error.description || 'Payment failed. No order was created.' });
                                 setProcessing(false);
                             });
 
                             rzp1.open();
-                        } else {
-                            // COD
+                        } else if (result.isCOD && result.orderId) {
+                            // COD: Order already created, redirect to success
                             window.location.href = "/checkout/success";
+                        } else {
+                            toast({ variant: "destructive", title: "Error", description: "Unexpected response from server" });
+                            setProcessing(false);
                         }
                     } else {
                         toast({ variant: "destructive", title: "Error", description: (result as any).error || "Failed to create order" });

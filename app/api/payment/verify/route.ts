@@ -7,16 +7,20 @@ import { sendInvoiceEmail } from "@/lib/email";
 import { getPaymentRateLimiter } from "@/lib/rate-limit";
 import { logError, logPaymentEvent, logRateLimitViolation } from "@/lib/logger";
 import { clearCart } from "@/app/actions/cart";
+import { createOrderAfterPayment } from "@/app/actions/checkout";
 
 /**
- * CRITICAL FIX: Payment Verification with Stock Reduction
+ * CRITICAL FIX: Create Order ONLY After Payment Verification
  * 
- * This route now handles:
- * 1. Rate limiting - prevents abuse
- * 2. Idempotency - prevents duplicate payment processing
- * 3. Stock reduction - ONLY after payment is verified
- * 4. Atomic operations - all updates in a single transaction
- * 5. Proper error handling and rollback
+ * NEW FLOW:
+ * 1. Frontend validates cart and collects order data
+ * 2. Razorpay order created with order data in 'notes' field
+ * 3. User completes payment
+ * 4. THIS ROUTE verifies signature
+ * 5. If valid -> create Order record with paymentStatus="PAID"
+ * 6. If invalid -> return error, NO order created
+ * 
+ * This ensures failed/cancelled payments NEVER create orphaned orders.
  */
 
 export async function POST(req: Request) {
@@ -30,11 +34,21 @@ export async function POST(req: Request) {
             logRateLimitViolation("/api/payment/verify", ip, ip);
             return NextResponse.json({ error: 'Too many payment requests. Please wait.' }, { status: 429 });
         }
-        const body = await req.json();
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = body;
 
-        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !orderId) {
+        const session = await auth();
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const body = await req.json();
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderData } = body;
+
+        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
             return NextResponse.json({ error: "Missing required payment parameters" }, { status: 400 });
+        }
+
+        if (!orderData) {
+            return NextResponse.json({ error: "Missing order data" }, { status: 400 });
         }
 
         if (!process.env.RAZORPAY_KEY_SECRET) {
@@ -60,7 +74,8 @@ export async function POST(req: Request) {
             return NextResponse.json({
                 success: true,
                 message: "Payment already processed",
-                alreadyProcessed: true
+                alreadyProcessed: true,
+                orderId: existingPayment.orderId
             });
         }
 
@@ -71,121 +86,43 @@ export async function POST(req: Request) {
             .digest("hex");
 
         if (generated_signature !== razorpay_signature) {
-            logPaymentEvent("PAYMENT_VERIFICATION_FAILED", orderId, {
+            logPaymentEvent("PAYMENT_VERIFICATION_FAILED", razorpay_order_id, {
                 reason: "Invalid signature",
                 razorpayOrderId: razorpay_order_id,
                 ipAddress: ip,
             });
-            return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+            return NextResponse.json({ error: "Invalid payment signature" }, { status: 400 });
         }
 
-        // ATOMIC TRANSACTION: Update order, reduce stock, create payment record
-        await prisma.$transaction(async (tx) => {
-            // Fetch order with items
-            const order = await tx.order.findUnique({
-                where: { id: orderId },
-                include: {
-                    items: {
-                        include: {
-                            product: true
-                        }
-                    },
-                    user: true
-                }
-            });
+        // SIGNATURE VALID - Now create the Order
+        if (process.env.NODE_ENV === "development") {
+            console.log("[PAYMENT_VERIFY] Signature valid, creating order for user:", session.user.id);
+        }
 
-            if (!order) {
-                throw new Error("Order not found");
-            }
-
-            // Check if order is already paid
-            if (order.paymentStatus === "PAID") {
-                throw new Error("Order already marked as paid");
-            }
-
-            // CRITICAL: Reduce stock for each item
-            for (const item of order.items) {
-                const currentProduct = await tx.product.findUnique({
-                    where: { id: item.productId },
-                    select: { stock: true, name: true }
-                });
-
-                if (!currentProduct) {
-                    throw new Error(`Product ${item.productId} not found during payment verification`);
-                }
-
-                if (currentProduct.stock < item.quantity) {
-                    throw new Error(
-                        `Insufficient stock for "${currentProduct.name}". ` +
-                        `Available: ${currentProduct.stock}, Required: ${item.quantity}`
-                    );
-                }
-
-                // Reduce stock atomically
-                await tx.product.update({
-                    where: { id: item.productId },
-                    data: {
-                        stock: {
-                            decrement: item.quantity
-                        }
-                    }
-                });
-            }
-
-            // Update Order Status
-            await tx.order.update({
-                where: { id: orderId },
-                data: {
-                    status: "CONFIRMED",
-                    paymentStatus: "PAID",
-                    paymentMethod: "Prepaid (Razorpay)",
-                },
-            });
-
-            // Create Payment Record
-            await tx.payment.create({
-                data: {
-                    orderId: orderId,
-                    amount: order.total,
-                    currency: "INR",
-                    status: "COMPLETED",
-                    method: "UPI", // Default - could be determined from Razorpay response
-                    gatewayProvider: "razorpay",
-                    gatewayOrderId: razorpay_order_id,
-                    gatewayPaymentId: razorpay_payment_id,
-                    gatewaySignature: razorpay_signature,
-                    subtotal: order.subtotal,
-                    cgst: order.cgst,
-                    sgst: order.sgst,
-                    igst: order.igst,
-                    gstRate: order.gstRate,
-                    verifiedAt: new Date(),
-                }
-            });
-
-            // Create Timeline Events
-            await tx.orderTimeline.createMany({
-                data: [
-                    {
-                        orderId: orderId,
-                        event: "Payment Received",
-                        details: `Payment ID: ${razorpay_payment_id}, Order ID: ${razorpay_order_id}`,
-                        createdBy: "system"
-                    },
-                    {
-                        orderId: orderId,
-                        event: "Stock Reduced",
-                        details: `Stock reduced for ${order.items.length} items`,
-                        createdBy: "system"
-                    }
-                ]
-            });
-
-            // Generate & Send Invoice (Outside transaction - non-critical)
-            // We''ll do this after transaction commits
+        // Create order using the new function
+        const orderId = await createOrderAfterPayment({
+            userId: session.user.id,
+            items: orderData.items,
+            total: orderData.total,
+            subtotal: orderData.subtotal,
+            discount: orderData.discount || 0,
+            shippingCharges: orderData.shippingCharges || 0,
+            cgst: orderData.cgst,
+            sgst: orderData.sgst,
+            igst: orderData.igst,
+            gstRate: orderData.gstRate,
+            customerName: orderData.customerName,
+            customerPhone: orderData.customerPhone,
+            shippingAddress: orderData.shippingAddress,
+            shippingState: orderData.shippingState,
+            couponCode: orderData.couponCode || null,
+            couponId: orderData.couponId || null,
+            razorpayOrderId: razorpay_order_id,
+            razorpayPaymentId: razorpay_payment_id,
+            razorpaySignature: razorpay_signature,
         });
 
-        // After successful transaction, generate invoice
+        // After successful order creation, generate invoice
         try {
             const fullOrder = await prisma.order.findUnique({
                 where: { id: orderId },
@@ -237,16 +174,13 @@ export async function POST(req: Request) {
 
         // CRITICAL: Clear the user's cart after successful purchase
         try {
-            // We need to import clearCart from actions/cart
-            // Since this is a server-side route, we can call the function directly if imported
-            // But clearCart relies on `auth()`, which works in Route Handlers
             await clearCart();
         } catch (cartError) {
             logError("CART_CLEAR_ERROR", cartError);
             // Don't fail the request, just log it
         }
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, orderId });
 
     } catch (error: any) {
         logError("PAYMENT_VERIFICATION", error, {
@@ -262,15 +196,15 @@ export async function POST(req: Request) {
             }, { status: 400 });
         }
 
-        if (error.message?.includes("already marked as paid")) {
+        if (error.message?.includes("not found") || error.message?.includes("no longer available")) {
             return NextResponse.json({
-                error: "This order was already processed",
+                error: "Payment received but some products are no longer available. Please contact support.",
                 details: error.message
             }, { status: 400 });
         }
 
         return NextResponse.json({
-            error: "Verification failed",
+            error: "Payment verification failed",
             details: error.message || "Unknown error"
         }, { status: 500 });
     }
