@@ -6,6 +6,7 @@ import { generateInvoicePDF } from "@/lib/invoice";
 import { sendInvoiceEmail } from "@/lib/email";
 import { getPaymentRateLimiter } from "@/lib/rate-limit";
 import { logError, logPaymentEvent, logRateLimitViolation } from "@/lib/logger";
+import { clearCart } from "@/app/actions/cart";
 
 /**
  * CRITICAL FIX: Payment Verification with Stock Reduction
@@ -233,6 +234,17 @@ export async function POST(req: Request) {
             razorpayPaymentId: razorpay_payment_id,
             razorpayOrderId: razorpay_order_id,
         });
+
+        // CRITICAL: Clear the user's cart after successful purchase
+        try {
+            // We need to import clearCart from actions/cart
+            // Since this is a server-side route, we can call the function directly if imported
+            // But clearCart relies on `auth()`, which works in Route Handlers
+            await clearCart();
+        } catch (cartError) {
+            logError("CART_CLEAR_ERROR", cartError);
+            // Don't fail the request, just log it
+        }
 
         return NextResponse.json({ success: true });
 

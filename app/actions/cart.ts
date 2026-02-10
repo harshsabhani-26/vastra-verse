@@ -167,10 +167,21 @@ export async function clearCart() {
     const session = await auth();
     if (!session?.user?.id) return { success: false };
 
-    // Logic to clear cart?
-    // Actually, usually we don't clear cart on logout, we just decouple it.
-    // The requirement is "when user logout cart must be empty".
-    // This implies the *local view* must be empty. The DB cart should persist for next login.
-    // So this action might not be needed for 'logout', but for 'checkout success'.
-    return { success: true };
+    try {
+        const cart = await prisma.cart.findUnique({
+            where: { userId: session.user.id }
+        });
+
+        if (cart) {
+            await prisma.cartItem.deleteMany({
+                where: { cartId: cart.id }
+            });
+        }
+
+        revalidatePath('/cart');
+        return { success: true };
+    } catch (error) {
+        console.error("Clear cart error:", error);
+        return { success: false, error: "Failed to clear cart" };
+    }
 }

@@ -211,6 +211,7 @@ export function Header() {
                                                         </Link>
                                                         <button
                                                             onClick={() => {
+                                                                clearUserCart();
                                                                 signOut();
                                                                 setIsProfileOpen(false);
                                                             }}
@@ -352,6 +353,7 @@ export function Header() {
                             {status === "authenticated" ? (
                                 <button
                                     onClick={() => {
+                                        clearUserCart();
                                         signOut();
                                         setIsMobileMenuOpen(false);
                                     }}
