@@ -45,9 +45,16 @@ export async function POST(request: NextRequest) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
+        const folder = formData.get("folder") as string;
+
         // Generate unique public_id for Cloudinary
         const ext = file.name.split(".").pop();
-        const publicId = `banners/${uuidv4()}`; // Store in 'banners' folder
+        // Use provided folder or default based on file type
+        const targetFolder = (folder && ['banners', 'categories', 'products'].includes(folder))
+            ? folder
+            : (isVideo ? 'videos' : 'banners');
+
+        const publicId = `${targetFolder}/${uuidv4()}`;
 
         // Upload to Cloudinary
         // Cloudinary handles all optimization automatically (no need for sharp)
@@ -56,7 +63,7 @@ export async function POST(request: NextRequest) {
                 {
                     public_id: publicId,
                     resource_type: isVideo ? 'video' : 'image',
-                    folder: isVideo ? 'videos' : 'banners',
+                    folder: targetFolder,
                     // Cloudinary auto-optimization
                     quality: 'auto',
                     fetch_format: 'auto',

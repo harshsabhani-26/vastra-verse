@@ -54,6 +54,7 @@ export default function CategoryForm({ category, mode }: CategoryFormProps) {
         try {
             const formData = new FormData();
             formData.append("file", file);
+            formData.append("folder", "categories");
 
             const response = await fetch("/api/upload", {
                 method: "POST",
