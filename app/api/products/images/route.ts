@@ -2,12 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import prisma from "@/lib/prisma";
 import cloudinary, { type CloudinaryUploadResult } from "@/lib/cloudinary";
-import { deleteFromSupabase, getStoragePathFromUrl, STORAGE_BUCKETS } from "@/lib/supabase-storage";
 
-// POST - Upload product images
+// Prevent Next.js from caching upload/delete responses
+export const dynamic = 'force-dynamic';
+
+/**
+ * Extract Cloudinary public_id from a Cloudinary secure_url.
+ * Example: https://res.cloudinary.com/xxx/image/upload/v123/vastra/products/abc.jpg
+ * Returns: vastra/products/abc
+ */
+function extractPublicId(url: string): string | null {
+    try {
+        const match = url.match(/\/upload\/(?:v\d+\/)?(.*?)(?:\.\w+)?$/);
+        return match?.[1] ?? null;
+    } catch {
+        return null;
+    }
+}
+
+// POST - Upload product images (parallel for performance)
 export async function POST(req: NextRequest) {
     const startTime = performance.now();
-    console.time('⏱️  [Upload] /api/products/images');
 
     try {
         const formData = await req.formData();
@@ -28,67 +43,63 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const uploadedImages = [];
-
-        for (const file of files) {
+        // Parallel upload for better admin performance
+        const uploadPromises = files.map(async (file) => {
             // Validate file type
             const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
             if (!allowedTypes.includes(file.type)) {
-                return NextResponse.json(
-                    { error: `Invalid file type: ${file.name}. Only JPG, PNG, and WebP are allowed.` },
-                    { status: 400 }
-                );
+                throw new Error(`Invalid file type: ${file.name}. Only JPG, PNG, and WebP are allowed.`);
             }
 
             // Validate file size (max 10MB)
-            const maxSize = 10 * 1024 * 1024; // 10MB
+            const maxSize = 10 * 1024 * 1024;
             if (file.size > maxSize) {
-                return NextResponse.json(
-                    { error: `File ${file.name} is too large. Maximum size is 10MB.` },
-                    { status: 400 }
-                );
+                throw new Error(`File ${file.name} is too large. Maximum size is 10MB.`);
             }
 
             // Convert file to buffer
             const bytes = await file.arrayBuffer();
             const buffer = Buffer.from(bytes);
 
-            // Generate unique public_id for Cloudinary
-            const publicId = `products/${uuidv4()}`;
+            // Generate unique public_id under vastra/products
+            const publicId = `vastra/products/${uuidv4()}`;
 
             // Upload to Cloudinary
-            // Cloudinary handles all optimization automatically (no need for sharp)
+            // public_id already includes folder path; do NOT pass folder option
             const uploadResult = await new Promise<CloudinaryUploadResult>((resolve, reject) => {
                 const uploadStream = cloudinary.uploader.upload_stream(
                     {
                         public_id: publicId,
-                        folder: 'products',
                         resource_type: 'image',
-                        // Cloudinary auto-optimization
                         quality: 'auto',
                         fetch_format: 'auto',
                     },
                     (error, result) => {
-                        if (error) reject(error);
-                        else resolve(result as CloudinaryUploadResult);
+                        if (error) {
+                            console.error(`❌ Cloudinary upload failed for public_id: ${publicId}`, error.message);
+                            reject(error);
+                        } else {
+                            resolve(result as CloudinaryUploadResult);
+                        }
                     }
                 );
 
                 uploadStream.end(buffer);
             });
 
-            // Create image object
-            uploadedImages.push({
+            console.log(`✅ Product image uploaded | public_id: ${uploadResult.public_id} | ${uploadResult.bytes} bytes`);
+
+            return {
                 url: uploadResult.secure_url,
                 width: uploadResult.width,
                 height: uploadResult.height,
                 fileSize: uploadResult.bytes,
-            });
-        }
+            };
+        });
 
-        const endTime = performance.now();
-        const duration = Math.round(endTime - startTime);
-        console.timeEnd('⏱️  [Upload] /api/products/images');
+        const uploadedImages = await Promise.all(uploadPromises);
+
+        const duration = Math.round(performance.now() - startTime);
         console.log(`✅ Uploaded ${uploadedImages.length} product images in ${duration}ms`);
 
         return NextResponse.json({
@@ -96,9 +107,17 @@ export async function POST(req: NextRequest) {
             images: uploadedImages,
         });
     } catch (error) {
-        console.timeEnd('⏱️  [Upload] /api/products/images');
-        console.error("Error uploading images:", error);
         const errorMessage = error instanceof Error ? error.message : "Failed to upload images";
+        console.error(`❌ Product image upload failed: ${errorMessage}`);
+
+        // Return validation errors with 400 status
+        if (errorMessage.includes('Invalid file type') || errorMessage.includes('too large')) {
+            return NextResponse.json(
+                { error: errorMessage },
+                { status: 400 }
+            );
+        }
+
         return NextResponse.json(
             { error: "Failed to upload images", details: errorMessage },
             { status: 500 }
@@ -106,7 +125,7 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// DELETE - Remove product image
+// DELETE - Remove product image (via Cloudinary)
 export async function DELETE(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
@@ -133,14 +152,15 @@ export async function DELETE(req: NextRequest) {
                 );
             }
 
-            // Delete file from Supabase Storage
-            const filepath = getStoragePathFromUrl(image.url);
-            if (filepath) {
+            // Delete file from Cloudinary
+            const publicId = extractPublicId(image.url);
+            if (publicId) {
                 try {
-                    await deleteFromSupabase(STORAGE_BUCKETS.PRODUCTS, filepath);
+                    await cloudinary.uploader.destroy(publicId);
+                    console.log(`✅ Cloudinary image deleted | public_id: ${publicId}`);
                 } catch (err) {
-                    console.error("Error deleting file from Supabase:", err);
-                    // Continue even if file deletion fails
+                    console.error(`❌ Cloudinary delete failed for public_id: ${publicId}`, err instanceof Error ? err.message : err);
+                    // Continue even if Cloudinary deletion fails
                 }
             }
 
@@ -150,12 +170,13 @@ export async function DELETE(req: NextRequest) {
             });
         } else if (imageUrl) {
             // Just delete file if only URL provided (for temp uploads)
-            const filepath = getStoragePathFromUrl(imageUrl);
-            if (filepath) {
+            const publicId = extractPublicId(imageUrl);
+            if (publicId) {
                 try {
-                    await deleteFromSupabase(STORAGE_BUCKETS.PRODUCTS, filepath);
+                    await cloudinary.uploader.destroy(publicId);
+                    console.log(`✅ Cloudinary image deleted | public_id: ${publicId}`);
                 } catch (err) {
-                    console.error("Error deleting file from Supabase:", err);
+                    console.error(`❌ Cloudinary delete failed for public_id: ${publicId}`, err instanceof Error ? err.message : err);
                 }
             }
         }

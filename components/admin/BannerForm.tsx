@@ -49,6 +49,7 @@ export function BannerForm({ banner }: BannerFormProps) {
         setLoading(true);
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("folder", "hero");
 
         try {
             const response = await fetch("/api/upload", {
@@ -92,6 +93,7 @@ export function BannerForm({ banner }: BannerFormProps) {
         setLoading(true);
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("folder", "videos");
 
         try {
             const response = await fetch("/api/upload", {

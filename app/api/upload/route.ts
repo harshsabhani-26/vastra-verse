@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import cloudinary, { type CloudinaryUploadResult } from "@/lib/cloudinary";
 
+// Prevent Next.js from caching upload responses
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
     const startTime = performance.now();
-    console.time('⏱️  [Upload] /api/upload');
 
     try {
         const formData = await request.formData();
@@ -47,40 +49,44 @@ export async function POST(request: NextRequest) {
 
         const folder = formData.get("folder") as string;
 
-        // Generate unique public_id for Cloudinary
-        const ext = file.name.split(".").pop();
-        // Use provided folder or default based on file type
-        const targetFolder = (folder && ['banners', 'categories', 'products'].includes(folder))
-            ? folder
-            : (isVideo ? 'videos' : 'banners');
+        // Map folder param to organized Cloudinary folders
+        const FOLDER_MAP: Record<string, string> = {
+            hero: 'vastra/hero',
+            products: 'vastra/products',
+            categories: 'vastra/categories',
+            videos: 'vastra/videos',
+            // Legacy support
+            banners: 'vastra/hero',
+        };
+        const targetFolder = FOLDER_MAP[folder] ?? (isVideo ? 'vastra/videos' : 'vastra/hero');
 
         const publicId = `${targetFolder}/${uuidv4()}`;
 
         // Upload to Cloudinary
-        // Cloudinary handles all optimization automatically (no need for sharp)
+        // public_id already includes folder path; do NOT pass folder option to avoid duplication
         const uploadResult = await new Promise<CloudinaryUploadResult>((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
                 {
                     public_id: publicId,
                     resource_type: isVideo ? 'video' : 'image',
-                    folder: targetFolder,
-                    // Cloudinary auto-optimization
                     quality: 'auto',
                     fetch_format: 'auto',
                 },
                 (error, result) => {
-                    if (error) reject(error);
-                    else resolve(result as CloudinaryUploadResult);
+                    if (error) {
+                        console.error(`❌ Cloudinary upload failed for public_id: ${publicId}`, error.message);
+                        reject(error);
+                    } else {
+                        resolve(result as CloudinaryUploadResult);
+                    }
                 }
             );
 
             uploadStream.end(buffer);
         });
 
-        const endTime = performance.now();
-        const duration = Math.round(endTime - startTime);
-        console.timeEnd('⏱️  [Upload] /api/upload');
-        console.log(`✅ Upload completed in ${duration}ms - URL: ${uploadResult.secure_url}`);
+        const duration = Math.round(performance.now() - startTime);
+        console.log(`✅ Upload completed in ${duration}ms | public_id: ${uploadResult.public_id} | ${uploadResult.bytes} bytes`);
 
         // Return the secure Cloudinary URL and public_id
         return NextResponse.json({
@@ -92,11 +98,8 @@ export async function POST(request: NextRequest) {
             bytes: uploadResult.bytes,
         }, { status: 200 });
     } catch (error) {
-        console.timeEnd('⏱️  [Upload] /api/upload');
-        console.error("Upload error:", error);
-
-        // Return more detailed error for debugging
         const errorMessage = error instanceof Error ? error.message : "Failed to upload file";
+        console.error(`❌ Upload failed: ${errorMessage}`);
         return NextResponse.json(
             { error: "Failed to upload file", details: errorMessage },
             { status: 500 }

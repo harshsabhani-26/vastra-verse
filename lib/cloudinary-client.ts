@@ -47,16 +47,27 @@ export function buildCloudinaryUrl(
 
 /**
  * Get responsive Cloudinary URL for hero banners
- * Optimizes for full-viewport width images
+ * Optimizes for full-viewport width images with f_auto, q_auto
  */
 export function getHeroBannerUrl(publicIdOrUrl: string): string {
     // If already a full URL (Supabase or external), return as-is
     if (publicIdOrUrl.startsWith('http://') || publicIdOrUrl.startsWith('https://')) {
-        // If it's a Cloudinary URL, optimize it
+        // If it's a Cloudinary URL, ensure it has optimization transforms
         if (publicIdOrUrl.includes('res.cloudinary.com')) {
-            // Extract public_id from existing Cloudinary URL if needed
-            // For now, just return as is or we could implement parsing logic
-            return publicIdOrUrl;
+            // If already has transforms (f_auto or q_auto), return as-is
+            if (publicIdOrUrl.includes('f_auto') || publicIdOrUrl.includes('q_auto')) {
+                return publicIdOrUrl;
+            }
+            // Extract public_id from URL and rebuild with optimization
+            const match = publicIdOrUrl.match(/\/upload\/(?:v\d+\/)?(.*?)(?:\.\w+)?$/);
+            if (match?.[1]) {
+                return buildCloudinaryUrl(match[1], {
+                    width: 1920,
+                    crop: 'limit',
+                    quality: 'auto',
+                    format: 'auto',
+                });
+            }
         }
         return publicIdOrUrl;
     }
@@ -68,4 +79,59 @@ export function getHeroBannerUrl(publicIdOrUrl: string): string {
         quality: 'auto',
         format: 'auto',
     });
+}
+
+/**
+ * Get responsive hero banner props with srcSet for multiple breakpoints
+ * Returns src, srcSet, and sizes for use with <img> or Next.js Image
+ */
+export function getResponsiveHeroBannerProps(publicIdOrUrl: string): {
+    src: string;
+    srcSet: string;
+    sizes: string;
+} {
+    const widths = [640, 1080, 1920];
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+    // Extract public_id from URL if needed
+    let publicId: string | null = null;
+    if (publicIdOrUrl.startsWith('http://') || publicIdOrUrl.startsWith('https://')) {
+        if (publicIdOrUrl.includes('res.cloudinary.com')) {
+            const match = publicIdOrUrl.match(/\/upload\/(?:v\d+\/)?(.*?)(?:\.\w+)?$/);
+            publicId = match?.[1] ?? null;
+        }
+    } else {
+        publicId = publicIdOrUrl;
+    }
+
+    // If we can't extract a public_id or no cloud name, return plain URL
+    if (!publicId || !cloudName) {
+        return {
+            src: publicIdOrUrl,
+            srcSet: '',
+            sizes: '100vw',
+        };
+    }
+
+    // Build srcSet with f_auto,q_auto at each breakpoint
+    const srcSetEntries = widths.map((w) => {
+        const url = buildCloudinaryUrl(publicId!, {
+            width: w,
+            crop: 'limit',
+            quality: 'auto',
+            format: 'auto',
+        });
+        return `${url} ${w}w`;
+    });
+
+    return {
+        src: buildCloudinaryUrl(publicId, {
+            width: 1920,
+            crop: 'limit',
+            quality: 'auto',
+            format: 'auto',
+        }),
+        srcSet: srcSetEntries.join(', '),
+        sizes: '100vw',
+    };
 }

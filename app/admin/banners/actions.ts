@@ -42,7 +42,6 @@ export async function getBanners(bannerType?: "HERO" | "MID_PAGE" | "BOTTOM_PAGE
 // added explicit select to reduce payload size
 export async function getActiveBanners() {
     try {
-        console.time('⏱️  [getActiveBanners]');
         const banners = await prisma.heroBanner.findMany({
             where: {
                 isActive: true,
@@ -57,10 +56,8 @@ export async function getActiveBanners() {
                 videoUrl: true,
                 bannerType: true,
                 displayOrder: true,
-                // Removed timestamps and redundant fields
             }
         });
-        console.timeEnd('⏱️  [getActiveBanners]');
         return banners;
     } catch (error) {
         console.error("Failed to fetch active hero banners:", error);
