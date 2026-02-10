@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { Decimal } from "@prisma/client/runtime/library";
+import { clearCart } from "./cart";
 
 /**
  * CRITICAL FIX: Payment-First Order Creation
@@ -287,6 +288,16 @@ export async function createOrder(formData: FormData) {
 
         return order.id;
     });
+
+    // CRITICAL: Clear cart after successful COD order
+    try {
+        await clearCart();
+        if (process.env.NODE_ENV === "development") {
+            console.log("Cart cleared for COD order:", orderId);
+        }
+    } catch (error) {
+        console.error("Failed to clear cart after COD order:", error);
+    }
 
     return { success: true, orderId, isCOD: true };
 }
