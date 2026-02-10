@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { getHeroBannerUrl } from "@/lib/cloudinary";
+
 // Default fallback slides
 const defaultSlides = [
     {
@@ -50,7 +52,7 @@ export function Hero({ banners }: HeroProps) {
         ? banners.map((b, idx) => ({
             id: idx + 1,
             mediaType: b.mediaType || "IMAGE",
-            image: b.imageUrl,
+            image: getHeroBannerUrl(b.imageUrl), // Optimize Cloudinary URLs
             videoUrl: b.videoUrl || null,
             buttonLink: b.ctaLink,
             title: b.title,

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { requireAdmin, unauthorizedResponse } from "@/lib/auth-utils";
+import { safePage, safePageSize } from "@/lib/api-utils";
+import { logAdminFetch } from "@/lib/logger";
 
 /**
  * GET /api/admin/payments
@@ -15,8 +17,8 @@ export async function GET(request: NextRequest) {
         }
 
         const { searchParams } = new URL(request.url);
-        const page = parseInt(searchParams.get("page") || "1");
-        const limit = parseInt(searchParams.get("limit") || "20");
+        const page = safePage(searchParams.get("page"));
+        const limit = safePageSize(searchParams.get("limit"));
         const status = searchParams.get("status") || "all";
         const method = searchParams.get("method") || "all";
         const search = searchParams.get("search") || "";
@@ -119,7 +121,7 @@ export async function GET(request: NextRequest) {
             },
         });
     } catch (error: any) {
-        console.error("Error fetching payments:", error);
+        logAdminFetch("PAYMENTS_GET", error);
         return NextResponse.json(
             { error: error.message || "Failed to fetch payments" },
             { status: 500 }

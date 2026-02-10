@@ -153,7 +153,7 @@ export const sendInvoiceEmail = async (
                                                 <tr>
                                                     <td width="50%" valign="top">
                                                         <h4 style="margin: 0 0 10px 0; color: #333;">What Next?</h4>
-                                                        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/orders" style="color: ${brandColor}; text-decoration: none; font-size: 13px;">View your order</a>
+                                                        <a href="${process.env.NEXTAUTH_URL || 'https://vastraverse.in'}/orders" style="color: ${brandColor}; text-decoration: none; font-size: 13px;">View your order</a>
                                                     </td>
                                                     <td width="50%" valign="top">
                                                         <h4 style="margin: 0 0 10px 0; color: #333;">Any Questions?</h4>

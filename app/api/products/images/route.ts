@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
-import sharp from "sharp";
 import prisma from "@/lib/prisma";
-import { uploadToSupabase, deleteFromSupabase, getStoragePathFromUrl, STORAGE_BUCKETS } from "@/lib/supabase-storage";
+import cloudinary, { type CloudinaryUploadResult } from "@/lib/cloudinary";
+import { deleteFromSupabase, getStoragePathFromUrl, STORAGE_BUCKETS } from "@/lib/supabase-storage";
 
 // POST - Upload product images
 export async function POST(req: NextRequest) {
+    const startTime = performance.now();
+    console.time('⏱️  [Upload] /api/products/images');
+
     try {
         const formData = await req.formData();
         const files = formData.getAll("files") as File[];
@@ -46,63 +49,54 @@ export async function POST(req: NextRequest) {
                 );
             }
 
-            // Generate unique filename
-            const ext = file.name.split(".").pop();
-            const filename = `${uuidv4()}.${ext}`;
-
             // Convert file to buffer
             const bytes = await file.arrayBuffer();
             const buffer = Buffer.from(bytes);
 
-            // Process image with sharp (resize, optimize)
-            // Maintain original format instead of forcing JPEG
-            let processedBuffer;
-            const sharpInstance = sharp(buffer).resize(1200, 1200, {
-                fit: "inside",
-                withoutEnlargement: true,
+            // Generate unique public_id for Cloudinary
+            const publicId = `products/${uuidv4()}`;
+
+            // Upload to Cloudinary
+            // Cloudinary handles all optimization automatically (no need for sharp)
+            const uploadResult = await new Promise<CloudinaryUploadResult>((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream(
+                    {
+                        public_id: publicId,
+                        folder: 'products',
+                        resource_type: 'image',
+                        // Cloudinary auto-optimization
+                        quality: 'auto',
+                        fetch_format: 'auto',
+                    },
+                    (error, result) => {
+                        if (error) reject(error);
+                        else resolve(result as CloudinaryUploadResult);
+                    }
+                );
+
+                uploadStream.end(buffer);
             });
-
-            // Apply format-specific optimization
-            if (file.type === "image/png") {
-                processedBuffer = await sharpInstance
-                    .png({ quality: 85, compressionLevel: 9 })
-                    .toBuffer();
-            } else if (file.type === "image/webp") {
-                processedBuffer = await sharpInstance
-                    .webp({ quality: 85 })
-                    .toBuffer();
-            } else {
-                // JPEG/JPG - convert to JPEG
-                processedBuffer = await sharpInstance
-                    .jpeg({ quality: 85 })
-                    .toBuffer();
-            }
-
-            // Get image metadata
-            const metadata = await sharp(processedBuffer).metadata();
-
-            // Upload to Supabase Storage
-            const publicUrl = await uploadToSupabase(
-                STORAGE_BUCKETS.PRODUCTS,
-                filename,
-                processedBuffer,
-                file.type
-            );
 
             // Create image object
             uploadedImages.push({
-                url: publicUrl,
-                width: metadata.width,
-                height: metadata.height,
-                fileSize: processedBuffer.length,
+                url: uploadResult.secure_url,
+                width: uploadResult.width,
+                height: uploadResult.height,
+                fileSize: uploadResult.bytes,
             });
         }
+
+        const endTime = performance.now();
+        const duration = Math.round(endTime - startTime);
+        console.timeEnd('⏱️  [Upload] /api/products/images');
+        console.log(`✅ Uploaded ${uploadedImages.length} product images in ${duration}ms`);
 
         return NextResponse.json({
             success: true,
             images: uploadedImages,
         });
     } catch (error) {
+        console.timeEnd('⏱️  [Upload] /api/products/images');
         console.error("Error uploading images:", error);
         const errorMessage = error instanceof Error ? error.message : "Failed to upload images";
         return NextResponse.json(

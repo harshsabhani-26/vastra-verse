@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth-utils';
+import { safeInt } from '@/lib/api-utils';
+import { logAdminFetch } from '@/lib/logger';
 
 // GET /api/admin/customers - List customers with filtering
 export async function GET(request: NextRequest) {
@@ -16,8 +18,8 @@ export async function GET(request: NextRequest) {
         const search = searchParams.get('search') || '';
         const vipOnly = searchParams.get('vipOnly') === 'true';
         const blockedOnly = searchParams.get('blockedOnly') === 'true';
-        const minOrders = parseInt(searchParams.get('minOrders') || '0');
-        const minSpent = parseFloat(searchParams.get('minSpent') || '0');
+        const minOrders = safeInt(searchParams.get('minOrders'), 0);
+        const minSpent = safeInt(searchParams.get('minSpent'), 0);
 
         // Build where clause
         const where: any = {};
@@ -105,7 +107,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json(customersWithStats);
     } catch (error) {
-        console.error('Error fetching customers:', error);
+        logAdminFetch('CUSTOMERS_GET', error);
         return NextResponse.json(
             { error: 'Failed to fetch customers' },
             { status: 500 }

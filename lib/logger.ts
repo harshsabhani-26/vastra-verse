@@ -102,3 +102,21 @@ export function logInfo(context: string, message: string, metadata?: LogMetadata
         timestamp: new Date().toISOString(),
     });
 }
+
+/**
+ * Log server startup event
+ */
+export function logServerStart() {
+    console.log(`[INFO:SERVER_START]`, {
+        nodeEnv: process.env.NODE_ENV || "development",
+        port: process.env.PORT || "3000 (default)",
+        timestamp: new Date().toISOString(),
+    });
+}
+
+/**
+ * Log admin data fetch failures
+ */
+export function logAdminFetch(route: string, error: unknown, metadata?: LogMetadata) {
+    logError(`ADMIN_FETCH:${route}`, error, metadata);
+}

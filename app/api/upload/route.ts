@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
-import sharp from "sharp";
-import { uploadToSupabase, STORAGE_BUCKETS } from "@/lib/supabase-storage";
+import cloudinary, { type CloudinaryUploadResult } from "@/lib/cloudinary";
 
 export async function POST(request: NextRequest) {
+    const startTime = performance.now();
+    console.time('⏱️  [Upload] /api/upload');
+
     try {
         const formData = await request.formData();
         const file = formData.get("file") as File;
@@ -39,58 +41,53 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Generate unique filename
-        const ext = file.name.split(".").pop();
-        const filename = `${uuidv4()}.${ext}`;
-
-        // Convert file to buffer
+        // Convert file to buffer for Cloudinary upload
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Process image with sharp (resize, optimize)
-        // Maintain original format instead of forcing JPEG
-        let processedBuffer: any = buffer;
+        // Generate unique public_id for Cloudinary
+        const ext = file.name.split(".").pop();
+        const publicId = `banners/${uuidv4()}`; // Store in 'banners' folder
 
-        if (!isVideo) {
-            try {
-                const sharpInstance = sharp(buffer).resize(1200, 1200, {
-                    fit: "inside",
-                    withoutEnlargement: true,
-                });
-
-                // Apply format-specific optimization
-                if (file.type === "image/png") {
-                    processedBuffer = await sharpInstance
-                        .png({ quality: 85, compressionLevel: 9 })
-                        .toBuffer();
-                } else if (file.type === "image/webp") {
-                    processedBuffer = await sharpInstance
-                        .webp({ quality: 85 })
-                        .toBuffer();
-                } else {
-                    // JPEG/JPG - convert to JPEG
-                    processedBuffer = await sharpInstance
-                        .jpeg({ quality: 85 })
-                        .toBuffer();
+        // Upload to Cloudinary
+        // Cloudinary handles all optimization automatically (no need for sharp)
+        const uploadResult = await new Promise<CloudinaryUploadResult>((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    public_id: publicId,
+                    resource_type: isVideo ? 'video' : 'image',
+                    folder: isVideo ? 'videos' : 'banners',
+                    // Cloudinary auto-optimization
+                    quality: 'auto',
+                    fetch_format: 'auto',
+                },
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result as CloudinaryUploadResult);
                 }
-            } catch (error) {
-                console.error("Image processing failed:", error);
-                // Fallback to original buffer if processing fails
-            }
-        }
+            );
 
-        // Upload to Supabase Storage
-        const publicUrl = await uploadToSupabase(
-            STORAGE_BUCKETS.COLLECTIONS,
-            filename,
-            processedBuffer as any,
-            file.type
-        );
+            uploadStream.end(buffer);
+        });
 
-        // Return the public URL
-        return NextResponse.json({ url: publicUrl }, { status: 200 });
+        const endTime = performance.now();
+        const duration = Math.round(endTime - startTime);
+        console.timeEnd('⏱️  [Upload] /api/upload');
+        console.log(`✅ Upload completed in ${duration}ms - URL: ${uploadResult.secure_url}`);
+
+        // Return the secure Cloudinary URL and public_id
+        return NextResponse.json({
+            url: uploadResult.secure_url,
+            public_id: uploadResult.public_id,
+            width: uploadResult.width,
+            height: uploadResult.height,
+            format: uploadResult.format,
+            bytes: uploadResult.bytes,
+        }, { status: 200 });
     } catch (error) {
+        console.timeEnd('⏱️  [Upload] /api/upload');
         console.error("Upload error:", error);
+
         // Return more detailed error for debugging
         const errorMessage = error instanceof Error ? error.message : "Failed to upload file";
         return NextResponse.json(
@@ -99,3 +96,4 @@ export async function POST(request: NextRequest) {
         );
     }
 }
+

@@ -2,6 +2,8 @@ import { NextResponse, NextRequest } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { requireAdmin, unauthorizedResponse } from "@/lib/auth-utils";
+import { safePage, safePageSize } from "@/lib/api-utils";
+import { logAdminFetch } from "@/lib/logger";
 
 // GET /api/admin/products - Get all products for inventory management
 export async function GET(req: NextRequest) {
@@ -15,8 +17,8 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
 
         // Pagination
-        const page = parseInt(searchParams.get("page") || "1");
-        const limit = parseInt(searchParams.get("limit") || "100");
+        const page = safePage(searchParams.get("page"));
+        const limit = safePageSize(searchParams.get("limit"), 100);
         const skip = (page - 1) * limit;
 
         // Filters
@@ -80,7 +82,7 @@ export async function GET(req: NextRequest) {
             }
         });
     } catch (error) {
-        console.error("[ADMIN_PRODUCTS_GET]", error);
+        logAdminFetch("PRODUCTS_GET", error);
         return NextResponse.json(
             { error: "Internal Server Error" },
             { status: 500 }

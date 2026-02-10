@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAdmin, unauthorizedResponse } from "@/lib/auth-utils";
+import { logAdminFetch } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
     try {
@@ -118,11 +119,11 @@ export async function GET(request: NextRequest) {
             giftWrapCharge: order.giftWrapCharge?.toString() || "0",
             items: order.items.map(item => ({
                 ...item,
-                price: item.price.toString(),
-                product: {
+                price: item.price?.toString() ?? "0",
+                product: item.product ? {
                     ...item.product,
-                    price: item.product.price.toString()
-                }
+                    price: item.product.price?.toString() ?? "0"
+                } : { id: "", name: "(deleted)", price: "0", images: [] }
             }))
         }));
 
@@ -133,7 +134,7 @@ export async function GET(request: NextRequest) {
             total, // For display purposes
         });
     } catch (error) {
-        console.error("Error fetching orders:", error);
+        logAdminFetch("ORDERS_GET", error);
         return NextResponse.json(
             { error: "Failed to fetch orders" },
             { status: 500 }

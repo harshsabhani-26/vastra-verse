@@ -2,55 +2,46 @@ import Link from "next/link";
 import Image from "next/image";
 import prisma from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
-import { unstable_cache } from 'next/cache';
-
-// Cached bestsellers query - revalidates every 5 minutes
-const getBestSellers = unstable_cache(
-    async () => {
-        try {
-            const products = await prisma.product.findMany({
-                where: {
-                    isBestSeller: true,
-                    status: "PUBLISHED"
-                },
-                take: 4,
-                select: {
-                    id: true,
-                    name: true,
-                    price: true,
-                    discount: true,
-                    finalPrice: true,
-                    isNewArrival: true,
-                    images: {
-                        where: { type: 'MAIN' },
-                        take: 1,
-                        select: {
-                            url: true,
-                            alt: true,
-                        }
-                    },
-                    category: {
-                        select: {
-                            name: true,
-                        }
+// Direct query - caching handled by page-level ISR
+async function getBestSellers() {
+    try {
+        const products = await prisma.product.findMany({
+            where: {
+                isBestSeller: true,
+                status: "PUBLISHED"
+            },
+            take: 4,
+            select: {
+                id: true,
+                name: true,
+                price: true,
+                discount: true,
+                finalPrice: true,
+                isNewArrival: true,
+                images: {
+                    where: { type: 'MAIN' },
+                    take: 1,
+                    select: {
+                        url: true,
+                        alt: true,
                     }
                 },
-                orderBy: {
-                    updatedAt: 'desc'
+                category: {
+                    select: {
+                        name: true,
+                    }
                 }
-            });
-            return products;
-        } catch (error) {
-            console.error("Failed to fetch best sellers:", error);
-            return [];
-        }
-    },
-    ['bestsellers'],
-    {
-        revalidate: 300, // 5 minutes
-        tags: ['products', 'bestsellers']
+            },
+            orderBy: {
+                updatedAt: 'desc'
+            }
+        });
+        return products;
+    } catch (error) {
+        console.error("Failed to fetch best sellers:", error);
+        return [];
     }
-);
+}
 
 export async function BestSellers() {
     const products = await getBestSellers();

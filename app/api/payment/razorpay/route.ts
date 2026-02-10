@@ -1,12 +1,13 @@
 import Razorpay from "razorpay";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { logError, logPaymentEvent } from "@/lib/logger";
 
 export async function POST(req: Request) {
     try {
         const session = await auth();
         if (!session) {
-            console.error("Razorpay API: Unauthorized access attempt");
+            logError("RAZORPAY_ORDER", new Error("Unauthorized access attempt"));
             return NextResponse.json(
                 { error: "Unauthorized" },
                 { status: 401 }
@@ -17,16 +18,15 @@ export async function POST(req: Request) {
         const { amount, currency = "INR", receipt, notes } = body;
 
         // Detailed Logging
-        console.log("Razorpay Order Request:", {
+        logPaymentEvent("PAYMENT_INITIATED", receipt || "unknown", {
             amount,
             currency,
-            receipt,
             hasKeyId: !!process.env.RAZORPAY_KEY_ID,
-            hasKeySecret: !!process.env.RAZORPAY_KEY_SECRET
+            hasKeySecret: !!process.env.RAZORPAY_KEY_SECRET,
         });
 
         if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-            console.error("Razorpay keys are missing in environment variables");
+            logError("RAZORPAY_ORDER", new Error("Razorpay keys missing in environment variables"));
             return NextResponse.json(
                 { error: "Payment configuration error: Missing keys" },
                 { status: 500 }
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
         }
 
         if (!amount || amount < 1) {
-            console.error("Razorpay API: Invalid amount", amount);
+            logError("RAZORPAY_ORDER", new Error(`Invalid amount: ${amount}`));
             return NextResponse.json(
                 { error: "Invalid amount" },
                 { status: 400 }
@@ -54,14 +54,11 @@ export async function POST(req: Request) {
         };
 
         const order = await razorpay.orders.create(options);
-        console.log("Razorpay Order Created:", order.id);
+        logPaymentEvent("PAYMENT_INITIATED", order.id, { status: "order_created" });
 
         return NextResponse.json(order);
     } catch (error: any) {
-        console.error("Razorpay order creation error:", {
-            message: error.message,
-            error: error
-        });
+        logError("RAZORPAY_ORDER", error);
         return NextResponse.json(
             { error: error.message || "Failed to create order" },
             { status: 500 }
