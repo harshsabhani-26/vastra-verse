@@ -171,6 +171,10 @@ export default function CheckoutPage() {
                                     amount: finalTotal,
                                     currency: "INR",
                                     receipt: result.orderId,
+                                    notes: {
+                                        address: `${formData.address1}, ${formData.city}, ${formData.state}, ${formData.zip}`,
+                                        customer_name: `${formData.firstName} ${formData.lastName}`
+                                    }
                                 }),
                             });
 
@@ -188,6 +192,7 @@ export default function CheckoutPage() {
                                 currency: orderData.currency,
                                 name: "Vastra Verse",
                                 description: "Order Payment",
+                                image: "https://vastra-verse.vercel.app/logo.png", // Placeholder - replace with actual logo URL
                                 order_id: orderData.id,
                                 handler: async function (response: any) {
                                     const verifyRes = await fetch("/api/payment/verify", {
@@ -212,7 +217,10 @@ export default function CheckoutPage() {
                                 prefill: {
                                     name: `${formData.firstName} ${formData.lastName}`,
                                     email: session?.user?.email || "",
-                                    contact: formData.phone,
+                                    contact: `+91${formData.phone}`, // Ensure E.164 format
+                                },
+                                notes: {
+                                    address: `${formData.address1}, ${formData.city}, ${formData.zip}`
                                 },
                                 theme: {
                                     color: "#1C1917",
