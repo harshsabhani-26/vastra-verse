@@ -199,7 +199,7 @@ export default function CheckoutPage() {
                                 currency: razorpayOrder.currency,
                                 name: "Vastra Verse",
                                 description: "Order Payment",
-                                image: "https://vastra-verse.vercel.app/logo.png",
+                                image: "/images/logo.png",
                                 order_id: razorpayOrder.id,
                                 handler: async function (response: any) {
                                     // Send orderData along with payment details to verification
