@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import { getHeroBannerUrl } from "@/lib/cloudinary";
+import { getHeroBannerUrl } from "@/lib/cloudinary-client";
 
 // Default fallback slides
 const defaultSlides = [
