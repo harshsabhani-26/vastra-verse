@@ -14,7 +14,7 @@ export function Header() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const { openCart, totalItems } = useCartStore();
+    const { openCart, totalItems, syncWithUser, clearUserCart } = useCartStore();
     const { data: session, status } = useSession();
     const [mounted, setMounted] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
@@ -38,6 +38,15 @@ export function Header() {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, []);
+
+    // Sync Cart with User Session
+    useEffect(() => {
+        if (status === "authenticated") {
+            syncWithUser();
+        } else if (status === "unauthenticated") {
+            clearUserCart();
+        }
+    }, [status, syncWithUser, clearUserCart]);
 
     return (
         <>
