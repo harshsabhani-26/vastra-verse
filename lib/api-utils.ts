@@ -49,3 +49,38 @@ export function safePageSize(value: string | null | undefined, fallback: number 
 export function safePage(value: string | null | undefined, fallback: number = 1): number {
     return Math.max(1, safeInt(value, fallback));
 }
+
+/**
+ * Validate cursor for cursor-based pagination
+ * Returns null if cursor is invalid or missing
+ */
+export function validateCursor(cursor: string | null | undefined): string | null {
+    if (!cursor) return null;
+
+    // Validate cursor format (cuid format: c followed by 24 alphanumeric characters)
+    if (typeof cursor !== 'string' || !/^c[a-z0-9]{24}$/i.test(cursor)) {
+        return null;
+    }
+
+    return cursor;
+}
+
+/**
+ * Validate and clamp limit for cursor-based pagination
+ * @param limit - Requested page size
+ * @param defaultLimit - Default if not provided (default: 20)
+ * @param maxLimit - Maximum allowed (default: 100)
+ */
+export function validateLimit(
+    limit: string | number | null | undefined,
+    defaultLimit: number = 20,
+    maxLimit: number = 100
+): number {
+    const parsed = typeof limit === 'string' ? safeInt(limit, defaultLimit) : limit;
+
+    if (parsed === null || parsed === undefined || parsed < 1) {
+        return defaultLimit;
+    }
+
+    return Math.min(parsed, maxLimit);
+}

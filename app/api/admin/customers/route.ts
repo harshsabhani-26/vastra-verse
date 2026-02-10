@@ -2,10 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth-utils';
-import { safeInt } from '@/lib/api-utils';
-import { logAdminFetch } from '@/lib/logger';
+import { validateCursor, validateLimit } from '@/lib/api-utils';
+import { withQueryLogging } from '@/lib/query-logger';
 
-// GET /api/admin/customers - List customers with filtering
+/**
+ * GET /api/admin/customers - Cursor-based paginated customer list
+ * 
+ * Query params:
+ * - cursor: User ID to start from (optional)
+ * - limit: Number of items per page (default: 20, max: 100)
+ * - search: Search by name, email, or phone
+ * - vipOnly: Filter VIP customers only
+ * - blockedOnly: Filter blocked customers only
+ */
 export async function GET(request: NextRequest) {
     try {
         // Admin authentication check
@@ -15,11 +24,15 @@ export async function GET(request: NextRequest) {
         }
 
         const searchParams = request.nextUrl.searchParams;
+
+        // Cursor-based pagination
+        const cursor = validateCursor(searchParams.get('cursor'));
+        const limit = validateLimit(searchParams.get('limit'), 20, 100);
+
+        // Filters
         const search = searchParams.get('search') || '';
         const vipOnly = searchParams.get('vipOnly') === 'true';
         const blockedOnly = searchParams.get('blockedOnly') === 'true';
-        const minOrders = safeInt(searchParams.get('minOrders'), 0);
-        const minSpent = safeInt(searchParams.get('minSpent'), 0);
 
         // Build where clause
         const where: any = {};
@@ -40,74 +53,53 @@ export async function GET(request: NextRequest) {
             where.isBlocked = true;
         }
 
-        // Fetch customers with order statistics
-        const customers = await prisma.user.findMany({
-            where,
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                phone: true,
-                phoneVerified: true,
-                isVIP: true,
-                isBlocked: true,
-                blockedReason: true,
-                blockedAt: true,
-                createdAt: true,
-                orders: {
-                    select: {
-                        id: true,
-                        total: true,
-                        createdAt: true,
-                        status: true,
-                    },
+        // Fetch customers with cursor pagination
+        // NOTE: Removed embedded order aggregation (too slow)
+        // Calculate stats on-demand via separate API if needed
+        const customers = await withQueryLogging(
+            '/api/admin/customers',
+            'findMany',
+            () => prisma.user.findMany({
+                where,
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                    phoneVerified: true,
+                    isVIP: true,
+                    isBlocked: true,
+                    blockedReason: true,
+                    blockedAt: true,
+                    createdAt: true,
+                    // Removed: orders, addresses aggregation
+                    // These should be fetched separately when viewing customer details
                 },
-                addresses: {
-                    select: {
-                        id: true,
-                    },
-                },
-            },
-            orderBy: {
-                createdAt: 'desc',
-            },
+                orderBy: [
+                    { createdAt: 'desc' },
+                    { id: 'desc' }
+                ],
+                ...(cursor ? {
+                    cursor: { id: cursor },
+                    skip: 1
+                } : {}),
+                take: limit + 1
+            }),
+            { cursor, limit, search, vipOnly, blockedOnly }
+        );
+
+        // Check for next page
+        const hasNextPage = customers.length > limit;
+        const items = hasNextPage ? customers.slice(0, limit) : customers;
+        const nextCursor = hasNextPage ? items[items.length - 1].id : null;
+
+        return NextResponse.json({
+            items,
+            nextCursor,
+            hasNextPage
         });
-
-        // Calculate statistics and filter by minOrders and minSpent
-        const customersWithStats = customers
-            .map((customer) => {
-                const orderCount = customer.orders.length;
-                const totalSpent = customer.orders.reduce(
-                    (sum, order) => sum + Number(order.total),
-                    0
-                );
-                const lastOrder = customer.orders[0]?.createdAt || null;
-
-                return {
-                    id: customer.id,
-                    name: customer.name,
-                    email: customer.email,
-                    phone: customer.phone,
-                    phoneVerified: customer.phoneVerified,
-                    isVIP: customer.isVIP,
-                    isBlocked: customer.isBlocked,
-                    blockedReason: customer.blockedReason,
-                    blockedAt: customer.blockedAt,
-                    createdAt: customer.createdAt,
-                    orderCount,
-                    totalSpent,
-                    lastOrder,
-                    addressCount: customer.addresses.length,
-                };
-            })
-            .filter(
-                (customer) =>
-                    customer.orderCount >= minOrders && customer.totalSpent >= minSpent
-            );
-
-        return NextResponse.json(customersWithStats);
     } catch (error) {
-        logAdminFetch('CUSTOMERS_GET', error);
+        console.error('[ERROR] /api/admin/customers - Failed to fetch customers:', error);
         return NextResponse.json(
             { error: 'Failed to fetch customers' },
             { status: 500 }

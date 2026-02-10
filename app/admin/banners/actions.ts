@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { auth } from "@/auth";
 
 
@@ -37,11 +37,10 @@ export async function getBanners(bannerType?: "HERO" | "MID_PAGE" | "BOTTOM_PAGE
 
 // PERFORMANCE: Cache wrapper to deduplicate requests across renders
 // Reduces DB calls from 2,710 → ~50 per deployment
-// PERFORMANCE: Optimized query for hero banners
-// Removed unstable_cache in favor of page-level ISR
-// added explicit select to reduce payload size
-export async function getActiveBanners() {
-    try {
+// PERFORMANCE: Cached query for hero banners with 60s revalidation
+// Reduces DB calls from hundreds per minute to ~1 per minute
+export const getActiveBanners = unstable_cache(
+    async () => {
         const banners = await prisma.heroBanner.findMany({
             where: {
                 isActive: true,
@@ -59,11 +58,13 @@ export async function getActiveBanners() {
             }
         });
         return banners;
-    } catch (error) {
-        console.error("Failed to fetch active hero banners:", error);
-        return [];
+    },
+    ['active-hero-banners'],
+    {
+        revalidate: 60, // Cache for 60 seconds
+        tags: ['hero-banners']
     }
-}
+);
 
 // Get active MID_PAGE banners only
 export async function getActiveMidPageBanners() {

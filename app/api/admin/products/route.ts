@@ -2,10 +2,18 @@ import { NextResponse, NextRequest } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { requireAdmin, unauthorizedResponse } from "@/lib/auth-utils";
-import { safePage, safePageSize } from "@/lib/api-utils";
-import { logAdminFetch } from "@/lib/logger";
+import { validateCursor, validateLimit } from "@/lib/api-utils";
+import { withQueryLogging } from "@/lib/query-logger";
 
-// GET /api/admin/products - Get all products for inventory management
+/**
+ * GET /api/admin/products - Cursor-based paginated product list
+ * 
+ * Query params:
+ * - cursor: Product ID to start from (optional)
+ * - limit: Number of items per page (default: 20, max: 100)
+ * - status: Filter by product status
+ * - search: Search by name or SKU
+ */
 export async function GET(req: NextRequest) {
     try {
         // Admin authentication check
@@ -16,10 +24,9 @@ export async function GET(req: NextRequest) {
 
         const { searchParams } = new URL(req.url);
 
-        // Pagination
-        const page = safePage(searchParams.get("page"));
-        const limit = safePageSize(searchParams.get("limit"), 100);
-        const skip = (page - 1) * limit;
+        // Cursor-based pagination
+        const cursor = validateCursor(searchParams.get("cursor"));
+        const limit = validateLimit(searchParams.get("limit"), 20, 100);
 
         // Filters
         const status = searchParams.get("status");
@@ -38,9 +45,11 @@ export async function GET(req: NextRequest) {
             ];
         }
 
-        // Fetch products with pagination
-        const [products, total] = await Promise.all([
-            prisma.product.findMany({
+        // Fetch products with cursor pagination
+        const products = await withQueryLogging(
+            '/api/admin/products',
+            'findMany',
+            () => prisma.product.findMany({
                 where,
                 select: {
                     id: true,
@@ -50,39 +59,44 @@ export async function GET(req: NextRequest) {
                     lowStockThreshold: true,
                     price: true,
                     status: true,
+                    createdAt: true,
                     category: {
                         select: {
                             name: true,
                         },
                     },
                 },
-                orderBy: {
-                    createdAt: "desc",
-                },
-                skip,
-                take: limit,
+                orderBy: [
+                    { createdAt: "desc" },
+                    { id: "desc" }  // Tiebreaker for stable sorting
+                ],
+                ...(cursor ? {
+                    cursor: { id: cursor },
+                    skip: 1  // Skip the cursor item itself
+                } : {}),
+                take: limit + 1  // Fetch +1 to check if there's a next page
             }),
-            prisma.product.count({ where }),
-        ]);
+            { cursor, limit, status, search }
+        );
+
+        // Check if there are more results
+        const hasNextPage = products.length > limit;
+        const items = hasNextPage ? products.slice(0, limit) : products;
+        const nextCursor = hasNextPage ? items[items.length - 1].id : null;
 
         // Convert Decimal to number for JSON serialization
-        const productsWithNumbers = products.map(product => ({
+        const productsWithNumbers = items.map(product => ({
             ...product,
             price: Number(product.price),
         }));
 
         return NextResponse.json({
-            products: productsWithNumbers,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
-                hasMore: page * limit < total,
-            }
+            items: productsWithNumbers,
+            nextCursor,
+            hasNextPage
         });
     } catch (error) {
-        logAdminFetch("PRODUCTS_GET", error);
+        console.error('[ERROR] /api/admin/products - Failed to fetch products:', error);
         return NextResponse.json(
             { error: "Internal Server Error" },
             { status: 500 }

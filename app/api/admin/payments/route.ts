@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { requireAdmin, unauthorizedResponse } from "@/lib/auth-utils";
-import { safePage, safePageSize } from "@/lib/api-utils";
-import { logAdminFetch } from "@/lib/logger";
+import { validateCursor, validateLimit } from "@/lib/api-utils";
+import { withQueryLogging } from "@/lib/query-logger";
 
 /**
- * GET /api/admin/payments
- * List all payments with filters
+ * GET /api/admin/payments - Cursor-based paginated payments list
+ * 
+ * Query params:
+ * - cursor: Payment ID to start from (optional)
+ * - limit: Number of items per page (default: 20, max: 100)
+ * - status: Filter by payment status
+ * - method: Filter by payment method
+ * - search: Search by order ID or gateway IDs
+ * - startDate, endDate: Date range filter
  */
 export async function GET(request: NextRequest) {
     try {
@@ -17,15 +24,17 @@ export async function GET(request: NextRequest) {
         }
 
         const { searchParams } = new URL(request.url);
-        const page = safePage(searchParams.get("page"));
-        const limit = safePageSize(searchParams.get("limit"));
+
+        // Cursor-based pagination
+        const cursor = validateCursor(searchParams.get("cursor"));
+        const limit = validateLimit(searchParams.get("limit"), 20, 100);
+
+        // Filters
         const status = searchParams.get("status") || "all";
         const method = searchParams.get("method") || "all";
         const search = searchParams.get("search") || "";
         const startDate = searchParams.get("startDate");
         const endDate = searchParams.get("endDate");
-
-        const skip = (page - 1) * limit;
 
         // Build where clause
         const where: any = {};
@@ -52,11 +61,21 @@ export async function GET(request: NextRequest) {
             if (endDate) where.createdAt.lte = new Date(endDate);
         }
 
-        // Fetch payments
-        const [payments, total] = await Promise.all([
-            prisma.payment.findMany({
+        // Fetch payments with cursor pagination
+        const payments = await withQueryLogging(
+            '/api/admin/payments',
+            'findMany',
+            () => prisma.payment.findMany({
                 where,
-                include: {
+                select: {
+                    id: true,
+                    orderId: true,
+                    amount: true,
+                    status: true,
+                    method: true,
+                    gatewayPaymentId: true,
+                    gatewayOrderId: true,
+                    createdAt: true,
                     order: {
                         select: {
                             id: true,
@@ -73,55 +92,31 @@ export async function GET(request: NextRequest) {
                         },
                     },
                 },
-                orderBy: { createdAt: "desc" },
-                skip,
-                take: limit,
+                orderBy: [
+                    { createdAt: "desc" },
+                    { id: "desc" }
+                ],
+                ...(cursor ? {
+                    cursor: { id: cursor },
+                    skip: 1
+                } : {}),
+                take: limit + 1
             }),
-            prisma.payment.count({ where }),
-        ]);
+            { cursor, limit, status, method, search }
+        );
 
-        // Calculate statistics
-        const stats = await prisma.payment.groupBy({
-            by: ["method"],
-            _sum: {
-                amount: true,
-            },
-            _count: true,
-        });
-
-        const methodBreakdown = stats.reduce((acc, stat) => {
-            acc[stat.method] = {
-                count: stat._count,
-                total: Number(stat._sum.amount) || 0,
-            };
-            return acc;
-        }, {} as Record<string, { count: number; total: number }>);
-
-        // Calculate COD vs Online split
-        const codTotal = methodBreakdown.COD?.total || 0;
-        const onlineTotal = Object.entries(methodBreakdown)
-            .filter(([method]) => method !== "COD")
-            .reduce((sum, [, data]) => sum + Number(data.total), 0);
+        // Check for next page
+        const hasNextPage = payments.length > limit;
+        const items = hasNextPage ? payments.slice(0, limit) : payments;
+        const nextCursor = hasNextPage ? items[items.length - 1].id : null;
 
         return NextResponse.json({
-            payments,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
-            },
-            stats: {
-                methodBreakdown,
-                codTotal,
-                onlineTotal,
-                codPercentage: codTotal && onlineTotal
-                    ? ((codTotal / (codTotal + onlineTotal)) * 100).toFixed(2)
-                    : 0,
-            },
+            items,
+            nextCursor,
+            hasNextPage
         });
     } catch (error: any) {
-        logAdminFetch("PAYMENTS_GET", error);
+        console.error('[ERROR] /api/admin/payments - Failed to fetch payments:', error);
         return NextResponse.json(
             { error: error.message || "Failed to fetch payments" },
             { status: 500 }

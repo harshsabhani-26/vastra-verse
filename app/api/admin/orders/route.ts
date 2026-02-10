@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { auth } from '@/auth';
+import { validateCursor, validateLimit } from '@/lib/api-utils';
+import { withQueryLogging } from '@/lib/query-logger';
 
 /**
  * ADMIN ORDERS API - Get all orders with pagination
@@ -19,15 +21,29 @@ export async function GET(request: NextRequest) {
         }
 
         const searchParams = request.nextUrl.searchParams;
-        const cursor = searchParams.get('cursor');
+
+        // Use safe validation helpers
+        const cursor = validateCursor(searchParams.get('cursor'));
+        const limit = validateLimit(searchParams.get('limit'), 20, 50); // specific max 50 for orders
+
         const status = searchParams.get('status');
         const startDate = searchParams.get('startDate');
         const endDate = searchParams.get('endDate');
 
         const where: any = {
-            // CRITICAL: Only show PAID orders by default
-            // This prevents showing orphaned PENDING orders from old flow
-            paymentStatus: "PAID"
+            // CRITICAL: Strict Visibility Rules
+            // 1. Show all PAID orders (Prepaid success)
+            // 2. Show PENDING orders ONLY if they are COD
+            // 3. Hide PENDING orders if they are Prepaid (failed/abandoned)
+            OR: [
+                { paymentStatus: "PAID" },
+                {
+                    AND: [
+                        { paymentStatus: "PENDING" },
+                        { paymentMethod: "COD" }
+                    ]
+                }
+            ]
         };
 
         // Allow filtering by order status (PENDING, CONFIRMED, SHIPPED, etc.)
@@ -48,48 +64,54 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        const pageSize = 50;
+        const pageSize = limit;
 
-        const orders = await prisma.order.findMany({
-            where,
-            take: pageSize + 1,
-            ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-            orderBy: { createdAt: 'desc' },
-            select: {
-                id: true,
-                createdAt: true,
-                total: true,
-                status: true,
-                paymentStatus: true,
-                paymentMethod: true,
-                customerName: true,
-                customerPhone: true,
-                shippingAddress: true,
-                items: {
-                    select: {
-                        quantity: true,
-                        product: {
-                            select: {
-                                name: true,
+        const orders = await withQueryLogging(
+            '/api/admin/orders',
+            'findMany',
+            () => prisma.order.findMany({
+                where,
+                take: pageSize + 1,
+                ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    id: true,
+                    createdAt: true,
+                    total: true,
+                    status: true,
+                    paymentStatus: true,
+                    paymentMethod: true,
+                    customerName: true,
+                    customerPhone: true,
+                    shippingAddress: true,
+                    items: {
+                        select: {
+                            quantity: true,
+                            product: {
+                                select: {
+                                    name: true,
+                                }
                             }
                         }
-                    }
-                },
-                user: {
-                    select: {
-                        name: true,
-                        email: true,
+                    },
+                    user: {
+                        select: {
+                            name: true,
+                            email: true,
+                        }
                     }
                 }
-            }
-        });
+            }),
+            { cursor, limit, status, startDate, endDate }
+        );
 
         const hasNextPage = orders.length > pageSize;
         const ordersToReturn = hasNextPage ? orders.slice(0, -1) : orders;
         const nextCursor = hasNextPage ? ordersToReturn[ordersToReturn.length - 1].id : null;
 
         return NextResponse.json({
-            orders: ordersToReturn,
+            items: ordersToReturn, // Standardized to "items"
+            orders: ordersToReturn, // Backward compatibility
             nextCursor,
             hasNextPage
         });
