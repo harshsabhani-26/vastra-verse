@@ -15,7 +15,6 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
       },
-      // Domain removed
       {
         protocol: 'https',
         hostname: '*.supabase.co',
@@ -80,7 +79,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://api.razorpay.com https://control.msg91.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.unsplash.com https://*.razorpay.com https://*.supabase.co; connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://control.msg91.com https://api.msg91.com https://*.supabase.co; frame-src 'self' https://api.razorpay.com https://control.msg91.com; object-src 'none'; base-uri 'self'; form-action 'self';"
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://api.razorpay.com https://control.msg91.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.unsplash.com https://*.razorpay.com https://*.supabase.co https://res.cloudinary.com; connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://control.msg91.com https://api.msg91.com https://*.supabase.co; frame-src 'self' https://api.razorpay.com https://control.msg91.com; object-src 'none'; base-uri 'self'; form-action 'self';"
           },
         ],
       },
