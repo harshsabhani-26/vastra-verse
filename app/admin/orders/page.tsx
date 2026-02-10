@@ -11,27 +11,30 @@ interface OrdersPageProps {
 
 export default function AdminOrdersPage() {
     const [orders, setOrders] = useState<any[]>([]);
-    const [pagination, setPagination] = useState({
-        page: 1,
-        limit: 20,
-        total: 0,
-        totalPages: 0,
-        hasMore: false
-    });
+    const [loading, setLoading] = useState(true);
+
+    // Pagination State
+    const [pageIndex, setPageIndex] = useState(0);
+    const [pageCursors, setPageCursors] = useState<(string | null)[]>([null]); // Index 0 is always null (first page)
+    const [totalOrders, setTotalOrders] = useState(0);
+    const [hasNextPage, setHasNextPage] = useState(false);
+
     const [filters, setFilters] = useState({
         status: "all",
         dateRange: "30" // last 30 days by default
     });
-    const [loading, setLoading] = useState(true);
 
     const fetchOrders = async () => {
         setLoading(true);
         try {
+            const currentCursor = pageCursors[pageIndex];
             const params = new URLSearchParams({
-                page: pagination.page.toString(),
-                limit: pagination.limit.toString(),
                 status: filters.status,
             });
+
+            if (currentCursor) {
+                params.append("cursor", currentCursor);
+            }
 
             // Add date range
             if (filters.dateRange !== "all") {
@@ -46,7 +49,23 @@ export default function AdminOrdersPage() {
 
             if (response.ok) {
                 setOrders(data.orders);
-                setPagination(data.pagination);
+                setTotalOrders(data.total);
+                setHasNextPage(data.hasNextPage);
+
+                // If there's a next page, store its cursor at the next index
+                if (data.nextCursor) {
+                    setPageCursors(prev => {
+                        const newCursors = [...prev];
+                        // Ensure we don't have stale cursors if we went back and forth (though with simple Next/Prev it's linear)
+                        // But strictly, we just need to ensure index+1 exists.
+                        if (newCursors.length <= pageIndex + 1) {
+                            newCursors.push(data.nextCursor);
+                        } else {
+                            newCursors[pageIndex + 1] = data.nextCursor;
+                        }
+                        return newCursors;
+                    });
+                }
             } else {
                 console.error("Failed to fetch orders:", data.error);
             }
@@ -59,21 +78,34 @@ export default function AdminOrdersPage() {
 
     useEffect(() => {
         fetchOrders();
-    }, [pagination.page, filters.status, filters.dateRange]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pageIndex, filters.status, filters.dateRange]);
 
-    const handlePageChange = (newPage: number) => {
-        setPagination(prev => ({ ...prev, page: newPage }));
+    const handleNextPage = () => {
+        if (hasNextPage) {
+            setPageIndex(prev => prev + 1);
+        }
+    };
+
+    const handlePrevPage = () => {
+        if (pageIndex > 0) {
+            setPageIndex(prev => prev - 1);
+        }
     };
 
     const handleStatusChange = (status: string) => {
         setFilters(prev => ({ ...prev, status }));
-        setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page
+        setPageIndex(0);
+        setPageCursors([null]);
     };
 
     const handleDateRangeChange = (range: string) => {
         setFilters(prev => ({ ...prev, dateRange: range }));
-        setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page
+        setPageIndex(0);
+        setPageCursors([null]);
     };
+
+    const totalPages = Math.ceil(totalOrders / 20); // 20 is PAGE_SIZE in API
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -136,7 +168,7 @@ export default function AdminOrdersPage() {
                                 "Loading..."
                             ) : (
                                 <>
-                                    Showing {orders.length} of {pagination.total} orders
+                                    Showing {orders.length} of {totalOrders} orders
                                 </>
                             )}
                         </div>
@@ -151,25 +183,25 @@ export default function AdminOrdersPage() {
             />
 
             {/* Pagination */}
-            {pagination.totalPages > 1 && (
+            {totalOrders > 20 && (
                 <div className="flex items-center justify-between bg-white p-4 rounded-lg border border-stone-200">
                     <p className="text-sm text-stone-600">
-                        Page {pagination.page} of {pagination.totalPages}
+                        Page {pageIndex + 1} of {Math.max(1, totalPages)}
                     </p>
                     <div className="flex gap-2">
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handlePageChange(pagination.page - 1)}
-                            disabled={pagination.page === 1 || loading}
+                            onClick={handlePrevPage}
+                            disabled={pageIndex === 0 || loading}
                         >
                             Previous
                         </Button>
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handlePageChange(pagination.page + 1)}
-                            disabled={!pagination.hasMore || loading}
+                            onClick={handleNextPage}
+                            disabled={!hasNextPage || loading}
                         >
                             Next
                         </Button>
