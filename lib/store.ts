@@ -29,7 +29,7 @@ interface CartStore {
     removeItem: (id: string) => Promise<void>;
     updateQuantity: (id: string, quantity: number) => Promise<void>;
     updateItemPrice: (id: string, price: number) => void;
-    clearCart: () => void;
+    clearCart: () => Promise<void>;
     removeInvalidItems: (validIds: Set<string>) => void;
     setCoupon: (coupon: AppliedCoupon) => void;
     removeCoupon: () => void;
@@ -135,7 +135,15 @@ export const useCartStore = create<CartStore>()(
                     ),
                 })),
 
-            clearCart: () => set({ items: [], appliedCoupon: null }),
+            clearCart: async () => {
+                set({ items: [], appliedCoupon: null });
+                // Also clear server-side cart to prevent rehydration after refresh
+                try {
+                    await clearServerCart();
+                } catch (e) {
+                    // Server clear is best-effort; local state is already cleared
+                }
+            },
 
             removeInvalidItems: (validIds) =>
                 set((state) => ({

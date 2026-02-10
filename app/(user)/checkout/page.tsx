@@ -2,6 +2,7 @@
 
 
 import { createOrder } from "@/app/actions/checkout";
+import { useCartStore } from "@/lib/store";
 import { applyCoupon, getAutoApplyCoupons } from "@/app/admin/coupons/actions";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -138,12 +139,16 @@ export default function CheckoutPage() {
                 }
 
                 // Place Order Logic
+                // Generate a unique session ID for idempotency
+                const checkoutSessionId = crypto.randomUUID();
+
                 const payload = new FormData();
                 Object.entries(formData).forEach(([key, value]) => payload.append(key, value));
                 payload.append("cartItems", JSON.stringify(cartItems));
                 payload.append("subtotal", subtotal.toString());
                 payload.append("shippingCharges", shippingCharges.toString());
                 payload.append("payment", paymentMethod);
+                payload.append("checkoutSessionId", checkoutSessionId);
 
                 // Include discount and coupon if applied
                 const discount = appliedCoupon?.discount || 0;
@@ -172,9 +177,11 @@ export default function CheckoutPage() {
                                     currency: "INR",
                                     receipt: `temp_${Date.now()}`,
                                     notes: {
-                                        // Store minimal data in Razorpay notes
                                         userId: result.orderData.userId,
-                                    }
+                                        checkoutSessionId,
+                                    },
+                                    orderData: result.orderData,
+                                    checkoutSessionId,
                                 }),
                             });
 
@@ -203,12 +210,16 @@ export default function CheckoutPage() {
                                             razorpay_order_id: response.razorpay_order_id,
                                             razorpay_payment_id: response.razorpay_payment_id,
                                             razorpay_signature: response.razorpay_signature,
-                                            orderData: result.orderData, // Pass order data from createOrder
+                                            orderData: result.orderData,
+                                            checkoutSessionId,
                                         }),
                                     });
 
                                     const verifyData = await verifyRes.json();
                                     if (verifyData.success) {
+                                        // CRITICAL: Clear client-side cart before redirect
+                                        useCartStore.getState().clearCart();
+                                        console.log("[CART_CLEARED]", { orderId: verifyData.orderId, paymentMethod: "Prepaid" });
                                         window.location.href = "/checkout/success";
                                     } else {
                                         toast({ variant: "destructive", title: "Error", description: verifyData.error || "Payment verification failed" });
@@ -244,7 +255,9 @@ export default function CheckoutPage() {
 
                             rzp1.open();
                         } else if (result.isCOD && result.orderId) {
-                            // COD: Order already created, redirect to success
+                            // COD: Order already created, clear cart and redirect to success
+                            useCartStore.getState().clearCart();
+                            console.log("[CART_CLEARED]", { orderId: result.orderId, paymentMethod: "COD" });
                             window.location.href = "/checkout/success";
                         } else {
                             toast({ variant: "destructive", title: "Error", description: "Unexpected response from server" });

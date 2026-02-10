@@ -3,6 +3,47 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { logError, logPaymentEvent } from "@/lib/logger";
 
+/**
+ * In-memory store for order data pending webhook/verify processing.
+ * Key: razorpayOrderId
+ * Value: { orderData, checkoutSessionId, createdAt }
+ * 
+ * Auto-cleaned: entries older than 30 minutes are pruned on each write.
+ * This is safe because:
+ * - Razorpay webhooks arrive within seconds of payment
+ * - Client verify happens immediately after Razorpay callback
+ * - 30 min is generous for edge cases
+ */
+const pendingOrderData = new Map<string, {
+    orderData: any;
+    checkoutSessionId: string;
+    createdAt: number;
+}>();
+
+function cleanupPendingOrders() {
+    const thirtyMinAgo = Date.now() - 30 * 60 * 1000;
+    for (const [key, value] of pendingOrderData) {
+        if (value.createdAt < thirtyMinAgo) {
+            pendingOrderData.delete(key);
+        }
+    }
+}
+
+/**
+ * Retrieve pending order data for a given Razorpay order ID.
+ * Used by the webhook handler to access order details.
+ */
+export function getPendingOrderData(razorpayOrderId: string) {
+    return pendingOrderData.get(razorpayOrderId) || null;
+}
+
+/**
+ * Remove pending order data after it has been consumed.
+ */
+export function removePendingOrderData(razorpayOrderId: string) {
+    pendingOrderData.delete(razorpayOrderId);
+}
+
 export async function POST(req: Request) {
     try {
         const session = await auth();
@@ -15,12 +56,13 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { amount, currency = "INR", receipt, notes } = body;
+        const { amount, currency = "INR", receipt, notes, orderData, checkoutSessionId } = body;
 
         // Detailed Logging
         logPaymentEvent("PAYMENT_INITIATED", receipt || "unknown", {
             amount,
             currency,
+            checkoutSessionId,
             hasKeyId: !!process.env.RAZORPAY_KEY_ID,
             hasKeySecret: !!process.env.RAZORPAY_KEY_SECRET,
         });
@@ -50,11 +92,27 @@ export async function POST(req: Request) {
             amount: Math.round(amount * 100), // convert to paise
             currency,
             receipt,
-            notes,
+            notes: {
+                ...notes,
+                checkoutSessionId: checkoutSessionId || "",
+            },
         };
 
         const order = await razorpay.orders.create(options);
-        logPaymentEvent("PAYMENT_INITIATED", order.id, { status: "order_created" });
+        logPaymentEvent("PAYMENT_INITIATED", order.id, {
+            status: "order_created",
+            checkoutSessionId,
+        });
+
+        // Store order data for webhook fallback retrieval
+        if (orderData) {
+            cleanupPendingOrders();
+            pendingOrderData.set(order.id, {
+                orderData,
+                checkoutSessionId: checkoutSessionId || "",
+                createdAt: Date.now(),
+            });
+        }
 
         return NextResponse.json(order);
     } catch (error: any) {
@@ -65,4 +123,3 @@ export async function POST(req: Request) {
         );
     }
 }
-

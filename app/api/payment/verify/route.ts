@@ -41,7 +41,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderData } = body;
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderData, checkoutSessionId } = body;
 
         if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
             return NextResponse.json({ error: "Missing required payment parameters" }, { status: 400 });
@@ -67,9 +67,11 @@ export async function POST(req: Request) {
         });
 
         if (existingPayment) {
-            if (process.env.NODE_ENV === "development") {
-                console.log("Payment already processed:", razorpay_payment_id);
-            }
+            console.log("[IDEMPOTENCY] Payment already processed", {
+                razorpayPaymentId: razorpay_payment_id,
+                existingOrderId: existingPayment.orderId,
+                checkoutSessionId,
+            });
             // Payment was already verified - return success to avoid errors
             return NextResponse.json({
                 success: true,
@@ -120,7 +122,14 @@ export async function POST(req: Request) {
             razorpayOrderId: razorpay_order_id,
             razorpayPaymentId: razorpay_payment_id,
             razorpaySignature: razorpay_signature,
+            checkoutSessionId: checkoutSessionId || null,
         });
+
+        // Clean up pending order data (consumed by client verify)
+        try {
+            const { removePendingOrderData } = await import("@/app/api/payment/razorpay/route");
+            removePendingOrderData(razorpay_order_id);
+        } catch { /* best-effort cleanup */ }
 
         // After successful order creation, generate invoice
         try {
@@ -175,6 +184,7 @@ export async function POST(req: Request) {
         // CRITICAL: Clear the user's cart after successful purchase
         try {
             await clearCart();
+            console.log("[CART_CLEARED] Server-side", { orderId, paymentMethod: "Prepaid" });
         } catch (cartError) {
             logError("CART_CLEAR_ERROR", cartError);
             // Don't fail the request, just log it

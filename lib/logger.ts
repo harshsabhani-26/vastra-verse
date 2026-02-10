@@ -81,7 +81,7 @@ export function logRateLimitViolation(
  * Log payment-related events (be careful not to log sensitive data)
  */
 export function logPaymentEvent(
-    event: "PAYMENT_INITIATED" | "PAYMENT_SUCCESS" | "PAYMENT_FAILED" | "PAYMENT_VERIFICATION_FAILED",
+    event: "PAYMENT_INITIATED" | "PAYMENT_SUCCESS" | "PAYMENT_FAILED" | "PAYMENT_VERIFICATION_FAILED" | "WEBHOOK_RECEIVED",
     orderId: string,
     metadata?: LogMetadata
 ) {

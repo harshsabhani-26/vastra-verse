@@ -49,6 +49,9 @@ export async function createOrder(formData: FormData) {
     const couponCode = (formData.get("couponCode") as string) || null;
     const couponId = (formData.get("couponId") as string) || null;
 
+    // Extract idempotency key
+    const checkoutSessionId = (formData.get("checkoutSessionId") as string) || null;
+
     let items: any[] = [];
     try {
         items = cartItemsJson ? JSON.parse(cartItemsJson) : [];
@@ -131,6 +134,7 @@ export async function createOrder(formData: FormData) {
         return {
             success: true,
             isPrepaid: true,
+            checkoutSessionId,
             orderData: {
                 userId: session.user.id,
                 items,
@@ -153,6 +157,23 @@ export async function createOrder(formData: FormData) {
     }
 
     // COD: Create Order immediately (existing behavior)
+
+    // IDEMPOTENCY: Check if a COD order was already created for this checkout session
+    if (checkoutSessionId) {
+        const existingTimeline = await prisma.orderTimeline.findFirst({
+            where: {
+                details: { contains: checkoutSessionId },
+                event: "Order Placed",
+                order: { userId: session.user.id! },
+            },
+            select: { orderId: true },
+        });
+        if (existingTimeline) {
+            console.log("[IDEMPOTENCY] Duplicate COD order blocked", { checkoutSessionId, existingOrderId: existingTimeline.orderId });
+            return { success: true, orderId: existingTimeline.orderId, isCOD: true };
+        }
+    }
+
     if (process.env.NODE_ENV === "development") {
         console.log("Creating COD order with:", {
             userId: session.user.id,
@@ -164,6 +185,7 @@ export async function createOrder(formData: FormData) {
             recipientPhone,
             phone,
             state,
+            checkoutSessionId,
         });
     }
 
@@ -224,7 +246,7 @@ export async function createOrder(formData: FormData) {
             data: {
                 orderId: order.id,
                 event: "Order Placed",
-                details: `COD order placed by ${customerName}. Payment on delivery.`,
+                details: `COD order placed by ${customerName}. Payment on delivery. Session: ${checkoutSessionId || "none"}`,
                 createdBy: session.user.id,
             },
         });
@@ -292,9 +314,7 @@ export async function createOrder(formData: FormData) {
     // CRITICAL: Clear cart after successful COD order
     try {
         await clearCart();
-        if (process.env.NODE_ENV === "development") {
-            console.log("Cart cleared for COD order:", orderId);
-        }
+        console.log("[CART_CLEARED] Server-side", { orderId, paymentMethod: "COD" });
     } catch (error) {
         console.error("Failed to clear cart after COD order:", error);
     }
@@ -328,6 +348,7 @@ export async function createOrderAfterPayment(data: {
     razorpayOrderId: string;
     razorpayPaymentId: string;
     razorpaySignature: string;
+    checkoutSessionId?: string | null;
 }) {
     const orderId = await prisma.$transaction(async (tx) => {
         // Final stock validation (in case stock changed during payment)
@@ -411,6 +432,10 @@ export async function createOrderAfterPayment(data: {
                 igst: new Decimal(data.igst),
                 gstRate: new Decimal(data.gstRate),
                 verifiedAt: new Date(),
+                metadata: {
+                    checkoutSessionId: data.checkoutSessionId || null,
+                    source: data.razorpaySignature === "webhook_verified" ? "webhook" : "client_verify",
+                },
             }
         });
 
