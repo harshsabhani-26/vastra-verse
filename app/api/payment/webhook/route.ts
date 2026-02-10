@@ -112,7 +112,7 @@ export async function POST(req: Request) {
         // Try to retrieve pending order data from in-memory store
         let pendingData: { orderData: any; checkoutSessionId: string } | null = null;
         try {
-            const { getPendingOrderData } = await import("@/app/api/payment/razorpay/route");
+            const { getPendingOrderData } = await import("@/lib/payment-store");
             pendingData = getPendingOrderData(razorpayOrderId);
         } catch (e) {
             logError("WEBHOOK_IMPORT", e);

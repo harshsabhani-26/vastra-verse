@@ -127,7 +127,7 @@ export async function POST(req: Request) {
 
         // Clean up pending order data (consumed by client verify)
         try {
-            const { removePendingOrderData } = await import("@/app/api/payment/razorpay/route");
+            const { removePendingOrderData } = await import("@/lib/payment-store");
             removePendingOrderData(razorpay_order_id);
         } catch { /* best-effort cleanup */ }
 

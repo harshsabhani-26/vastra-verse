@@ -2,47 +2,7 @@ import Razorpay from "razorpay";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { logError, logPaymentEvent } from "@/lib/logger";
-
-/**
- * In-memory store for order data pending webhook/verify processing.
- * Key: razorpayOrderId
- * Value: { orderData, checkoutSessionId, createdAt }
- * 
- * Auto-cleaned: entries older than 30 minutes are pruned on each write.
- * This is safe because:
- * - Razorpay webhooks arrive within seconds of payment
- * - Client verify happens immediately after Razorpay callback
- * - 30 min is generous for edge cases
- */
-const pendingOrderData = new Map<string, {
-    orderData: any;
-    checkoutSessionId: string;
-    createdAt: number;
-}>();
-
-function cleanupPendingOrders() {
-    const thirtyMinAgo = Date.now() - 30 * 60 * 1000;
-    for (const [key, value] of pendingOrderData) {
-        if (value.createdAt < thirtyMinAgo) {
-            pendingOrderData.delete(key);
-        }
-    }
-}
-
-/**
- * Retrieve pending order data for a given Razorpay order ID.
- * Used by the webhook handler to access order details.
- */
-export function getPendingOrderData(razorpayOrderId: string) {
-    return pendingOrderData.get(razorpayOrderId) || null;
-}
-
-/**
- * Remove pending order data after it has been consumed.
- */
-export function removePendingOrderData(razorpayOrderId: string) {
-    pendingOrderData.delete(razorpayOrderId);
-}
+import { storePendingOrderData } from "@/lib/payment-store";
 
 export async function POST(req: Request) {
     try {
@@ -106,11 +66,9 @@ export async function POST(req: Request) {
 
         // Store order data for webhook fallback retrieval
         if (orderData) {
-            cleanupPendingOrders();
-            pendingOrderData.set(order.id, {
+            storePendingOrderData(order.id, {
                 orderData,
                 checkoutSessionId: checkoutSessionId || "",
-                createdAt: Date.now(),
             });
         }
 
