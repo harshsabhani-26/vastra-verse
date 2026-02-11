@@ -6,7 +6,7 @@ import { NewArrivals } from "@/components/home/NewArrivals";
 import { BestSellers } from "@/components/home/BestSellers";
 import { MidPageBanner } from "@/components/home/MidPageBanner";
 import { getCategories } from "@/app/actions/category";
-import { getActiveBanners, getActiveMidPageBanners, getActiveBottomPageBanners } from "@/app/admin/banners/actions";
+import { getActiveHeroBanners, getActiveMidPageBanners, getActiveBottomPageBanners } from "@/lib/data/banners";
 
 // Cache this page and revalidate every 5 minutes
 export const revalidate = 300;
@@ -14,7 +14,7 @@ export const revalidate = 300;
 export default async function Home() {
     const [categories, heroBanners, midPageBanners, bottomPageBanners] = await Promise.all([
         getCategories(),
-        getActiveBanners(),
+        getActiveHeroBanners(),
         getActiveMidPageBanners(),
         getActiveBottomPageBanners()
     ]);

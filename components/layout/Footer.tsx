@@ -15,30 +15,8 @@ export function Footer({ categories = [] }: FooterProps) {
             {/* Main Footer Section */}
             <div className="container mx-auto px-4 md:px-12 max-w-[1400px]">
                 {/* Links Section */}
-                <div className="pb-16 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 md:gap-8 lg:gap-12">
-                    {/* Column 1: Shop */}
-                    <div>
-                        <h4 className="text-sm font-serif font-bold uppercase tracking-[0.15em] text-primary mb-8">
-                            Shop
-                        </h4>
-                        <ul className="space-y-4 text-sm text-text-muted hover:text-primary transition-colors duration-300 font-sans">
-                            {categories.slice(0, 4).map((category) => (
-                                <li key={category.id}>
-                                    <Link
-                                        href={`/shop?category=${encodeURIComponent(category.name)}`}
-                                        className="hover:text-secondary transition-colors duration-300"
-                                    >
-                                        {category.name}
-                                    </Link>
-                                </li>
-                            ))}
-                            <li>
-                                <Link href="/shop" className="hover:text-secondary transition-colors duration-300 font-medium">
-                                    View All
-                                </Link>
-                            </li>
-                        </ul>
-                    </div>
+                <div className="pb-16 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 lg:gap-12">
+
 
                     {/* Column 2: Customer Care */}
                     <div>
@@ -69,34 +47,7 @@ export function Footer({ categories = [] }: FooterProps) {
                         </ul>
                     </div>
 
-                    {/* Column 3: My Account */}
-                    <div>
-                        <h4 className="text-sm font-serif font-bold uppercase tracking-[0.15em] text-primary mb-8">
-                            My Account
-                        </h4>
-                        <ul className="space-y-4 text-sm text-text-muted font-sans">
-                            <li>
-                                <Link href="/profile" className="hover:text-secondary transition-colors duration-300">
-                                    Profile
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="/orders" className="hover:text-secondary transition-colors duration-300">
-                                    Orders
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="/wishlist" className="hover:text-secondary transition-colors duration-300">
-                                    Wishlist
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="/cart" className="hover:text-secondary transition-colors duration-300">
-                                    Cart
-                                </Link>
-                            </li>
-                        </ul>
-                    </div>
+
 
                     {/* Column 4: About Us */}
                     <div>
