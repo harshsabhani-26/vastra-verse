@@ -443,14 +443,14 @@ export default function RefundsPage() {
 
             {/* Action Dialog */}
             <Dialog open={!!selectedRefund} onOpenChange={() => closeDialog()}>
-                <DialogContent>
+                <DialogContent aria-describedby="refund-action-description">
                     <DialogHeader>
                         <DialogTitle>
                             {actionType === "approve" && "Approve Refund"}
                             {actionType === "process" && "Process Refund"}
                             {actionType === "reject" && "Reject Refund"}
                         </DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription id="refund-action-description">
                             {actionType === "approve" &&
                                 "Approving this refund will allow it to be processed."}
                             {actionType === "process" &&

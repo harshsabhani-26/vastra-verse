@@ -17,6 +17,9 @@ const judson = Judson({
 export const metadata: Metadata = {
     title: "Vastra Verse | Premium Indian Sarees",
     description: "Experience the elegance of traditional Indian heritage with our curated collection of premium sarees.",
+    icons: {
+        icon: "/favicon.ico",
+    },
 };
 
 export const viewport = {

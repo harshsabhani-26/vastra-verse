@@ -490,9 +490,12 @@ M & H Team`;
 
             {/* Cancel Order Dialog */}
             <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-                <DialogContent>
+                <DialogContent aria-describedby="cancel-order-description">
                     <DialogHeader>
                         <DialogTitle>Cancel Order</DialogTitle>
+                        <p id="cancel-order-description" className="sr-only">
+                            Cancel order {order.id} and restore stock
+                        </p>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div>

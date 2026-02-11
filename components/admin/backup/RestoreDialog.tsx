@@ -80,13 +80,13 @@ export function RestoreDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg" aria-describedby="restore-backup-description">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <AlertTriangle className="w-5 h-5 text-destructive" />
                         Restore Database Backup
                     </DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription id="restore-backup-description">
                         This action will replace ALL current data with the backup data.
                         This cannot be undone!
                     </DialogDescription>

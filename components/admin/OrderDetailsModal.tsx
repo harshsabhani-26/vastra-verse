@@ -57,9 +57,12 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
 
     return (
         <Dialog open={true} onOpenChange={onClose}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" aria-describedby="order-details-description">
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-serif">Order Details</DialogTitle>
+                    <p id="order-details-description" className="sr-only">
+                        View detailed information about order {order.id}
+                    </p>
                 </DialogHeader>
 
                 <div className="space-y-6">
