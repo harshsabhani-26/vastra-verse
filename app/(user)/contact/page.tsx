@@ -71,15 +71,15 @@ export default function ContactPage() {
                         <div className="prose prose-stone max-w-none text-primary">
                             <p className="leading-relaxed">
                                 If you have any queries related to our products or your order, kindly call or WhatsApp us on:{" "}
-                                <span className="font-medium">+91 97257 14184</span> (Monday to Saturday – 9:30 am to 6:00 pm IST),
+                                <span className="font-medium">+91 81549 49599</span> (Monday to Saturday – 9:30 am to 6:00 pm IST),
                                 or email us at:{" "}
-                                <a href="mailto:yogitextile43@gmail.com" className="underline hover:text-[#AA8C2C]">yogitextile43@gmail.com</a>
+                                <a href="mailto:harshsabhani18@gmail.com" className="underline hover:text-[#AA8C2C]">harshsabhani18@gmail.com</a>
                             </p>
 
                             <p className="text-sm text-stone-500 italic mt-4">
                                 (Kindly refrain from sending job or internship enquiring emails on this ID as they will not be processed further.
                                 If you'd like to be a collaborator and innovator with us, please send in your resume and portfolio here:{" "}
-                                <a href="mailto:yogitextile43@gmail.com" className="not-italic hover:text-[#AA8C2C] underline">yogitextile43@gmail.com</a>
+                                <a href="mailto:harshsabhani18@gmail.com" className="not-italic hover:text-[#AA8C2C] underline">harshsabhani18@gmail.com</a>
                                 and we will reach out to you.)
                             </p>
                         </div>
@@ -87,15 +87,15 @@ export default function ContactPage() {
                         <div className="prose prose-stone max-w-none text-primary">
                             <p>
                                 For any PR or media-related queries, write to us at:{" "}
-                                <a href="mailto:yogitextile43@gmail.com" className="underline hover:text-[#AA8C2C]">yogitextile43@gmail.com</a>
+                                <a href="mailto:harshsabhani18@gmail.com" className="underline hover:text-[#AA8C2C]">harshsabhani18@gmail.com</a>
                             </p>
                         </div>
 
                         <div className="space-y-6">
                             <div>
                                 <p className="text-xs font-bold tracking-widest text-primary mb-1">GENERAL QUERIES</p>
-                                <p className="text-sm text-stone-600 mb-1">+91 9725714184</p>
-                                <a href="mailto:yogitextile43@gmail.com" className="text-sm text-stone-600 hover:text-primary underline">yogitextile43@gmail.com</a>
+                                <p className="text-sm text-stone-600 mb-1">+91 8154949599</p>
+                                <a href="mailto:harshsabhani18@gmail.com" className="text-sm text-stone-600 hover:text-primary underline">harshsabhani18@gmail.com</a>
                             </div>
                         </div>
 

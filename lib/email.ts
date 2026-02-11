@@ -157,7 +157,7 @@ export const sendInvoiceEmail = async (
                                                     </td>
                                                     <td width="50%" valign="top">
                                                         <h4 style="margin: 0 0 10px 0; color: #333;">Any Questions?</h4>
-                                                        <a href="mailto:yogitextile43@gmail.com" style="color: ${brandColor}; text-decoration: none; font-size: 13px;">Contact Customer Care</a>
+                                                        <a href="mailto:harshsabhani18@gmail.com" style="color: ${brandColor}; text-decoration: none; font-size: 13px;">Contact Customer Care</a>
                                                     </td>
                                                 </tr>
                                             </table>

@@ -105,7 +105,7 @@ export function Footer({ categories = [] }: FooterProps) {
                         <ul className="space-y-4 text-sm text-text-muted font-sans">
                             <li>
                                 <a
-                                    href="https://mail.google.com/mail/?view=cm&fs=1&to=yogitextile43@gmail.com"
+                                    href="https://mail.google.com/mail/?view=cm&fs=1&to=harshsabhani18@gmail.com"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="hover:text-secondary transition-colors duration-300"
@@ -115,7 +115,7 @@ export function Footer({ categories = [] }: FooterProps) {
                             </li>
                             <li>
                                 <a
-                                    href="https://wa.me/919725714184"
+                                    href="https://wa.me/918154949599"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="hover:text-secondary transition-colors duration-300"
@@ -125,10 +125,10 @@ export function Footer({ categories = [] }: FooterProps) {
                             </li>
                             <li>
                                 <a
-                                    href="tel:+919725714184"
+                                    href="tel:+918154949599"
                                     className="hover:text-secondary transition-colors duration-300"
                                 >
-                                    +91 97257 14184
+                                    +91 81549 49599
                                 </a>
                             </li>
                         </ul>

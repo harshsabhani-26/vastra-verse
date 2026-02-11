@@ -5,11 +5,11 @@ const prisma = new PrismaClient()
 async function checkAdmin() {
     try {
         const user = await prisma.user.findUnique({
-            where: { email: 'yogitextile43@gmail.com' }
+            where: { email: 'harshsabhani18@gmail.com' }
         });
 
         if (!user) {
-            console.log('❌ User not found: yogitextile43@gmail.com');
+            console.log('❌ User not found: harshsabhani18@gmail.com');
             return;
         }
 

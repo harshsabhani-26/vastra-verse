@@ -8,7 +8,7 @@ import { toast } from "react-hot-toast";
 export default function AppointmentPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
-        storeLocation: "New Delhi - Flagship Store",
+        storeLocation: "Vastra Verse Surat",
         preferredTime: "Morning (10AM - 1PM)",
         appointmentDate: "",
         customerName: "",
@@ -73,7 +73,7 @@ export default function AppointmentPage() {
                 );
                 // Reset form
                 setFormData({
-                    storeLocation: "New Delhi - Flagship Store",
+                    storeLocation: "Vastra Verse Surat",
                     preferredTime: "Morning (10AM - 1PM)",
                     appointmentDate: "",
                     customerName: "",
@@ -124,8 +124,7 @@ export default function AppointmentPage() {
                                 required
                                 className="w-full h-10 px-3 border border-stone-300 bg-white text-sm focus:outline-none focus:border-primary"
                             >
-                                <option>New Delhi - Flagship Store</option>
-                                <option>Mumbai - Juhu</option>
+                                <option>Vastra Verse Surat</option>
                                 <option>Virtual Appointment</option>
                             </select>
                         </div>

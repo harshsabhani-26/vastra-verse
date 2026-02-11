@@ -11,7 +11,7 @@ const STORES = [
         name: "Vastra Verse Surat",
         address: "27-28 A Sk-2 Industrial, Sosyo Circle, Udhna Surat, Gandhi kutir, Surat, Gujrat, India",
         timing: "11am to 7:30pm",
-        phone: "+91 9725714184",
+        phone: "+91 81549 49599",
     }
 ];
 

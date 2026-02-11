@@ -14,7 +14,7 @@ export default function CorporatePage() {
 
                     <p><strong>Contact:</strong><br />
                         Email: care@vastraverse.com<br />
-                        Phone: +91 97257 14184</p>
+                        Phone: +91 81549 49599</p>
                 </div>
             </div>
         </div>

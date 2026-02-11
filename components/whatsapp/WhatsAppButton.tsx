@@ -4,8 +4,8 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 export function WhatsAppButton({ className }: { className?: string }) {
-    // Phone number from footer: +91 97257 14184
-    const phoneNumber = "919725714184";
+    // Phone number from footer: +91 81549 49599
+    const phoneNumber = "918154949599";
     const message = encodeURIComponent("Hello! I would like to know more about M & H products.");
 
     return (
