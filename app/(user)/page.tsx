@@ -5,7 +5,7 @@ import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { NewArrivals } from "@/components/home/NewArrivals";
 import { BestSellers } from "@/components/home/BestSellers";
 import { MidPageBanner } from "@/components/home/MidPageBanner";
-import { getCategories } from "@/app/actions/category";
+import { getCategories } from "@/lib/data/categories";
 import { getActiveHeroBanners, getActiveMidPageBanners, getActiveBottomPageBanners } from "@/lib/data/banners";
 
 // Cache this page and revalidate every 5 minutes

@@ -1,7 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ConditionalNewsletter } from "@/components/layout/ConditionalNewsletter";
-import { getCategories } from "@/app/actions/category";
+import { getCategories } from "@/lib/data/categories";
 
 export default async function MainLayout({
     children,

@@ -1,6 +1,7 @@
 import { ProductCard } from "@/components/product/ProductCard";
 import { FilterBar } from "@/components/shop/FilterBar";
 import prisma from "@/lib/prisma";
+import { getCategories } from "@/lib/data/categories";
 import Link from "next/link";
 import { Prisma } from "@prisma/client";
 
@@ -112,12 +113,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         }
     });
 
-    // Fetch categories for filter
-    const categories = await prisma.category.findMany({
-        where: { isActive: true },
-        orderBy: { displayOrder: 'asc' },
-        select: { id: true, name: true, slug: true }
-    });
+    // Fetch categories for filter (uses React.cache for deduplication)
+    const categories = await getCategories();
 
     // Determine grid columns based on view parameter
     const gridCols = view === '2'

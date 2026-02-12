@@ -190,11 +190,13 @@ export async function createOrder(formData: FormData) {
     }
 
     const orderId = await prisma.$transaction(async (tx) => {
-        // Validate stock availability BEFORE creating order
+        // ATOMIC stock validation + decrement: prevents race conditions
+        // Uses updateMany with stock >= quantity guard — if count === 0, stock was insufficient
         for (const item of items) {
+            // First check product exists and is published
             const product = await tx.product.findUnique({
                 where: { id: item.id },
-                select: { stock: true, name: true, status: true },
+                select: { name: true, status: true },
             });
 
             if (!product) {
@@ -205,9 +207,20 @@ export async function createOrder(formData: FormData) {
                 throw new Error(`Product "${product.name}" is no longer available`);
             }
 
-            if (product.stock < item.quantity) {
+            // Atomic: decrement only if stock >= requested quantity
+            const result = await tx.product.updateMany({
+                where: {
+                    id: item.id,
+                    stock: { gte: item.quantity },
+                },
+                data: {
+                    stock: { decrement: item.quantity },
+                },
+            });
+
+            if (result.count === 0) {
                 throw new Error(
-                    `Insufficient stock for "${product.name}". Available: ${product.stock}, Requested: ${item.quantity}`
+                    `Insufficient stock for "${product.name}". Requested: ${item.quantity}`
                 );
             }
         }
@@ -250,18 +263,6 @@ export async function createOrder(formData: FormData) {
                 createdBy: session.user.id,
             },
         });
-
-        // COD: Reduce stock immediately to prevent overselling
-        for (const item of items) {
-            await tx.product.update({
-                where: { id: item.id },
-                data: {
-                    stock: {
-                        decrement: item.quantity
-                    }
-                }
-            });
-        }
 
         // Add timeline event for stock reduction
         await tx.orderTimeline.create({
@@ -351,11 +352,12 @@ export async function createOrderAfterPayment(data: {
     checkoutSessionId?: string | null;
 }) {
     const orderId = await prisma.$transaction(async (tx) => {
-        // Final stock validation (in case stock changed during payment)
+        // ATOMIC stock validation + decrement: prevents race conditions
         for (const item of data.items) {
+            // First check product exists and is published
             const product = await tx.product.findUnique({
                 where: { id: item.id },
-                select: { stock: true, name: true, status: true },
+                select: { name: true, status: true },
             });
 
             if (!product) {
@@ -366,9 +368,20 @@ export async function createOrderAfterPayment(data: {
                 throw new Error(`Product "${product.name}" is no longer available`);
             }
 
-            if (product.stock < item.quantity) {
+            // Atomic: decrement only if stock >= requested quantity
+            const result = await tx.product.updateMany({
+                where: {
+                    id: item.id,
+                    stock: { gte: item.quantity },
+                },
+                data: {
+                    stock: { decrement: item.quantity },
+                },
+            });
+
+            if (result.count === 0) {
                 throw new Error(
-                    `Insufficient stock for "${product.name}". Available: ${product.stock}, Required: ${item.quantity}`
+                    `Insufficient stock for "${product.name}". Requested: ${item.quantity}`
                 );
             }
         }
@@ -401,18 +414,6 @@ export async function createOrderAfterPayment(data: {
                 },
             },
         });
-
-        // Reduce stock for each item
-        for (const item of data.items) {
-            await tx.product.update({
-                where: { id: item.id },
-                data: {
-                    stock: {
-                        decrement: item.quantity
-                    }
-                }
-            });
-        }
 
         // Create Payment Record
         await tx.payment.create({
