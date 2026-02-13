@@ -43,33 +43,7 @@ export function ProfileForm({ user, msg91Config }: { user: UserData; msg91Config
     // Phone state
     const [currentPhone, setCurrentPhone] = useState(user.phoneVerified ? (user.phone || "") : "");
     const [isEditing, setIsEditing] = useState(false);
-    const [isMsg91Ready, setIsMsg91Ready] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false);
-
-    // Check if MSG91 widget is loaded
-    useEffect(() => {
-        const checkMsg91 = () => {
-            if (typeof window !== 'undefined' && (window as any).initSendOTP) {
-                setIsMsg91Ready(true);
-            }
-        };
-
-        // Check immediately
-        checkMsg91();
-
-        // Also check periodically in case script loads late
-        const interval = setInterval(checkMsg91, 500);
-
-        // Cleanup after 10 seconds (script should load by then)
-        const timeout = setTimeout(() => {
-            clearInterval(interval);
-        }, 10000);
-
-        return () => {
-            clearInterval(interval);
-            clearTimeout(timeout);
-        };
-    }, []);
 
     // Derived state: User is verified only if user.phoneVerified is true AND the input matches the saved phone
     // However, since we now blank the input if unverified, currentPhone will be empty or user typed.
@@ -197,12 +171,7 @@ export function ProfileForm({ user, msg91Config }: { user: UserData; msg91Config
                                     return;
                                 }
 
-                                // Check if MSG91 widget is loaded
-                                if (!isMsg91Ready) {
-                                    toast.error('Verification service is loading. Please wait a moment and try again.');
-                                    console.error('MSG91 widget not yet loaded. initSendOTP is not available on window object.');
-                                    return;
-                                }
+
 
                                 setIsVerifying(true);
 
@@ -265,18 +234,13 @@ export function ProfileForm({ user, msg91Config }: { user: UserData; msg91Config
                                     setIsVerifying(false);
                                 }
                             }}
-                            disabled={!isMsg91Ready || isVerifying}
+                            disabled={isVerifying}
                             className="w-full sm:w-auto h-11 px-8 bg-primary text-white hover:bg-primary-dark uppercase tracking-[0.2em] text-[10px] font-bold shadow-luxury hover:shadow-elevated rounded-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isVerifying ? (
                                 <>
                                     <Loader2 className="w-3 h-3 animate-spin" />
                                     Verifying...
-                                </>
-                            ) : !isMsg91Ready ? (
-                                <>
-                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                    Loading...
                                 </>
                             ) : (
                                 'Verify Now'
