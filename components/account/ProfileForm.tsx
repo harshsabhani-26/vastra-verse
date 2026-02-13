@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { updateProfile } from "@/app/actions/account";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { toast } from "react-hot-toast";
-import { Check, Mail, Phone, User as UserIcon } from "lucide-react";
+import { Check, Mail, Phone, User as UserIcon, Loader2 } from "lucide-react";
 
 interface UserData {
     name: string | null;
@@ -43,6 +43,33 @@ export function ProfileForm({ user, msg91Config }: { user: UserData; msg91Config
     // Phone state
     const [currentPhone, setCurrentPhone] = useState(user.phoneVerified ? (user.phone || "") : "");
     const [isEditing, setIsEditing] = useState(false);
+    const [isMsg91Ready, setIsMsg91Ready] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
+
+    // Check if MSG91 widget is loaded
+    useEffect(() => {
+        const checkMsg91 = () => {
+            if (typeof window !== 'undefined' && (window as any).initSendOTP) {
+                setIsMsg91Ready(true);
+            }
+        };
+
+        // Check immediately
+        checkMsg91();
+
+        // Also check periodically in case script loads late
+        const interval = setInterval(checkMsg91, 500);
+
+        // Cleanup after 10 seconds (script should load by then)
+        const timeout = setTimeout(() => {
+            clearInterval(interval);
+        }, 10000);
+
+        return () => {
+            clearInterval(interval);
+            clearTimeout(timeout);
+        };
+    }, []);
 
     // Derived state: User is verified only if user.phoneVerified is true AND the input matches the saved phone
     // However, since we now blank the input if unverified, currentPhone will be empty or user typed.
@@ -150,7 +177,7 @@ export function ProfileForm({ user, msg91Config }: { user: UserData; msg91Config
                     ) : (
                         <Button
                             type="button"
-                            onClick={() => {
+                            onClick={async () => {
                                 if (!currentPhone || currentPhone.length !== 10) {
                                     toast.error('Please enter a valid 10-digit mobile number');
                                     return;
@@ -158,53 +185,92 @@ export function ProfileForm({ user, msg91Config }: { user: UserData; msg91Config
 
                                 // Check if MSG91 configuration is available
                                 if (!msg91Config.widgetId || !msg91Config.tokenAuth) {
-                                    toast.error('SMS verification is not configured. Please contact support.');
-                                    console.error('MSG91 configuration missing:', { widgetId: !!msg91Config.widgetId, tokenAuth: !!msg91Config.tokenAuth });
+                                    toast.error('Phone verification is not configured. Please contact support at care@vastraverse.com');
+                                    console.error('MSG91 configuration missing:', {
+                                        widgetId: !!msg91Config.widgetId,
+                                        tokenAuth: !!msg91Config.tokenAuth,
+                                        envVars: {
+                                            NEXT_PUBLIC_MSG91_WIDGET_ID: !!process.env.NEXT_PUBLIC_MSG91_WIDGET_ID,
+                                            NEXT_PUBLIC_MSG91_TOKEN_AUTH: !!process.env.NEXT_PUBLIC_MSG91_TOKEN_AUTH
+                                        }
+                                    });
                                     return;
                                 }
 
+                                // Check if MSG91 widget is loaded
+                                if (!isMsg91Ready) {
+                                    toast.error('Verification service is loading. Please wait a moment and try again.');
+                                    console.error('MSG91 widget not yet loaded. initSendOTP is not available on window object.');
+                                    return;
+                                }
+
+                                setIsVerifying(true);
+
                                 // Trigger MSG91 OTP widget
-                                if (typeof window !== 'undefined' && (window as any).initSendOTP) {
+                                try {
                                     (window as any).initSendOTP({
                                         widgetId: msg91Config.widgetId,
                                         tokenAuth: msg91Config.tokenAuth,
                                         mobile: '91' + currentPhone,
                                         identifier: '91' + currentPhone,
                                         success: async (data: any) => {
-                                            // Handle various response formats
-                                            const token = data.token || data.message || (typeof data === 'string' ? data : null);
+                                            try {
+                                                // Handle various response formats
+                                                const token = data.token || data.message || (typeof data === 'string' ? data : null);
 
-                                            if (!token) {
-                                                toast.error('Could not retrieve verification token');
-                                                return;
-                                            }
+                                                if (!token) {
+                                                    toast.error('Could not retrieve verification token');
+                                                    setIsVerifying(false);
+                                                    return;
+                                                }
 
-                                            // Update phoneVerified status
-                                            const res = await fetch('/api/auth/verify-phone', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({ token: token, phone: currentPhone })
-                                            });
-                                            const responseData = await res.json();
-                                            if (res.ok) {
-                                                toast.success('Phone verified successfully!');
-                                                window.location.reload();
-                                            } else {
-                                                toast.error(responseData.error || 'Verification failed');
+                                                // Update phoneVerified status
+                                                const res = await fetch('/api/auth/verify-phone', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ token: token, phone: currentPhone })
+                                                });
+                                                const responseData = await res.json();
+                                                if (res.ok) {
+                                                    toast.success('Phone verified successfully!');
+                                                    window.location.reload();
+                                                } else {
+                                                    toast.error(responseData.error || 'Verification failed');
+                                                    setIsVerifying(false);
+                                                }
+                                            } catch (error) {
+                                                console.error('Error during verification:', error);
+                                                toast.error('An error occurred during verification');
+                                                setIsVerifying(false);
                                             }
                                         },
                                         failure: () => {
                                             toast.error('Verification failed. Please try again.');
+                                            setIsVerifying(false);
                                         }
                                     });
-                                } else {
-                                    toast.error('Verification service is still loading. Please wait a moment and try again.');
-                                    console.error('MSG91 widget not loaded. initSendOTP is not available on window object.');
+                                } catch (error) {
+                                    console.error('Error initializing MSG91:', error);
+                                    toast.error('Failed to initialize verification. Please try again.');
+                                    setIsVerifying(false);
                                 }
                             }}
-                            className="w-full sm:w-auto h-11 px-8 bg-primary text-white hover:bg-primary-dark uppercase tracking-[0.2em] text-[10px] font-bold shadow-luxury hover:shadow-elevated rounded-sm transition-all"
+                            disabled={!isMsg91Ready || isVerifying}
+                            className="w-full sm:w-auto h-11 px-8 bg-primary text-white hover:bg-primary-dark uppercase tracking-[0.2em] text-[10px] font-bold shadow-luxury hover:shadow-elevated rounded-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
-                            Verify Now
+                            {isVerifying ? (
+                                <>
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    Verifying...
+                                </>
+                            ) : !isMsg91Ready ? (
+                                <>
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    Loading...
+                                </>
+                            ) : (
+                                'Verify Now'
+                            )}
                         </Button>
                     )}
                 </div>
