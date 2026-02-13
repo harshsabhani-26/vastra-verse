@@ -119,6 +119,25 @@ export async function getAddresses() {
     });
 }
 
+export async function getWishlist() {
+    const session = await auth();
+    if (!session?.user?.id) return [];
+
+    try {
+        const wishlistItems = await prisma.wishlist.findMany({
+            where: { userId: session.user.id },
+            select: {
+                productId: true
+            }
+        });
+        return wishlistItems;
+    } catch (error) {
+        console.error("Failed to fetch wishlist:", error);
+        return [];
+    }
+}
+
+
 export async function removeFromWishlist(productId: string) {
     const session = await auth();
     if (!session?.user?.id) return { error: "Not authenticated" };

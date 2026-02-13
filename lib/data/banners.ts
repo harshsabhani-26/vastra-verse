@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { cache } from "react";
+import { unstable_cache } from "next/cache";
 
 /**
  * Pure data access layer for banner queries
@@ -11,65 +11,86 @@ import { cache } from "react";
  * - Uses React cache for request deduplication
  */
 
-export const getActiveHeroBanners = cache(async () => {
-    return prisma.heroBanner.findMany({
-        where: {
-            isActive: true,
-            bannerType: "HERO"
-        },
-        orderBy: {
-            displayOrder: "asc"
-        },
-        select: {
-            id: true,
-            ctaLink: true,
-            mediaType: true,
-            imageUrl: true,
-            videoUrl: true,
-            bannerType: true,
-            displayOrder: true,
-        }
-    });
-});
+export const getActiveHeroBanners = unstable_cache(
+    async () => {
+        return prisma.heroBanner.findMany({
+            where: {
+                isActive: true,
+                bannerType: "HERO"
+            },
+            orderBy: {
+                displayOrder: "asc"
+            },
+            select: {
+                id: true,
+                ctaLink: true,
+                mediaType: true,
+                imageUrl: true,
+                videoUrl: true,
+                bannerType: true,
+                displayOrder: true,
+            }
+        });
+    },
+    ['hero-banners'],
+    {
+        revalidate: 3600,
+        tags: ['banners']
+    }
+);
 
-export const getActiveMidPageBanners = cache(async () => {
-    return prisma.heroBanner.findMany({
-        where: {
-            isActive: true,
-            bannerType: "MID_PAGE"
-        },
-        orderBy: {
-            displayOrder: "asc"
-        },
-        select: {
-            id: true,
-            ctaLink: true,
-            mediaType: true,
-            imageUrl: true,
-            videoUrl: true,
-            bannerType: true,
-            displayOrder: true,
-        }
-    });
-});
+export const getActiveMidPageBanners = unstable_cache(
+    async () => {
+        return prisma.heroBanner.findMany({
+            where: {
+                isActive: true,
+                bannerType: "MID_PAGE"
+            },
+            orderBy: {
+                displayOrder: "asc"
+            },
+            select: {
+                id: true,
+                ctaLink: true,
+                mediaType: true,
+                imageUrl: true,
+                videoUrl: true,
+                bannerType: true,
+                displayOrder: true,
+            }
+        });
+    },
+    ['mid-page-banners'],
+    {
+        revalidate: 3600,
+        tags: ['banners']
+    }
+);
 
-export const getActiveBottomPageBanners = cache(async () => {
-    return prisma.heroBanner.findMany({
-        where: {
-            isActive: true,
-            bannerType: "BOTTOM_PAGE"
-        },
-        orderBy: {
-            displayOrder: "asc"
-        },
-        select: {
-            id: true,
-            ctaLink: true,
-            mediaType: true,
-            imageUrl: true,
-            videoUrl: true,
-            bannerType: true,
-            displayOrder: true,
-        }
-    });
-});
+export const getActiveBottomPageBanners = unstable_cache(
+    async () => {
+        return prisma.heroBanner.findMany({
+            where: {
+                isActive: true,
+                bannerType: "BOTTOM_PAGE"
+            },
+            orderBy: {
+                displayOrder: "asc"
+            },
+            select: {
+                id: true,
+                ctaLink: true,
+                mediaType: true,
+                imageUrl: true,
+                videoUrl: true,
+                bannerType: true,
+                displayOrder: true,
+            }
+        });
+    },
+    ['bottom-page-banners'],
+    {
+        revalidate: 3600,
+        tags: ['banners']
+    }
+);

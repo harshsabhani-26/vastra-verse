@@ -1,10 +1,11 @@
 "use client";
 
 import { Heart } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { toggleWishlist } from "@/app/actions/account";
 import { cn } from "@/lib/utils";
 import { toast } from "react-hot-toast";
+import { useWishlistStore } from "@/lib/wishlist-store";
 
 interface WishlistToggleProps {
     productId: string;
@@ -13,8 +14,15 @@ interface WishlistToggleProps {
 }
 
 export function WishlistToggle({ productId, initialIsWishlisted = false, className }: WishlistToggleProps) {
-    const [isWishlisted, setIsWishlisted] = useState(initialIsWishlisted);
+    const { isInWishlist, addItem, removeItem } = useWishlistStore();
+    const [mounted, setMounted] = useState(false);
     const [isPending, startTransition] = useTransition();
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const isWishlisted = mounted ? isInWishlist(productId) : initialIsWishlisted;
 
     const handleToggle = (e: React.MouseEvent) => {
         e.preventDefault(); // Prevent Link navigation
@@ -22,11 +30,12 @@ export function WishlistToggle({ productId, initialIsWishlisted = false, classNa
 
         // Optimistic update
         const newState = !isWishlisted;
-        setIsWishlisted(newState);
 
         if (newState) {
+            addItem(productId);
             toast.success("Added to wishlist");
         } else {
+            removeItem(productId);
             toast.success("Removed from wishlist");
         }
 
@@ -34,16 +43,12 @@ export function WishlistToggle({ productId, initialIsWishlisted = false, classNa
             const result = await toggleWishlist(productId);
             if (result.error) {
                 // Revert on error
-                setIsWishlisted(!newState);
+                if (newState) {
+                    removeItem(productId);
+                } else {
+                    addItem(productId);
+                }
                 toast.error(result.error);
-                if (result.authenticated === false) {
-                    // Could redirect to login here if we had router
-                }
-            } else {
-                // Confirm state from server
-                if (result.isWishlisted !== undefined) {
-                    setIsWishlisted(result.isWishlisted);
-                }
             }
         });
     };

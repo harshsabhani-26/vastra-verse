@@ -12,12 +12,15 @@ const STORES = [
         address: "27-28 A Sk-2 Industrial, Sosyo Circle, Udhna Surat, Gandhi kutir, Surat, Gujrat, India",
         timing: "11am to 7:30pm",
         phone: "+91 81549 49599",
+        lat: 21.17183355867574,
+        lng: 72.82787524724728,
     }
 ];
 
 export default function StoreLocatorPage() {
     const [selectedStore, setSelectedStore] = useState(STORES[0]);
     const [mapType, setMapType] = useState<"m" | "k">("m"); // m = map, k = satellite
+    const [mapKey, setMapKey] = useState(0);
     const mapContainerRef = useRef<HTMLDivElement>(null);
 
     const toggleFullscreen = () => {
@@ -28,10 +31,14 @@ export default function StoreLocatorPage() {
         }
     };
 
-    const getMapUrl = (address: string, type: "m" | "k") => {
+    const getMapUrl = (lat: number, lng: number, type: "m" | "k") => {
         const baseUrl = "https://maps.google.com/maps";
-        const query = encodeURIComponent(address);
-        return `${baseUrl}?q=${query}&t=${type}&z=15&ie=UTF8&iwloc=&output=embed`;
+        return `${baseUrl}?q=${lat},${lng}&t=${type}&z=15&ie=UTF8&iwloc=near&output=embed`;
+    };
+
+    const handleStoreClick = (store: typeof STORES[0]) => {
+        setSelectedStore(store);
+        setMapKey(prev => prev + 1);
     };
 
     return (
@@ -51,7 +58,7 @@ export default function StoreLocatorPage() {
                         {STORES.map((store) => (
                             <div
                                 key={store.id}
-                                onClick={() => setSelectedStore(store)}
+                                onClick={() => handleStoreClick(store)}
                                 className={`p-6 cursor-pointer transition-all border relative ${selectedStore.id === store.id
                                     ? "bg-[#E5E0D5] border-[#AA8C2C] shadow-sm scale-[1.02]"
                                     : "bg-white border-stone-200 hover:border-stone-300 hover:shadow-sm"
@@ -114,15 +121,15 @@ export default function StoreLocatorPage() {
                             className="bg-stone-200 flex-1 w-full relative border border-stone-200 shadow-inner rounded-b-md overflow-hidden"
                         >
                             <iframe
-                                key={`${selectedStore.id}-${mapType}`}
-                                src={getMapUrl(selectedStore.address, mapType)}
+                                key={`${selectedStore.id}-${mapType}-${mapKey}`}
+                                src={getMapUrl(selectedStore.lat, selectedStore.lng, mapType)}
                                 width="100%"
                                 height="100%"
                                 style={{ border: 0 }}
                                 allowFullScreen
                                 loading="lazy"
                                 referrerPolicy="no-referrer-when-downgrade"
-                                className="w-full h-full"
+                                className="w-full h-[calc(100%+450px)] -mt-[150px]"
                             ></iframe>
 
                             {/* Place Card Overlay - Kept inside but positioned bottom-left to avoid top area */}
@@ -131,7 +138,7 @@ export default function StoreLocatorPage() {
                                 <p className="text-xs text-stone-500 mt-1">{selectedStore.address}</p>
                                 <div className="mt-3 flex gap-2">
                                     <a
-                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedStore.address)}`}
+                                        href={`https://www.google.com/maps/search/?api=1&query=${selectedStore.lat},${selectedStore.lng}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                     >

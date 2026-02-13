@@ -1,47 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import prisma from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
-// Direct query - caching handled by page-level ISR
-async function getNewArrivals() {
-    try {
-        const products = await prisma.product.findMany({
-            where: {
-                isNewArrival: true,
-                status: "PUBLISHED"
-            },
-            take: 4,
-            select: {
-                id: true,
-                name: true,
-                price: true,
-                discount: true,
-                finalPrice: true,
-                isNewArrival: true,
-                images: {
-                    where: { type: 'MAIN' },
-                    take: 1,
-                    select: {
-                        url: true,
-                        alt: true,
-                    }
-                },
-                category: {
-                    select: {
-                        name: true,
-                    }
-                }
-            },
-            orderBy: {
-                createdAt: 'desc' // Most recent first
-            }
-        });
-        return products;
-    } catch (error) {
-        console.error("Failed to fetch new arrivals:", error);
-        return [];
-    }
-}
+import { getNewArrivals } from "@/lib/data/products";
 
 export async function NewArrivals() {
     const products = await getNewArrivals();

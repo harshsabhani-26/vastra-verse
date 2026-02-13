@@ -89,11 +89,7 @@ export function Footer({ categories = [] }: FooterProps) {
                                     Terms of Use
                                 </Link>
                             </li>
-                            <li>
-                                <Link href="/policies/cookie" className="hover:text-secondary transition-colors duration-300">
-                                    Cookie Policy
-                                </Link>
-                            </li>
+
                         </ul>
                     </div>
 
@@ -123,14 +119,7 @@ export function Footer({ categories = [] }: FooterProps) {
                                     WhatsApp
                                 </a>
                             </li>
-                            <li>
-                                <a
-                                    href="tel:+918154949599"
-                                    className="hover:text-secondary transition-colors duration-300"
-                                >
-                                    +91 81549 49599
-                                </a>
-                            </li>
+
                         </ul>
                     </div>
                 </div>

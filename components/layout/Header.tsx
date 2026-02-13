@@ -8,6 +8,7 @@ import { useCartStore } from "@/lib/store";
 import { useSession, signOut } from "next-auth/react";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import { SearchOverlay } from "@/components/search/SearchOverlay";
+import { useWishlistStore } from "@/lib/wishlist-store";
 
 export function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -15,6 +16,7 @@ export function Header() {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const { openCart, totalItems, syncWithUser, clearUserCart } = useCartStore();
+    const { totalItems: wishlistCount, syncWithUser: syncWishlist, clearWishlist } = useWishlistStore();
     const { data: session, status } = useSession();
     const [mounted, setMounted] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
@@ -39,14 +41,16 @@ export function Header() {
         };
     }, []);
 
-    // Sync Cart with User Session
+    // Sync Cart and Wishlist with User Session
     useEffect(() => {
         if (status === "authenticated") {
             syncWithUser();
+            syncWishlist();
         } else if (status === "unauthenticated") {
             clearUserCart();
+            clearWishlist();
         }
-    }, [status, syncWithUser, clearUserCart]);
+    }, [status, syncWithUser, clearUserCart, syncWishlist, clearWishlist]);
 
     return (
         <>
@@ -89,6 +93,9 @@ export function Header() {
                                 >
                                     <Search className="h-5 w-5" />
                                 </button>
+
+                                {/* WhatsApp */}
+                                <WhatsAppButton />
 
                                 {/* Cart */}
                                 <button
@@ -212,6 +219,7 @@ export function Header() {
                                                         <button
                                                             onClick={() => {
                                                                 clearUserCart();
+                                                                clearWishlist();
                                                                 signOut();
                                                                 setIsProfileOpen(false);
                                                             }}
@@ -246,10 +254,15 @@ export function Header() {
                                 {/* Wishlist */}
                                 <Link
                                     href="/wishlist"
-                                    className="p-2 hover:text-secondary transition-colors duration-300 hover-lift"
+                                    className="p-2 hover:text-secondary transition-colors duration-300 hover-lift relative"
                                     aria-label="Wishlist"
                                 >
                                     <Heart className="h-5 w-5" />
+                                    {mounted && wishlistCount() > 0 && (
+                                        <span className="absolute -top-1 -right-1 h-5 w-5 bg-secondary text-[10px] text-primary-dark flex items-center justify-center rounded-full font-sans font-bold animate-scale-in">
+                                            {wishlistCount()}
+                                        </span>
+                                    )}
                                 </Link>
 
                                 {/* Cart */}
@@ -354,6 +367,7 @@ export function Header() {
                                 <button
                                     onClick={() => {
                                         clearUserCart();
+                                        clearWishlist();
                                         signOut();
                                         setIsMobileMenuOpen(false);
                                     }}
