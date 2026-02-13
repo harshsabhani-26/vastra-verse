@@ -27,12 +27,17 @@ export default async function ProfilePage() {
         newsletter: user.newsletter || false,
     };
 
+    const msg91Config = {
+        widgetId: process.env.NEXT_PUBLIC_MSG91_WIDGET_ID || '',
+        tokenAuth: process.env.NEXT_PUBLIC_MSG91_TOKEN_AUTH || '',
+    };
+
     return (
         <>
             {/* MSG91 OTP Widget Script */}
             <Script
                 src="https://verify.msg91.com/otp-provider.js"
-                strategy="lazyOnload"
+                strategy="afterInteractive"
             />
 
             <div className="bg-background min-h-screen py-16">
@@ -42,7 +47,7 @@ export default async function ProfilePage() {
                         <div className="flex-1 max-w-3xl">
                             <h1 className="text-3xl font-serif text-primary mb-8 tracking-tight">My Profile</h1>
                             <div className="bg-background p-0 md:p-8 animate-fade-in-up">
-                                <ProfileForm user={userData} />
+                                <ProfileForm user={userData} msg91Config={msg91Config} />
                             </div>
                         </div>
                     </div>

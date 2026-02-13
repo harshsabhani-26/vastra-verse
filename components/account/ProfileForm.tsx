@@ -16,7 +16,12 @@ interface UserData {
     newsletter: boolean;
 }
 
-export function ProfileForm({ user }: { user: UserData }) {
+interface MSG91Config {
+    widgetId: string;
+    tokenAuth: string;
+}
+
+export function ProfileForm({ user, msg91Config }: { user: UserData; msg91Config: MSG91Config }) {
     const [isPending, startTransition] = useTransition();
 
     // Split name
@@ -150,11 +155,19 @@ export function ProfileForm({ user }: { user: UserData }) {
                                     toast.error('Please enter a valid 10-digit mobile number');
                                     return;
                                 }
+
+                                // Check if MSG91 configuration is available
+                                if (!msg91Config.widgetId || !msg91Config.tokenAuth) {
+                                    toast.error('SMS verification is not configured. Please contact support.');
+                                    console.error('MSG91 configuration missing:', { widgetId: !!msg91Config.widgetId, tokenAuth: !!msg91Config.tokenAuth });
+                                    return;
+                                }
+
                                 // Trigger MSG91 OTP widget
                                 if (typeof window !== 'undefined' && (window as any).initSendOTP) {
                                     (window as any).initSendOTP({
-                                        widgetId: process.env.NEXT_PUBLIC_MSG91_WIDGET_ID,
-                                        tokenAuth: process.env.NEXT_PUBLIC_MSG91_TOKEN_AUTH,
+                                        widgetId: msg91Config.widgetId,
+                                        tokenAuth: msg91Config.tokenAuth,
                                         mobile: '91' + currentPhone,
                                         identifier: '91' + currentPhone,
                                         success: async (data: any) => {
@@ -185,7 +198,8 @@ export function ProfileForm({ user }: { user: UserData }) {
                                         }
                                     });
                                 } else {
-                                    toast.error('Verification service not available');
+                                    toast.error('Verification service is still loading. Please wait a moment and try again.');
+                                    console.error('MSG91 widget not loaded. initSendOTP is not available on window object.');
                                 }
                             }}
                             className="w-full sm:w-auto h-11 px-8 bg-primary text-white hover:bg-primary-dark uppercase tracking-[0.2em] text-[10px] font-bold shadow-luxury hover:shadow-elevated rounded-sm transition-all"
