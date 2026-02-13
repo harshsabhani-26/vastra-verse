@@ -8,77 +8,98 @@ const { auth } = NextAuth(authConfig);
 export default async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
-    // Skip middleware for API routes (including auth)
+    // Skip middleware for API routes
     if (pathname.startsWith("/api")) {
         return NextResponse.next();
     }
 
-    // Add pathname to headers for server components
+    // Add pathname to headers
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-pathname", pathname);
 
-    // Get session with error handling for secret rotation
+    // Get session with error handling
     let session;
     try {
         session = await auth();
     } catch (error) {
-        console.error("Middleware Auth Error (likely invalid session/secret rotation):", error);
-        // Forcefully clear the invalid session cookies to fix the loop
-        const response = NextResponse.redirect(new URL("/login?error=session_rotated", request.url));
-        response.cookies.delete("next-auth.session-token");
-        response.cookies.delete("__Secure-next-auth.session-token");
-        return response;
+        if (process.env.NODE_ENV === 'development') {
+            console.error("Auth error:", error);
+        }
+        const errorResponse = NextResponse.redirect(new URL("/login?error=session_expired", request.url));
+        errorResponse.cookies.delete("next-auth.session-token");
+        errorResponse.cookies.delete("__Secure-next-auth.session-token");
+        return errorResponse;
     }
 
-    // Get admin email from environment
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const isAdminUser = session?.user?.email?.toLowerCase() === adminEmail?.toLowerCase();
-
-    // 🐛 TEMPORARY DEBUG LOGGING (REMOVE AFTER FIXING)
-    if (pathname.startsWith("/admin")) {
-        console.log("🔍 [ADMIN ACCESS DEBUG]", {
-            pathname,
-            userEmail: session?.user?.email,
-            userRole: session?.user?.role,
-            adminEmailFromEnv: adminEmail,
-            isAdminUser,
-            sessionExists: !!session,
-        });
-    }
-
-    // STRICT ADMIN PANEL PROTECTION
-    // Completely hide admin panel from non-admin users
-    if (pathname.startsWith("/admin")) {
-        // If not logged in OR not the admin email, redirect to homepage
-        // This makes the admin panel completely invisible to regular users
-        if (!session?.user || !isAdminUser) {
-            // Redirect to homepage to make it look like admin panel doesn't exist
-            return NextResponse.redirect(new URL("/", request.url));
-        }
-
-        // If user is admin and trying to access /admin/login, redirect to dashboard
-        if (pathname === "/admin/login") {
-            return NextResponse.redirect(new URL("/admin", request.url));
-        }
-
-        // Optional: IP-based restriction for extra security
-        const allowedIPs = process.env.ALLOWED_IPS?.split(",").map(ip => ip.trim());
-        if (allowedIPs && allowedIPs.length > 0) {
-            const userIP = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "unknown";
-
-            if (!allowedIPs.includes(userIP)) {
-                // Redirect to homepage instead of showing error
-                // This prevents revealing admin panel existence
-                return NextResponse.redirect(new URL("/", request.url));
-            }
-        }
-    }
-
-    return NextResponse.next({
+    // Create response with headers
+    const response = NextResponse.next({
         request: {
             headers: requestHeaders,
         },
     });
+
+    // ============================================
+    // ENTERPRISE SECURITY HEADERS
+    // ============================================
+
+    // HSTS
+    response.headers.set(
+        'Strict-Transport-Security',
+        'max-age=63072000; includeSubDomains; preload'
+    );
+
+    // Prevent clickjacking
+    response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+
+    // Prevent MIME sniffing
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+
+    // XSS Protection
+    response.headers.set('X-XSS-Protection', '1; mode=block');
+
+    // Referrer Policy
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+    // Permissions Policy
+    response.headers.set(
+        'Permissions-Policy',
+        'camera=(), microphone=(), geolocation=(self), payment=(self), interest-cohort=()'
+    );
+
+    // Content Security Policy
+    const csp = [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://api.razorpay.com https://*.msg91.com https://js.hcaptcha.com https://*.hcaptcha.com https://cdnjs.cloudflare.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.msg91.com https://cdnjs.cloudflare.com",
+        "font-src 'self' https://fonts.gstatic.com data:",
+        "img-src 'self' data: blob: https://*.unsplash.com https://*.razorpay.com https://*.supabase.co https://res.cloudinary.com https://*.googleapis.com https://*.gstatic.com https://cdnjs.cloudflare.com",
+        "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://*.msg91.com https://*.supabase.co https://*.hcaptcha.com",
+        "frame-src 'self' https://api.razorpay.com https://*.msg91.com https://*.google.com https://maps.google.com https://*.hcaptcha.com https://newassets.hcaptcha.com",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'self'"
+    ].join('; ');
+
+    response.headers.set('Content-Security-Policy', csp);
+
+    // ============================================
+    // ADMIN PANEL PROTECTION
+    // ============================================
+
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const isAdminUser = session?.user?.email?.toLowerCase() === adminEmail?.toLowerCase();
+
+    if (pathname.startsWith("/admin")) {
+        if (!session?.user || !isAdminUser) {
+            return NextResponse.redirect(new URL("/", request.url));
+        }
+        if (pathname === "/admin/login") {
+            return NextResponse.redirect(new URL("/admin", request.url));
+        }
+    }
+
+    return response;
 }
 
 export const config = {
