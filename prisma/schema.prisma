@@ -126,6 +126,7 @@ model EmailVerification {
   type      String
   expiresAt DateTime
   verified  Boolean  @default(false)
+  attempts  Int      @default(0)
   createdAt DateTime @default(now())
   phone     String?
 

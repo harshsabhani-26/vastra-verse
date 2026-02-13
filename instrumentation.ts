@@ -2,18 +2,21 @@
  * Next.js Instrumentation Hook
  * 
  * Runs once when the server starts.
- * Used for env validation and server start logging.
+ * Integrates Sentry for error monitoring.
  * See: https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */
+import * as Sentry from "@sentry/nextjs";
+
 export async function register() {
-    // Only run on server
-    // Only run on server
-    // if (typeof window !== "undefined") return;
+    if (process.env.NEXT_RUNTIME === "nodejs") {
+        // Server-side Sentry initialization
+        await import("./sentry.server.config");
+    }
 
-    // const { validateEnv } = await import("@/lib/env");
-    // const { logServerStart } = await import("@/lib/logger");
-
-    // validateEnv();
-    // logServerStart();
-    console.error("DEBUG: Instrumentation skipped");
+    if (process.env.NEXT_RUNTIME === "edge") {
+        // Edge runtime Sentry initialization
+        await import("./sentry.edge.config");
+    }
 }
+
+export const onRequestError = Sentry.captureRequestError;

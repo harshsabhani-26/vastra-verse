@@ -23,7 +23,21 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        const { email, type } = await request.json();
+        const body = await request.json();
+        const { email, type, hcaptchaToken } = body;
+
+        // SECURITY: hCaptcha server-side verification (if token provided)
+        if (hcaptchaToken) {
+            const { verifyHCaptchaToken } = await import('@/lib/hcaptcha');
+            const isHuman = await verifyHCaptchaToken(hcaptchaToken);
+            if (!isHuman) {
+                logSecurityEvent("HCAPTCHA_FAILED", { endpoint: "/api/auth/send-otp", ip });
+                return NextResponse.json(
+                    { error: 'Captcha verification failed' },
+                    { status: 400 }
+                );
+            }
+        }
 
         if (!email || !type) {
             return NextResponse.json(

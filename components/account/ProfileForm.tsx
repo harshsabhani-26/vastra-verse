@@ -192,21 +192,33 @@ export function ProfileForm({ user, msg91Config }: { user: UserData; msg91Config
                                         tokenAuth: msg91Config.tokenAuth,
                                         mobile: '91' + currentPhone,
                                         identifier: '91' + currentPhone,
-                                        // Multi-layered GeoIP disable approach
-                                        // Option 1: Override GeoIP lookup with immediate callback
-                                        geoIpLookup: (callback: any) => {
-                                            // Return India immediately, prevent any external API calls
-                                            callback('in');
-                                        },
-                                        // Option 2: Set initial country explicitly
-                                        initialCountry: 'in',
-                                        // Option 3: Disable auto country detection
-                                        autoCountry: false,
-                                        defaultCountry: 'in',
-                                        // Option 4: Configure intl-tel-input directly if MSG91 exposes it
-                                        intlTelInputOptions: {
-                                            initialCountry: 'in',
-                                            geoIpLookup: (callback: any) => callback('in')
+                                        // Enable automatic country detection via IP geolocation
+                                        initialCountry: 'auto',
+                                        geoIpLookup: function (callback: any) {
+                                            // Production-safe geo-IP lookup with timeout and error handling
+                                            const controller = new AbortController();
+                                            const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
+
+                                            fetch('https://api.db-ip.com/v2/free/self', {
+                                                signal: controller.signal,
+                                                cache: 'default'
+                                            })
+                                                .then(res => {
+                                                    clearTimeout(timeoutId);
+                                                    if (!res?.ok) throw new Error('Network response not ok');
+                                                    return res.json();
+                                                })
+                                                .then(data => {
+                                                    // Safe access with optional chaining
+                                                    const countryCode = data?.countryCode?.toLowerCase();
+                                                    callback(countryCode || 'in');
+                                                })
+                                                .catch((err) => {
+                                                    clearTimeout(timeoutId);
+                                                    // Fallback to India on any error (timeout, network, etc.)
+                                                    console.warn('Auto country detection failed, using fallback:', err?.message);
+                                                    callback('in');
+                                                });
                                         },
                                         success: async (data: any) => {
                                             try {
