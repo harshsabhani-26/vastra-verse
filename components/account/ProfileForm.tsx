@@ -206,8 +206,18 @@ export function ProfileForm({ user, msg91Config }: { user: UserData; msg91Config
 
                                 setIsVerifying(true);
 
+                                // Debug logging
+                                console.log('=== MSG91 Widget Debug ===');
+                                console.log('Config:', {
+                                    widgetId: msg91Config.widgetId,
+                                    tokenAuth: msg91Config.tokenAuth?.substring(0, 10) + '...',
+                                    mobile: '91' + currentPhone
+                                });
+                                console.log('initSendOTP type:', typeof (window as any).initSendOTP);
+
                                 // Trigger MSG91 OTP widget
                                 try {
+                                    console.log('Calling initSendOTP...');
                                     (window as any).initSendOTP({
                                         widgetId: msg91Config.widgetId,
                                         tokenAuth: msg91Config.tokenAuth,

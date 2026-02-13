@@ -38,6 +38,13 @@ export default async function ProfilePage() {
             <Script
                 src="https://verify.msg91.com/otp-provider.js"
                 strategy="afterInteractive"
+                onLoad={() => {
+                    console.log('MSG91 script loaded successfully');
+                    console.log('initSendOTP available:', typeof (window as any).initSendOTP);
+                }}
+                onError={() => {
+                    console.error('Failed to load MSG91 script');
+                }}
             />
 
             <div className="bg-background min-h-screen py-16">
