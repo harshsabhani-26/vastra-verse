@@ -1,14 +1,14 @@
 "use client";
 
 
-import { createOrder } from "@/app/actions/checkout";
+import { createOrder, checkUserPhoneVerification } from "@/app/actions/checkout";
 import { useCartStore } from "@/lib/store";
 import { applyCoupon, getAutoApplyCoupons } from "@/app/admin/coupons/actions";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { Tag, X, Loader2, Check, Gift, ChevronDown } from "lucide-react";
+import { Tag, X, Loader2, Check, Gift, ChevronDown, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Script from "next/script";
 
@@ -60,6 +60,128 @@ export default function CheckoutPage() {
     const [couponError, setCouponError] = useState("");
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
     const [isCheckingAutoApply, setIsCheckingAutoApply] = useState(false);
+
+    // Phone verification state
+    const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [isCheckingVerification, setIsCheckingVerification] = useState(false);
+
+    // MSG91 config (public env vars)
+    const msg91Config = {
+        widgetId: process.env.NEXT_PUBLIC_MSG91_WIDGET_ID || '',
+        tokenAuth: process.env.NEXT_PUBLIC_MSG91_TOKEN_AUTH || '',
+    };
+
+    // Auto-check if the entered phone is already verified
+    const checkPhoneVerification = useCallback(async (phone: string) => {
+        if (phone.length !== 10) {
+            setIsPhoneVerified(false);
+            return;
+        }
+        setIsCheckingVerification(true);
+        try {
+            const result = await checkUserPhoneVerification(phone);
+            setIsPhoneVerified(result.isVerified);
+        } catch {
+            setIsPhoneVerified(false);
+        } finally {
+            setIsCheckingVerification(false);
+        }
+    }, []);
+
+    // Debounced phone verification check
+    useEffect(() => {
+        if (!mounted) return;
+        const timer = setTimeout(() => {
+            checkPhoneVerification(formData.phone);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [formData.phone, mounted, checkPhoneVerification]);
+
+    // Handle MSG91 verification
+    const handleVerifyPhone = () => {
+        const phone = formData.phone;
+        if (!phone || phone.length !== 10) {
+            toast({ variant: "destructive", title: "Invalid Phone", description: "Please enter a valid 10-digit mobile number" });
+            return;
+        }
+
+        if (!msg91Config.widgetId || !msg91Config.tokenAuth) {
+            toast({ variant: "destructive", title: "Configuration Error", description: "Phone verification is not configured. Please contact support at care@vastraverse.com" });
+            return;
+        }
+
+        setIsVerifying(true);
+
+        try {
+            (window as any).initSendOTP({
+                widgetId: msg91Config.widgetId,
+                tokenAuth: msg91Config.tokenAuth,
+                mobile: '91' + phone,
+                identifier: '91' + phone,
+                initialCountry: 'auto',
+                geoIpLookup: function (callback: any) {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 3000);
+                    fetch('https://api.db-ip.com/v2/free/self', {
+                        signal: controller.signal,
+                        cache: 'default'
+                    })
+                        .then(res => {
+                            clearTimeout(timeoutId);
+                            if (!res?.ok) throw new Error('Network response not ok');
+                            return res.json();
+                        })
+                        .then(data => {
+                            const countryCode = data?.countryCode?.toLowerCase();
+                            callback(countryCode || 'in');
+                        })
+                        .catch((err) => {
+                            clearTimeout(timeoutId);
+                            console.warn('Auto country detection failed, using fallback:', err?.message);
+                            callback('in');
+                        });
+                },
+                success: async (data: any) => {
+                    try {
+                        const token = data.token || data.message || (typeof data === 'string' ? data : null);
+                        if (!token) {
+                            toast({ variant: "destructive", title: "Verification Error", description: "Could not retrieve verification token" });
+                            setIsVerifying(false);
+                            return;
+                        }
+
+                        const res = await fetch('/api/auth/verify-phone', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ token, phone })
+                        });
+                        const responseData = await res.json();
+                        if (res.ok) {
+                            toast({ title: "Success", description: "Phone verified successfully!" });
+                            setIsPhoneVerified(true);
+                            setIsVerifying(false);
+                        } else {
+                            toast({ variant: "destructive", title: "Verification Failed", description: responseData.error || "Verification failed" });
+                            setIsVerifying(false);
+                        }
+                    } catch (error) {
+                        console.error('Error during verification:', error);
+                        toast({ variant: "destructive", title: "Error", description: "An error occurred during verification" });
+                        setIsVerifying(false);
+                    }
+                },
+                failure: () => {
+                    toast({ variant: "destructive", title: "Failed", description: "Verification failed. Please try again." });
+                    setIsVerifying(false);
+                }
+            });
+        } catch (error) {
+            console.error('Error initializing MSG91:', error);
+            toast({ variant: "destructive", title: "Error", description: "Failed to initialize verification. Please try again." });
+            setIsVerifying(false);
+        }
+    };
 
     // Initial Cart Logic (omitted for brevity, keep existing)
     useEffect(() => {
@@ -301,6 +423,11 @@ export default function CheckoutPage() {
                 id="razorpay-checkout-js"
                 src="https://checkout.razorpay.com/v1/checkout.js"
             />
+            <Script
+                id="msg91-otp-widget"
+                src="https://verify.msg91.com/otp-provider.js"
+                strategy="afterInteractive"
+            />
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
 
@@ -316,30 +443,89 @@ export default function CheckoutPage() {
 
                                 {/* Phone Verification Section */}
                                 <div className="py-6 border-b border-stone-200">
-                                    <div className="flex items-end gap-4 max-w-md">
-                                        <div className="w-24">
-                                            <label className="text-[10px] uppercase tracking-widest text-[#1C1917] mb-2 block opacity-0">Code</label>
-                                            <div className="h-10 border-b border-stone-300 flex items-center text-sm font-medium text-[#1C1917]">+91 (IN)</div>
-                                        </div>
-                                        <div className="flex-1">
-                                            <label className="text-[10px] uppercase tracking-widest text-red-700 mb-1 block">Phone Number*</label>
-                                            <input
-                                                type="tel"
-                                                name="phone"
-                                                value={formData.phone}
-                                                onChange={handleInputChange}
-                                                className={cn(
-                                                    "w-full h-10 border-b bg-transparent focus:outline-none text-sm text-[#1C1917]",
-                                                    errors.phone ? "border-red-500" : "border-stone-300 focus:border-[#1C1917]"
-                                                )}
-                                                placeholder="9876543210"
-                                            />
-                                            {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
-                                        </div>
-                                        <button className="text-[10px] uppercase tracking-widest text-stone-400 font-medium hover:text-[#1C1917] mb-2">
-                                            VERIFY
-                                        </button>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <label className="text-[10px] uppercase tracking-widest text-[#1C1917] font-medium">
+                                            Phone Number <span className="text-red-500">*</span>
+                                        </label>
+                                        {isCheckingVerification ? (
+                                            <span className="text-[10px] uppercase tracking-wider text-stone-400 font-medium px-2 py-0.5 flex items-center gap-1">
+                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                                Checking...
+                                            </span>
+                                        ) : isPhoneVerified ? (
+                                            <span className="text-[10px] uppercase tracking-wider text-green-700 font-medium bg-green-50 px-3 py-1 rounded-full border border-green-200 flex items-center gap-1 shadow-sm">
+                                                <Check className="w-3 h-3" />
+                                                Verified
+                                            </span>
+                                        ) : (
+                                            <span className="text-[10px] uppercase tracking-wider text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-sm border border-amber-100 flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                Unverified
+                                            </span>
+                                        )}
                                     </div>
+
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                        <div className="flex gap-3 flex-1">
+                                            <div className="flex-shrink-0">
+                                                <div className="h-10 px-3 bg-stone-50 border border-stone-200 text-sm font-medium text-[#1C1917] flex items-center rounded-sm w-20 justify-center">+91</div>
+                                            </div>
+                                            <div className="relative flex-1">
+                                                <Phone className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
+                                                <input
+                                                    type="tel"
+                                                    name="phone"
+                                                    value={formData.phone}
+                                                    onChange={(e) => {
+                                                        handleInputChange(e);
+                                                        // Reset verification when phone changes
+                                                        if (isPhoneVerified) setIsPhoneVerified(false);
+                                                    }}
+                                                    disabled={isPhoneVerified}
+                                                    maxLength={10}
+                                                    pattern="[0-9]{10}"
+                                                    className={cn(
+                                                        "w-full h-10 pl-9 border bg-transparent focus:outline-none text-sm text-[#1C1917] rounded-sm transition-all",
+                                                        errors.phone ? "border-red-500" : "border-stone-200 focus:border-[#1C1917]",
+                                                        isPhoneVerified && "opacity-70 cursor-not-allowed bg-stone-50"
+                                                    )}
+                                                    placeholder="9876543210"
+                                                />
+                                                {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
+                                            </div>
+                                        </div>
+
+                                        {isPhoneVerified ? (
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => {
+                                                    setIsPhoneVerified(false);
+                                                    setFormData(prev => ({ ...prev, phone: "" }));
+                                                }}
+                                                className="w-full sm:w-auto h-10 px-6 text-[10px] uppercase tracking-[0.2em] border-stone-200 hover:border-[#1C1917] hover:bg-stone-50 text-[#1C1917] rounded-sm transition-all"
+                                            >
+                                                Edit
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                type="button"
+                                                onClick={handleVerifyPhone}
+                                                disabled={isVerifying || !formData.phone || formData.phone.length !== 10}
+                                                className="w-full sm:w-auto h-10 px-8 bg-[#1C1917] text-white hover:bg-[#333333] uppercase tracking-[0.2em] text-[10px] font-bold rounded-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                            >
+                                                {isVerifying ? (
+                                                    <>
+                                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                                        Verifying...
+                                                    </>
+                                                ) : (
+                                                    'Verify Now'
+                                                )}
+                                            </Button>
+                                        )}
+                                    </div>
+
                                     <div className="mt-4 flex items-center gap-2">
                                         <div className="w-4 h-4 bg-[#AA8C2C] flex items-center justify-center rounded-[2px]">
                                             <Check className="w-3 h-3 text-white" strokeWidth={3} />
@@ -624,9 +810,15 @@ export default function CheckoutPage() {
                                 </p>
                             )}
 
+                            {step === 'shipping' && !isPhoneVerified && (
+                                <p className="text-xs text-amber-600 mb-3 text-center flex items-center justify-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                    Please verify your phone number to continue
+                                </p>
+                            )}
                             <Button
                                 onClick={handleNext}
-                                disabled={processing}
+                                disabled={processing || (step === 'shipping' && !isPhoneVerified)}
                                 className="w-full h-12 bg-[#1C1917] hover:bg-[#333333] disabled:opacity-50 text-white rounded-none uppercase tracking-widest text-xs font-bold"
                             >
                                 {processing ? 'PROCESSING...' : (step === 'shipping' ? 'Next: Payment' : 'Place Order')}
