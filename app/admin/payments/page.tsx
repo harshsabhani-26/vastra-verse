@@ -84,9 +84,9 @@ export default function PaymentsPage() {
             const data = await response.json();
 
             if (response.ok) {
-                setPayments(data.payments);
-                setStats(data.stats);
-                setTotalPages(data.pagination.totalPages);
+                setPayments(data?.payments ?? []);
+                setStats(data?.stats ?? null);
+                setTotalPages(data?.pagination?.totalPages ?? 1);
             } else {
                 toast.error(data.error || "Failed to fetch payments");
             }
@@ -289,7 +289,7 @@ export default function PaymentsPage() {
                 <CardContent>
                     {loading ? (
                         <div className="text-center py-8 text-stone-500">Loading payments...</div>
-                    ) : payments.length === 0 ? (
+                    ) : (payments?.length ?? 0) === 0 ? (
                         <div className="text-center py-8 text-stone-500">No payments found</div>
                     ) : (
                         <div className="overflow-x-auto">

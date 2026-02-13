@@ -2,13 +2,14 @@
 
 
 import { createOrder, checkUserPhoneVerification } from "@/app/actions/checkout";
+import { getAddresses, addAddress } from "@/app/actions/account";
 import { useCartStore } from "@/lib/store";
 import { applyCoupon, getAutoApplyCoupons } from "@/app/admin/coupons/actions";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { Tag, X, Loader2, Check, Gift, ChevronDown, Phone } from "lucide-react";
+import { Tag, X, Loader2, Check, Gift, ChevronDown, Phone, MapPin, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Script from "next/script";
 
@@ -26,6 +27,21 @@ interface AppliedCoupon {
     discount: number;
     type: string;
     isAutoApplied?: boolean;
+}
+
+interface SavedAddress {
+    id: string;
+    title: string;
+    firstName: string;
+    lastName: string;
+    address1: string;
+    address2: string | null;
+    city: string;
+    state: string;
+    country: string;
+    zipCode: string;
+    phone: string;
+    isDefault: boolean;
 }
 
 export default function CheckoutPage() {
@@ -183,6 +199,45 @@ export default function CheckoutPage() {
         }
     };
 
+    // Saved addresses state
+    const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+    const [saveToAddressBook, setSaveToAddressBook] = useState(false);
+    const [addressTitle, setAddressTitle] = useState("");
+
+    // Fetch saved addresses
+    useEffect(() => {
+        if (!mounted || !session?.user?.id) return;
+        getAddresses().then((addresses) => {
+            setSavedAddresses(addresses as SavedAddress[]);
+            // Auto-select default address if exists
+            const defaultAddr = addresses.find((addr) => addr.isDefault);
+            if (defaultAddr) {
+                handleSelectAddress(defaultAddr.id);
+            }
+        });
+    }, [mounted, session]);
+
+    // Handle address selection
+    const handleSelectAddress = (addressId: string) => {
+        const address = savedAddresses.find((a) => a.id === addressId);
+        if (!address) return;
+
+        setSelectedAddressId(addressId);
+        setFormData({
+            phone: formData.phone, // Keep phone from existing state (for verification)
+            firstName: address.firstName,
+            lastName: address.lastName,
+            address1: address.address1,
+            address2: address.address2 || "",
+            country: address.country,
+            zip: address.zipCode,
+            city: address.city,
+            state: address.state,
+            recipientPhone: address.phone,
+        });
+    };
+
     // Initial Cart Logic (omitted for brevity, keep existing)
     useEffect(() => {
         setMounted(true);
@@ -231,6 +286,37 @@ export default function CheckoutPage() {
     const handleNext = async () => {
         if (step === 'shipping') {
             if (validateForm()) {
+                // Save address to Address Book if checkbox is checked
+                if (saveToAddressBook && addressTitle.trim()) {
+                    const addressFormData = new FormData();
+                    addressFormData.append("title", addressTitle.trim());
+                    addressFormData.append("firstName", formData.firstName);
+                    addressFormData.append("lastName", formData.lastName);
+                    addressFormData.append("address1", formData.address1);
+                    addressFormData.append("address2", formData.address2);
+                    addressFormData.append("country", formData.country);
+                    addressFormData.append("state", formData.state);
+                    addressFormData.append("city", formData.city);
+                    addressFormData.append("zipCode", formData.zip);
+                    addressFormData.append("phone", formData.recipientPhone);
+                    addressFormData.append("type", "Shipping");
+                    addressFormData.append("isDefault", "off");
+
+                    try {
+                        const result = await addAddress(addressFormData);
+                        if (result.success) {
+                            toast({ title: "Address Saved", description: "Address has been saved to your Address Book" });
+                            // Refresh addresses
+                            const updatedAddresses = await getAddresses();
+                            setSavedAddresses(updatedAddresses as SavedAddress[]);
+                        } else if (result.error) {
+                            toast({ variant: "destructive", title: "Failed to save address", description: result.error });
+                        }
+                    } catch (error) {
+                        console.error("Error saving address:", error);
+                    }
+                }
+
                 setStep('payment');
                 window.scrollTo(0, 0);
             }
@@ -440,6 +526,52 @@ export default function CheckoutPage() {
                                     <p className="text-[10px] uppercase tracking-widest text-stone-500 mb-2">STEP 1 OF 2</p>
                                     <h1 className="text-4xl font-serif text-[#1C1917]">Shipping</h1>
                                 </div>
+
+                                {/* Saved Addresses Selector */}
+                                {savedAddresses.length > 0 && (
+                                    <div className="pb-6 border-b border-stone-200">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <label className="text-[10px] uppercase tracking-widest text-[#1C1917] font-medium flex items-center gap-2">
+                                                <MapPin className="w-3.5 h-3.5" />
+                                                Saved Addresses
+                                                <span className="text-xs text-stone-400 font-normal normal-case tracking-normal">({savedAddresses.length})</span>
+                                            </label>
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <select
+                                                value={selectedAddressId || ""}
+                                                onChange={(e) => {
+                                                    if (e.target.value === "new") {
+                                                        setSelectedAddressId(null);
+                                                        setFormData({
+                                                            phone: formData.phone,
+                                                            firstName: "",
+                                                            lastName: "",
+                                                            address1: "",
+                                                            address2: "",
+                                                            country: "India",
+                                                            zip: "",
+                                                            city: "",
+                                                            state: "",
+                                                            recipientPhone: "",
+                                                        });
+                                                    } else if (e.target.value) {
+                                                        handleSelectAddress(e.target.value);
+                                                    }
+                                                }}
+                                                className="flex-1 h-11 px-4 bg-background border border-stone-200 rounded-sm text-sm text-[#1C1917] focus:outline-none focus:border-[#1C1917] transition-colors"
+                                            >
+                                                <option value="">Select a saved address</option>
+                                                {savedAddresses.map((addr) => (
+                                                    <option key={addr.id} value={addr.id}>
+                                                        {addr.title} - {addr.address1}, {addr.city}
+                                                    </option>
+                                                ))}
+                                                <option value="new">+ Enter New Address</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Phone Verification Section */}
                                 <div className="py-6 border-b border-stone-200">
@@ -671,6 +803,37 @@ export default function CheckoutPage() {
                                                 {errors.recipientPhone && <p className="text-xs text-red-500 mt-1">{errors.recipientPhone}</p>}
                                             </div>
                                         </div>
+
+                                        {/* Save Address to Address Book */}
+                                        {!selectedAddressId && (
+                                            <div className="mt-6 p-4 bg-stone-50 border border-stone-200 rounded-sm">
+                                                <div className="flex items-start gap-3">
+                                                    <input
+                                                        type="checkbox"
+                                                        id="saveAddress"
+                                                        checked={saveToAddressBook}
+                                                        onChange={(e) => setSaveToAddressBook(e.target.checked)}
+                                                        className="mt-1 h-4 w-4 rounded-sm border-stone-300 text-[#1C1917] focus:ring-[#1C1917] cursor-pointer"
+                                                    />
+                                                    <div className="flex-1">
+                                                        <label htmlFor="saveAddress" className="text-sm text-[#1C1917] font-medium cursor-pointer">
+                                                            Save this address to my Address Book
+                                                        </label>
+                                                        {saveToAddressBook && (
+                                                            <div className="mt-3">
+                                                                <input
+                                                                    type="text"
+                                                                    value={addressTitle}
+                                                                    onChange={(e) => setAddressTitle(e.target.value)}
+                                                                    placeholder="e.g. Home, Office, Parents House"
+                                                                    className="w-full h-10 px-3 border border-stone-300 rounded-sm text-sm focus:outline-none focus:border-[#1C1917] transition-colors"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
 
                                     </div>
                                 </div>

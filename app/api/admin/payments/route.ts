@@ -5,17 +5,6 @@ import { requireAdmin, unauthorizedResponse } from "@/lib/auth-utils";
 import { validateCursor, validateLimit } from "@/lib/api-utils";
 import { withQueryLogging } from "@/lib/query-logger";
 
-/**
- * GET /api/admin/payments - Cursor-based paginated payments list
- * 
- * Query params:
- * - cursor: Payment ID to start from (optional)
- * - limit: Number of items per page (default: 20, max: 100)
- * - status: Filter by payment status
- * - method: Filter by payment method
- * - search: Search by order ID or gateway IDs
- * - startDate, endDate: Date range filter
- */
 export async function GET(request: NextRequest) {
     try {
         const adminCheck = await requireAdmin();
@@ -25,9 +14,10 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url);
 
-        // Cursor-based pagination
-        const cursor = validateCursor(searchParams.get("cursor"));
+        // Offset-based pagination
+        const page = parseInt(searchParams.get("page") || "1");
         const limit = validateLimit(searchParams.get("limit"), 20, 100);
+        const skip = (page - 1) * limit;
 
         // Filters
         const status = searchParams.get("status") || "all";
@@ -61,7 +51,14 @@ export async function GET(request: NextRequest) {
             if (endDate) where.createdAt.lte = new Date(endDate);
         }
 
-        // Fetch payments with cursor pagination
+        // Fetch total count for pagination
+        const totalCount = await withQueryLogging(
+            '/api/admin/payments',
+            'count',
+            () => prisma.payment.count({ where })
+        );
+
+        // Fetch payments with offset pagination
         const payments = await withQueryLogging(
             '/api/admin/payments',
             'findMany',
@@ -75,6 +72,7 @@ export async function GET(request: NextRequest) {
                     method: true,
                     gatewayPaymentId: true,
                     gatewayOrderId: true,
+                    failureReason: true,
                     createdAt: true,
                     order: {
                         select: {
@@ -96,29 +94,75 @@ export async function GET(request: NextRequest) {
                     { createdAt: "desc" },
                     { id: "desc" }
                 ],
-                ...(cursor ? {
-                    cursor: { id: cursor },
-                    skip: 1
-                } : {}),
-                take: limit + 1
+                skip,
+                take: limit
             }),
-            { cursor, limit, status, method, search }
+            { page, limit, status, method, search }
         );
 
-        // Check for next page
-        const hasNextPage = payments.length > limit;
-        const items = hasNextPage ? payments.slice(0, limit) : payments;
-        const nextCursor = hasNextPage ? items[items.length - 1].id : null;
+        // Calculate stats
+        const allPayments = await withQueryLogging(
+            '/api/admin/payments',
+            'findMany-stats',
+            () => prisma.payment.findMany({
+                where,
+                select: {
+                    amount: true,
+                    method: true,
+                },
+            })
+        );
+
+        const methodBreakdown: Record<string, { count: number; total: number }> = {};
+        let codTotal = 0;
+        let onlineTotal = 0;
+
+        allPayments.forEach((payment) => {
+            const amount = Number(payment.amount);
+            const method = payment.method;
+
+            if (!methodBreakdown[method]) {
+                methodBreakdown[method] = { count: 0, total: 0 };
+            }
+            methodBreakdown[method].count += 1;
+            methodBreakdown[method].total += amount;
+
+            if (method === "COD") {
+                codTotal += amount;
+            } else {
+                onlineTotal += amount;
+            }
+        });
+
+        const totalRevenue = codTotal + onlineTotal;
+        const codPercentage = totalRevenue > 0 ? ((codTotal / totalRevenue) * 100).toFixed(2) : "0.00";
+
+        const totalPages = Math.ceil(totalCount / limit);
 
         return NextResponse.json({
-            items,
-            nextCursor,
-            hasNextPage
+            payments,
+            stats: {
+                methodBreakdown,
+                codTotal,
+                onlineTotal,
+                codPercentage,
+            },
+            pagination: {
+                page,
+                totalPages,
+                totalCount,
+                limit,
+            },
         });
     } catch (error: any) {
         console.error('[ERROR] /api/admin/payments - Failed to fetch payments:', error);
         return NextResponse.json(
-            { error: error.message || "Failed to fetch payments" },
+            {
+                payments: [],
+                stats: null,
+                pagination: { page: 1, totalPages: 1, totalCount: 0, limit: 20 },
+                error: error.message || "Failed to fetch payments"
+            },
             { status: 500 }
         );
     }
