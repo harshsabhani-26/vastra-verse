@@ -192,6 +192,11 @@ export function ProfileForm({ user, msg91Config }: { user: UserData; msg91Config
                                         tokenAuth: msg91Config.tokenAuth,
                                         mobile: '91' + currentPhone,
                                         identifier: '91' + currentPhone,
+                                        // Disable GeoIP auto-detection to prevent db-ip.com CSP errors
+                                        // Default to India - user can manually select country if needed
+                                        geoIpLookup: function (callback: (countryCode: string) => void) {
+                                            callback('in'); // ISO 3166-1 alpha-2 country code for India
+                                        },
                                         success: async (data: any) => {
                                             try {
                                                 // Handle various response formats
