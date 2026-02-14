@@ -172,9 +172,20 @@ export default function CheckoutPage() {
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ token, phone })
                         });
-                        const responseData = await res.json();
-                        if (res.ok) {
-                            toast({ title: "Success", description: "Phone verified successfully!" });
+
+                        let responseData;
+                        try {
+                            responseData = await res.json();
+                        } catch (e) {
+                            throw new Error('Invalid server response');
+                        }
+
+                        if (res.ok && responseData.success) {
+                            if (responseData.alreadyVerified) {
+                                toast({ title: "Note", description: responseData.message || "Phone already verified" });
+                            } else {
+                                toast({ title: "Success", description: responseData.message || "Phone verified successfully!" });
+                            }
                             setIsPhoneVerified(true);
                             setIsVerifying(false);
                         } else {

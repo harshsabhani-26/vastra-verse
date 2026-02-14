@@ -233,7 +233,6 @@ export function ProfileForm({ user, msg91Config }: { user: UserData; msg91Config
                                         },
                                         success: async (data: any) => {
                                             try {
-                                                // Handle various response formats
                                                 const token = data.token || data.message || (typeof data === 'string' ? data : null);
 
                                                 if (!token) {
@@ -248,9 +247,28 @@ export function ProfileForm({ user, msg91Config }: { user: UserData; msg91Config
                                                     headers: { 'Content-Type': 'application/json' },
                                                     body: JSON.stringify({ token: token, phone: currentPhone })
                                                 });
-                                                const responseData = await res.json();
-                                                if (res.ok) {
-                                                    toast.success('Phone verified successfully!');
+
+                                                let responseData;
+                                                try {
+                                                    responseData = await res.json();
+                                                } catch (e) {
+                                                    throw new Error('Invalid server response');
+                                                }
+
+                                                if (res.ok && responseData.success) {
+                                                    if (responseData.alreadyVerified) {
+                                                        toast.success(responseData.message || 'Phone already verified');
+                                                    } else {
+                                                        toast.success(responseData.message || 'Phone verified successfully!');
+                                                    }
+
+                                                    // OPTIMISTIC UPDATE: Prevent loop immediately
+                                                    // 1. Update local state to verified/not editing
+                                                    setIsVerifying(false);
+                                                    setIsEditing(false);
+
+                                                    // 2. Refresh server data
+                                                    // Note: We depend on page reload/refresh to get clean session
                                                     router.refresh();
                                                 } else {
                                                     toast.error(responseData.error || 'Verification failed');

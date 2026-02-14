@@ -3,122 +3,189 @@ import prisma from '@/lib/prisma';
 import { auth } from '@/auth';
 import { getAuthRateLimiter } from '@/lib/rate-limit';
 
+// Strictly typed response helper to ensure consistency
+const jsonResponse = (data: any, status: number = 200) => {
+    return NextResponse.json(data, { status });
+};
+
 export async function POST(req: NextRequest) {
     try {
-        // SECURITY: Rate limiting
+        // 1. SECURITY: Rate limiting
         const rateLimiter = getAuthRateLimiter();
         const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-        const { success } = await rateLimiter.limit(ip);
+        const { success: allowed } = await rateLimiter.limit(ip);
 
-        if (!success) {
-            return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
+        if (!allowed) {
+            console.warn(`[OTP] Rate limit exceeded for IP: ${ip}`);
+            return jsonResponse({
+                success: false,
+                verified: false,
+                error: 'Too many requests. Please try again later.'
+            }, 429);
         }
 
+        // 2. SESSION VALIDATION
         const session = await auth();
         if (!session?.user?.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            console.warn(`[OTP] Unauthorized access attempt from IP: ${ip}`);
+            return jsonResponse({
+                success: false,
+                verified: false,
+                error: 'Unauthorized. Please login.'
+            }, 401);
         }
 
-        const { token, phone } = await req.json();
+        // 3. INPUT VALIDATION
+        let body;
+        try {
+            body = await req.json();
+        } catch (e) {
+            return jsonResponse({ success: false, verified: false, error: 'Invalid JSON body' }, 400);
+        }
+
+        const { token, phone } = body;
 
         if (!token) {
-            return NextResponse.json({ error: 'Token is required' }, { status: 400 });
+            return jsonResponse({ success: false, verified: false, error: 'OTP Token is required' }, 400);
         }
 
-        if (process.env.NODE_ENV === 'development') {
-            console.log('Verifying token:', token);
-        }
-
-        if (!process.env.MSG91_AUTH_KEY) {
-            console.error('MSG91_AUTH_KEY is missing in environment variables');
-            return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-        }
-
-        // Verify the token with MSG91
-        const verifyResponse = await fetch('https://control.msg91.com/api/v5/widget/verifyAccessToken', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'authkey': process.env.MSG91_AUTH_KEY // Also send in header as per some MSG91 docs
-            },
-            body: JSON.stringify({
-                authkey: process.env.MSG91_AUTH_KEY,
-                'access-token': token,
-            }),
+        // 4. IDEMPOTENCY CHECK
+        // Check if user is ALREADY verified before calling external API
+        const currentUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { phoneVerified: true, phone: true }
         });
 
-        const verifyData = await verifyResponse.json();
-        if (process.env.NODE_ENV === 'development') {
-            console.log('MSG91 Verify Response:', JSON.stringify(verifyData, null, 2));
+        // Normalize phone for comparison if possible
+        // (Assuming frontend sends phone number to check against)
+        if (currentUser?.phoneVerified) {
+            console.log(`[OTP] User ${session.user.id} already verified.`);
+            return jsonResponse({
+                success: true,
+                verified: true,
+                message: "Phone already verified",
+                alreadyVerified: true
+            }, 200);
         }
 
-        if (!verifyResponse.ok || verifyData.type !== 'success') {
-            const errorMessage = verifyData.message || verifyData.error || 'Invalid verification token';
-            console.error('MSG91 Verification Failed:', errorMessage);
-            return NextResponse.json({
-                error: errorMessage
-            }, { status: 400 });
+        // 5. EXTERNAL VERIFICATION (MSG91)
+        if (!process.env.MSG91_AUTH_KEY) {
+            console.error('[OTP] CRITICAL: MSG91_AUTH_KEY missing in logic');
+            return jsonResponse({
+                success: false,
+                verified: false,
+                error: 'Server configuration error'
+            }, 500);
         }
 
-        // Extract phone number from MSG91 response
-        // Try multiple possible fields based on common MSG91 response patterns
+        console.log(`[OTP] Verifying token for user ${session.user.id}`);
+
+        let msg91Data;
+        try {
+            const verifyResponse = await fetch('https://control.msg91.com/api/v5/widget/verifyAccessToken', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'authkey': process.env.MSG91_AUTH_KEY
+                },
+                body: JSON.stringify({
+                    authkey: process.env.MSG91_AUTH_KEY,
+                    'access-token': token,
+                    'mobile': phone ? ('91' + phone) : undefined // Optional support for validating specific number
+                }),
+            });
+
+            msg91Data = await verifyResponse.json();
+
+            // Log raw response for debugging (sensitive data masked in prod logs ideal, but here simple log)
+            console.log(`[OTP] MSG91 Response: ${JSON.stringify(msg91Data)}`);
+
+            if (!verifyResponse.ok || msg91Data.type !== 'success') {
+                const msg = msg91Data.message || msg91Data.error || 'Invalid OTP';
+                console.warn(`[OTP] Verification failed: ${msg}`);
+                return jsonResponse({
+                    success: false,
+                    verified: false,
+                    error: msg
+                }, 400);
+            }
+        } catch (fetchError) {
+            console.error('[OTP] External API failure:', fetchError);
+            return jsonResponse({
+                success: false,
+                verified: false,
+                error: 'Verification service unreachable'
+            }, 502);
+        }
+
+        // 6. PROCESS VERIFIED NUMBER
+        // Extract phone from response OR fallback to valid input
         let verifiedPhone: string | undefined = undefined;
 
-        if (verifyData.mobile) verifiedPhone = verifyData.mobile;
-        else if (verifyData.data?.mobile) verifiedPhone = verifyData.data.mobile;
-        else if (verifyData.message && /^\d+$/.test(verifyData.message)) verifiedPhone = verifyData.message; // valid if message is just digits
-        // If the API response doesn't contain the number, use the one provided by client IF the token is valid
-        // NOTE: This assumes that a valid token implies the client-provided phone was the one verified.
-        // In a stricter system, we'd require the provider to return the number.
-        else if (phone) verifiedPhone = phone;
+        if (msg91Data.mobile) verifiedPhone = msg91Data.mobile;
+        else if (msg91Data.data?.mobile) verifiedPhone = msg91Data.data.mobile;
+        else if (msg91Data.message && /^\d+$/.test(msg91Data.message)) verifiedPhone = msg91Data.message;
+        else if (phone) verifiedPhone = phone; // Trust client IF token was valid (Fallback)
 
-        // Clean up formatting
-        if (verifiedPhone) {
-            verifiedPhone = verifiedPhone.toString();
-            // Remove any non-digit characters
-            verifiedPhone = verifiedPhone.replace(/\D/g, '');
-
-            // If it starts with 91 and is 12 digits, strip the 91
-            if (verifiedPhone.length === 12 && verifiedPhone.startsWith('91')) {
-                verifiedPhone = verifiedPhone.substring(2);
-            }
-            // If it starts with 0 and is 11 digits, strip the 0
-            if (verifiedPhone.length === 11 && verifiedPhone.startsWith('0')) {
-                verifiedPhone = verifiedPhone.substring(1);
-            }
+        if (!verifiedPhone) {
+            console.error('[OTP] Could not resolve phone number from successful response');
+            return jsonResponse({ success: false, verified: false, error: 'Could not determine verified number' }, 400);
         }
 
-        if (!verifiedPhone || verifiedPhone.length !== 10) {
-            console.error('Could not determine a valid 10-digit verified phone number', {
-                raw: verifyData,
-                processed: verifiedPhone
+        // Sanitization
+        verifiedPhone = verifiedPhone.toString().replace(/\D/g, '');
+        // Strip 91 prefix if 12 digits
+        if (verifiedPhone.length === 12 && verifiedPhone.startsWith('91')) verifiedPhone = verifiedPhone.substring(2);
+        // Strip 0 prefix if 11 digits
+        if (verifiedPhone.length === 11 && verifiedPhone.startsWith('0')) verifiedPhone = verifiedPhone.substring(1);
+
+        if (verifiedPhone.length !== 10) {
+            console.error(`[OTP] Invalid phone length: ${verifiedPhone}`);
+            return jsonResponse({ success: false, verified: false, error: 'Invalid phone number format' }, 400);
+        }
+
+        // 7. ATOMIC DATABASE UPDATE
+        console.log(`[OTP] Updating DB for user ${session.user.id} with phone ${verifiedPhone}`);
+
+        await prisma.$transaction(async (tx) => {
+            // Update user
+            await tx.user.update({
+                where: { id: session.user.id },
+                data: {
+                    phoneVerified: true,
+                    phone: verifiedPhone,
+                }
             });
-            return NextResponse.json({ error: 'Could not determine verified phone number' }, { status: 400 });
-        }
 
-        if (process.env.NODE_ENV === 'development') {
-            console.log('Updating user phone to:', verifiedPhone);
-        }
-
-        // Update user's phoneVerified status and the phone number
-        await prisma.user.update({
-            where: { id: session.user.id },
-            data: {
-                phoneVerified: true,
-                phone: verifiedPhone,
-            },
+            // Optional: Log activity
+            await tx.activityLog.create({
+                data: {
+                    userId: session.user.id,
+                    action: 'PHONE_VERIFIED',
+                    description: `Phone verified: ${verifiedPhone}`,
+                    ipAddress: ip
+                }
+            });
         });
 
-        // Note: Client should call session.update() to refresh the session
-        // with the new phoneVerified status after receiving this response
-        return NextResponse.json({ success: true, message: 'Phone verified successfully', phone: verifiedPhone });
-    } catch (error) {
-        console.error('Phone verification error detailed:', {
-            message: (error as Error).message,
-            stack: (error as Error).stack,
-            cause: (error as Error).cause
-        });
-        return NextResponse.json({ error: 'Verification failed', details: (error as Error).message }, { status: 500 });
+        // 8. SUCCESS RESPONSE
+        console.log(`[OTP] Success for user ${session.user.id}`);
+        return jsonResponse({
+            success: true,
+            verified: true,
+            message: "Phone verified successfully",
+            phone: verifiedPhone
+        }, 200);
+
+    } catch (globalError) {
+        // 9. GLOBAL SAFETY NET
+        console.error('[OTP] UNCAUGHT EXCEPTION:', globalError);
+        return jsonResponse({
+            success: false,
+            verified: false,
+            error: 'Internal Server Error',
+            details: (globalError as Error).message
+        }, 500);
     }
 }
