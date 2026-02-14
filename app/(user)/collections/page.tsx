@@ -20,6 +20,10 @@ async function getProducts() {
                 id: true,
                 name: true,
                 price: true,
+                finalPrice: true,
+                discount: true,
+                discountType: true,
+                isNewArrival: true,
                 createdAt: true,
                 category: {
                     select: {
@@ -79,10 +83,12 @@ export default async function CollectionsPage() {
                                 key={product.id}
                                 id={product.id}
                                 name={product.name}
-                                price={parseFloat(product.price.toString())}
+                                price={product.finalPrice ? parseFloat(product.finalPrice.toString()) : parseFloat(product.price.toString())}
+                                originalPrice={product.finalPrice ? parseFloat(product.price.toString()) : undefined}
+                                discountPercentage={product.discount && product.discountType === 'PERCENTAGE' ? parseFloat(product.discount.toString()) : undefined}
                                 image={product.images[0]?.url || "/images/placeholder.jpg"}
                                 category={product.category.name}
-                                isNew={new Date().getTime() - new Date(product.createdAt).getTime() < 30 * 24 * 60 * 60 * 1000}
+                                isNew={product.isNewArrival}
                                 isWishlisted={wishlistedProductIds.has(product.id)}
                             />
                         ))}

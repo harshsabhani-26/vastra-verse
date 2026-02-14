@@ -168,11 +168,11 @@ export function CartSummary() {
 
                 {/* Tax Breakdown */}
                 <div className="flex justify-between text-xs text-text-muted mb-2">
-                    <span>CGST (9%)</span>
+                    <span>CGST (9%) (Included)</span>
                     <span>₹{((subtotal - (subtotal / 1.18)) / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-xs text-text-muted mb-4">
-                    <span>SGST (9%)</span>
+                    <span>SGST (9%) (Included)</span>
                     <span>₹{((subtotal - (subtotal / 1.18)) / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
 
