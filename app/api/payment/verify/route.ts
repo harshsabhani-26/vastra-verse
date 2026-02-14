@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
-import { generateInvoicePDF } from "@/lib/invoice";
-import { sendInvoiceEmail } from "@/lib/email";
+import { buildInvoiceData } from "@/lib/invoice-data-builder";
+import { generateInvoicePDF } from "@/lib/invoice-pdf-generator";
+import { sendInvoiceEmail } from "@/lib/email/send-invoice";
 import { getPaymentRateLimiter } from "@/lib/rate-limit";
 import { logError, logPaymentEvent, logRateLimitViolation } from "@/lib/logger";
 import { clearCart } from "@/app/actions/cart";
@@ -131,44 +132,33 @@ export async function POST(req: Request) {
             removePendingOrderData(razorpay_order_id);
         } catch { /* best-effort cleanup */ }
 
-        // After successful order creation, generate invoice
+        // After successful order creation, generate invoice using 3-layer architecture
         try {
-            const fullOrder = await prisma.order.findUnique({
-                where: { id: orderId },
-                include: {
-                    user: true,
-                    items: {
-                        include: {
-                            product: true
-                        }
-                    }
-                }
-            });
+            // Layer 1: Build typed invoice data (single DB fetch + GST calculation)
+            const invoiceData = await buildInvoiceData(orderId);
 
-            if (fullOrder) {
+            if (process.env.NODE_ENV === "development") {
+                console.log("Generating invoice for order:", orderId);
+            }
+
+            // Layer 2: Render PDF from typed data
+            const pdfBuffer = await generateInvoicePDF(invoiceData);
+
+            // Layer 3: Send email with PDF attachment
+            if (invoiceData.customer.email) {
                 if (process.env.NODE_ENV === "development") {
-                    console.log("Generating invoice for order:", orderId);
+                    console.log("Sending invoice email to:", invoiceData.customer.email);
                 }
-                const pdfBuffer = await generateInvoicePDF(fullOrder);
+                await sendInvoiceEmail(invoiceData, pdfBuffer);
 
-                const customerEmail = fullOrder.user?.email;
-                const customerName = fullOrder.user?.name || fullOrder.customerName || "Customer";
-
-                if (customerEmail) {
-                    if (process.env.NODE_ENV === "development") {
-                        console.log("Sending invoice email to:", customerEmail);
+                await prisma.orderTimeline.create({
+                    data: {
+                        orderId: orderId,
+                        event: "Invoice Sent",
+                        details: `Invoice emailed to ${invoiceData.customer.email}`,
+                        createdBy: "system"
                     }
-                    await sendInvoiceEmail(customerEmail, orderId, customerName, pdfBuffer);
-
-                    await prisma.orderTimeline.create({
-                        data: {
-                            orderId: orderId,
-                            event: "Invoice Sent",
-                            details: `Invoice emailed to ${customerEmail}`,
-                            createdBy: "system"
-                        }
-                    });
-                }
+                });
             }
         } catch (invError) {
             logError("INVOICE_GENERATION", invError);

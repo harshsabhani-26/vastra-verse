@@ -1,30 +1,28 @@
 /**
  * Invoice API Route — Admin Only
- * POST /api/admin/orders/[id]/invoice
+ * POST /api/admin/orders/[id]/invoice?mode=download|email
  * 
- * Modes:
- *   mode=download → returns PDF stream for auto-download
- *   mode=email    → sends invoice email to customer
+ * Orchestrates the 3-layer invoice architecture:
+ *   Layer 1: buildInvoiceData()  — fetch + calculate
+ *   Layer 2: generateInvoicePDF() — render PDF
+ *   Layer 3: sendInvoiceEmail()  — deliver email
  * 
- * Features:
- *   - Admin authentication (email-based via ADMIN_EMAIL)
- *   - Server-side PDF generation (PDFKit)
- *   - Audit logging to ActivityLog
- *   - Error-safe responses
+ * Single DB fetch. Single PDF generation. Structured errors.
  */
 
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import prisma from "@/lib/prisma";
-import { generateInvoicePDFBuffer } from "@/lib/invoice/generator";
-import { sendInvoiceEmailWithPDF } from "@/lib/email/send-invoice";
+import { buildInvoiceData, InvoiceError } from "@/lib/invoice-data-builder";
+import { generateInvoicePDF } from "@/lib/invoice-pdf-generator";
+import { sendInvoiceEmail } from "@/lib/email/send-invoice";
 
 export async function POST(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        // ---- Auth (email-based admin check) ----
+        // ── 1. Auth ──
         let session;
         try {
             session = await requireAdmin();
@@ -34,7 +32,7 @@ export async function POST(
 
         const { id } = await params;
 
-        // ---- Get mode from URL ----
+        // ── 2. Parse mode ──
         let mode = "download";
         try {
             const url = new URL(req.url);
@@ -43,165 +41,110 @@ export async function POST(
             mode = "download";
         }
 
-        // ---- Fetch Order ----
-        const order = await prisma.order.findUnique({
-            where: { id },
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        phone: true,
-                    },
-                },
-                items: {
-                    include: {
-                        product: {
-                            select: {
-                                id: true,
-                                name: true,
-                                price: true,
-                                sku: true,
-                            },
-                        },
-                    },
-                },
-                payments: {
-                    select: {
-                        id: true,
-                        gatewayPaymentId: true,
-                        method: true,
-                        status: true,
-                    },
-                    orderBy: { createdAt: "desc" },
-                    take: 1,
-                },
-            },
-        });
-
-        if (!order) {
-            return NextResponse.json({ error: "Order not found" }, { status: 404 });
+        if (mode !== "download" && mode !== "email") {
+            return NextResponse.json(
+                { error: `Invalid mode: ${mode}. Use 'download' or 'email'.` },
+                { status: 400 }
+            );
         }
 
-        // ---- Generate PDF ----
-        let pdfBuffer: Buffer;
+        // ── 3. LAYER 1 — Build Invoice Data ──
+        let invoiceData;
         try {
-            pdfBuffer = await generateInvoicePDFBuffer(order as any);
-        } catch (pdfError: any) {
-            console.error("[Invoice API] PDF generation failed:", pdfError);
+            invoiceData = await buildInvoiceData(id);
+        } catch (err: any) {
+            if (err instanceof InvoiceError && err.code === "ORDER_NOT_FOUND") {
+                return NextResponse.json({ error: err.message }, { status: 404 });
+            }
+            console.error("[Invoice API] Data builder error:", err);
             return NextResponse.json(
-                { error: "Failed to generate invoice PDF", details: pdfError.message },
+                { error: "Failed to build invoice data", details: err.message },
                 { status: 500 }
             );
         }
 
-        // ---- Audit Log (non-blocking, errors don't block response) ----
-        const logAudit = async (action: string, description: string, status: string = "SUCCESS", errorMessage?: string) => {
-            try {
-                await prisma.activityLog.create({
-                    data: {
-                        userId: session.user?.id,
-                        userEmail: session.user?.email || undefined,
-                        action,
-                        description,
-                        resourceType: "Order",
-                        resourceId: id,
-                        status,
-                        errorMessage,
-                    },
-                });
-            } catch (logErr) {
-                console.error("[Invoice API] Audit log failed:", logErr);
-            }
+        // ── 4. LAYER 2 — Generate PDF ──
+        let pdfBuffer: Buffer;
+        try {
+            pdfBuffer = await generateInvoicePDF(invoiceData);
+        } catch (err: any) {
+            console.error("[Invoice API] PDF generator error:", err);
+            return NextResponse.json(
+                { error: "Failed to generate invoice PDF", details: err.message },
+                { status: 500 }
+            );
+        }
+
+        // ── Non-blocking audit helper ──
+        const logAudit = (action: string, description: string, status = "SUCCESS", errorMessage?: string) => {
+            prisma.activityLog.create({
+                data: {
+                    userId: session.user?.id,
+                    userEmail: session.user?.email || undefined,
+                    action,
+                    description,
+                    resourceType: "Order",
+                    resourceId: id,
+                    status,
+                    errorMessage,
+                },
+            }).catch((e) => console.error("[Invoice API] Audit log failed:", e));
         };
 
-        const logTimeline = async (event: string, details: string) => {
-            try {
-                await prisma.orderTimeline.create({
-                    data: {
-                        orderId: id,
-                        event,
-                        details,
-                        createdBy: session.user?.id,
-                    },
-                });
-            } catch (logErr) {
-                console.error("[Invoice API] Timeline log failed:", logErr);
-            }
+        const logTimeline = (event: string, details: string) => {
+            prisma.orderTimeline.create({
+                data: { orderId: id, event, details, createdBy: session.user?.id },
+            }).catch((e) => console.error("[Invoice API] Timeline log failed:", e));
         };
 
-        // =====================
+        // ══════════════════
         // MODE: DOWNLOAD
-        // =====================
+        // ══════════════════
         if (mode === "download") {
-            // Non-blocking audit + timeline
-            logAudit("INVOICE_DOWNLOADED", `Invoice downloaded for order ${id}`);
-            logTimeline("Invoice Downloaded", "Invoice PDF downloaded by admin");
+            logAudit("INVOICE_DOWNLOADED", `Invoice ${invoiceData.invoiceNumber} downloaded for order ${id}`);
+            logTimeline("Invoice Downloaded", `Invoice ${invoiceData.invoiceNumber} downloaded by admin`);
 
-            // Return PDF response
             return new Response(new Uint8Array(pdfBuffer), {
                 status: 200,
                 headers: {
                     "Content-Type": "application/pdf",
-                    "Content-Disposition": `attachment; filename="invoice-${id}.pdf"`,
+                    "Content-Disposition": `attachment; filename="${invoiceData.invoiceNumber}.pdf"`,
                     "Content-Length": String(pdfBuffer.length),
                     "Cache-Control": "no-cache, no-store, must-revalidate",
                 },
             });
         }
 
-        // =====================
+        // ══════════════════
         // MODE: EMAIL
-        // =====================
-        if (mode === "email") {
-            const customerEmail = order.user?.email;
-            const customerName = order.customerName || order.user?.name || "Customer";
-
-            if (!customerEmail) {
-                return NextResponse.json(
-                    { error: "Customer email not found" },
-                    { status: 400 }
-                );
-            }
-
-            const result = await sendInvoiceEmailWithPDF({
-                to: customerEmail,
-                orderId: order.id,
-                customerName,
-                pdfBuffer,
-                orderTotal: Number(order.total).toLocaleString("en-IN"),
-                paymentMethod: order.paymentMethod || "N/A",
-            });
-
-            if (result.success) {
-                logAudit("INVOICE_EMAILED", `Invoice emailed to ${customerEmail} for order ${id}`);
-                logTimeline("Invoice Emailed", `Invoice sent to ${customerEmail} by admin`);
-
-                return NextResponse.json({
-                    success: true,
-                    message: `Invoice sent to ${customerEmail}`,
-                    messageId: result.messageId,
-                });
-            } else {
-                logAudit("INVOICE_EMAILED", `Failed to email invoice for order ${id}: ${result.error}`, "FAILED", result.error);
-
-                return NextResponse.json(
-                    { error: result.error || "Failed to send email" },
-                    { status: 500 }
-                );
-            }
+        // ══════════════════
+        if (!invoiceData.customer.email) {
+            return NextResponse.json({ error: "Customer email not found" }, { status: 400 });
         }
 
-        return NextResponse.json(
-            { error: `Invalid mode: ${mode}. Use 'download' or 'email'.` },
-            { status: 400 }
-        );
+        // ── 5. LAYER 3 — Send Email ──
+        const result = await sendInvoiceEmail(invoiceData, pdfBuffer);
+
+        if (result.success) {
+            logAudit("INVOICE_EMAILED", `Invoice ${invoiceData.invoiceNumber} emailed to ${invoiceData.customer.email}`);
+            logTimeline("Invoice Emailed", `Invoice sent to ${invoiceData.customer.email}`);
+
+            return NextResponse.json({
+                success: true,
+                message: `Invoice sent to ${invoiceData.customer.email}`,
+                invoiceNumber: invoiceData.invoiceNumber,
+                messageId: result.messageId,
+            });
+        } else {
+            logAudit("INVOICE_EMAILED", `Failed: ${result.error}`, "FAILED", result.error);
+
+            return NextResponse.json(
+                { error: result.error || "Failed to send email" },
+                { status: 500 }
+            );
+        }
     } catch (error: any) {
         console.error("[Invoice API] Unhandled error:", error?.message || error);
-        return NextResponse.json(
-            { error: "Internal Server Error" },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
