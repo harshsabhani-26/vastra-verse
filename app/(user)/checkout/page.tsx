@@ -6,6 +6,7 @@ import { getAddresses, addAddress } from "@/app/actions/account";
 import { useCartStore } from "@/lib/store";
 import { applyCoupon, getAutoApplyCoupons } from "@/app/admin/coupons/actions";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
@@ -44,7 +45,10 @@ interface SavedAddress {
     isDefault: boolean;
 }
 
+import { useRouter } from "next/navigation";
+
 export default function CheckoutPage() {
+    const router = useRouter();
     const { data: session } = useSession();
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const [subtotal, setSubtotal] = useState(0);
@@ -188,6 +192,8 @@ export default function CheckoutPage() {
                             }
                             setIsPhoneVerified(true);
                             setIsVerifying(false);
+                            // Refresh server session to ensure latest data
+                            router.refresh();
                         } else {
                             toast({ variant: "destructive", title: "Verification Failed", description: responseData.error || "Verification failed" });
                             setIsVerifying(false);
@@ -596,10 +602,10 @@ export default function CheckoutPage() {
                                                 Checking...
                                             </span>
                                         ) : isPhoneVerified ? (
-                                            <span className="text-[10px] uppercase tracking-wider text-green-700 font-medium bg-green-50 px-3 py-1 rounded-full border border-green-200 flex items-center gap-1 shadow-sm">
+                                            <Badge variant="secondary" className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200 gap-1 px-3 py-1 font-medium rounded-full shadow-sm">
                                                 <Check className="w-3 h-3" />
                                                 Verified
-                                            </span>
+                                            </Badge>
                                         ) : (
                                             <span className="text-[10px] uppercase tracking-wider text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-sm border border-amber-100 flex items-center gap-1">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
@@ -611,10 +617,12 @@ export default function CheckoutPage() {
                                     <div className="flex flex-col sm:flex-row gap-3">
                                         <div className="flex gap-3 flex-1">
                                             <div className="flex-shrink-0">
-                                                <div className="h-10 px-3 bg-stone-50 border border-stone-200 text-sm font-medium text-[#1C1917] flex items-center rounded-sm w-20 justify-center">+91</div>
+                                                <select className="h-11 px-3 bg-stone-50 border border-stone-200 text-sm text-[#1C1917] focus:outline-none focus:border-[#1C1917] w-20 rounded-sm">
+                                                    <option>+91</option>
+                                                </select>
                                             </div>
                                             <div className="relative flex-1">
-                                                <Phone className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
+                                                <Phone className="absolute left-3 top-3.5 h-4 w-4 text-stone-400" />
                                                 <input
                                                     type="tel"
                                                     name="phone"
@@ -628,7 +636,7 @@ export default function CheckoutPage() {
                                                     maxLength={10}
                                                     pattern="[0-9]{10}"
                                                     className={cn(
-                                                        "w-full h-10 pl-9 border bg-transparent focus:outline-none text-sm text-[#1C1917] rounded-sm transition-all",
+                                                        "w-full h-11 pl-9 border bg-transparent focus:outline-none text-sm text-[#1C1917] rounded-sm transition-all",
                                                         errors.phone ? "border-red-500" : "border-stone-200 focus:border-[#1C1917]",
                                                         isPhoneVerified && "opacity-70 cursor-not-allowed bg-stone-50"
                                                     )}
@@ -646,7 +654,7 @@ export default function CheckoutPage() {
                                                     setIsPhoneVerified(false);
                                                     setFormData(prev => ({ ...prev, phone: "" }));
                                                 }}
-                                                className="w-full sm:w-auto h-10 px-6 text-[10px] uppercase tracking-[0.2em] border-stone-200 hover:border-[#1C1917] hover:bg-stone-50 text-[#1C1917] rounded-sm transition-all"
+                                                className="w-full sm:w-auto h-11 px-6 text-[10px] uppercase tracking-[0.2em] border-stone-200 hover:border-[#1C1917] hover:bg-stone-50 text-[#1C1917] rounded-sm transition-all"
                                             >
                                                 Edit
                                             </Button>
@@ -655,7 +663,7 @@ export default function CheckoutPage() {
                                                 type="button"
                                                 onClick={handleVerifyPhone}
                                                 disabled={isVerifying || !formData.phone || formData.phone.length !== 10}
-                                                className="w-full sm:w-auto h-10 px-8 bg-[#1C1917] text-white hover:bg-[#333333] uppercase tracking-[0.2em] text-[10px] font-bold rounded-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                                className="w-full sm:w-auto h-11 px-8 bg-[#1C1917] text-white hover:bg-[#333333] uppercase tracking-[0.2em] text-[10px] font-bold shadow-luxury hover:shadow-elevated rounded-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                             >
                                                 {isVerifying ? (
                                                     <>
