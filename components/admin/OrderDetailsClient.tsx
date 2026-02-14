@@ -6,7 +6,7 @@ import { OrderStatus, PaymentStatus } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import {
     ArrowLeft, User, MapPin, CreditCard, Package, Clock,
-    Truck, MessageCircle, Mail, Ban, RotateCcw, FileText, Pencil
+    Truck, MessageCircle, Mail, Ban, RotateCcw, FileText, Pencil, Loader2, Download, CheckCircle
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import InvoiceEmailModal from "@/components/admin/InvoiceEmailModal";
 
 interface OrderItem {
     id: string;
@@ -87,6 +88,10 @@ export default function OrderDetailsClient({ order }: { order: Order }) {
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [cancellationReason, setCancellationReason] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // Invoice state
+    const [invoiceState, setInvoiceState] = useState<"idle" | "generating" | "downloading" | "done" | "error">("idle");
+    const [emailModalOpen, setEmailModalOpen] = useState(false);
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -439,6 +444,52 @@ M & H Team`;
 
                 {/* Actions Sidebar - Right Column (1/3) */}
                 <div className="space-y-6">
+                    {/* Invoice Actions */}
+                    <div className="bg-white rounded-lg border border-stone-200 p-6">
+                        <h3 className="font-semibold mb-4">Invoice</h3>
+                        <div className="space-y-2">
+                            <Button
+                                variant="outline"
+                                className="w-full justify-start"
+                                disabled={invoiceState === "generating" || invoiceState === "downloading"}
+                                onClick={async () => {
+                                    setInvoiceState("generating");
+                                    try {
+                                        const response = await fetch(`/api/admin/orders/${order.id}/invoice?mode=download`, { method: "POST" });
+                                        if (!response.ok) throw new Error("Failed to generate invoice");
+                                        setInvoiceState("downloading");
+                                        const blob = await response.blob();
+                                        const url = window.URL.createObjectURL(blob);
+                                        const link = document.createElement("a");
+                                        link.href = url;
+                                        link.download = `invoice-${order.id}.pdf`;
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                        window.URL.revokeObjectURL(url);
+                                        setInvoiceState("done");
+                                        setEmailModalOpen(true);
+                                        setTimeout(() => setInvoiceState("idle"), 3000);
+                                    } catch (error: any) {
+                                        setInvoiceState("error");
+                                        alert(error.message || "Error generating invoice");
+                                        setTimeout(() => setInvoiceState("idle"), 3000);
+                                    }
+                                }}
+                            >
+                                {invoiceState === "generating" ? (
+                                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Generating...</>
+                                ) : invoiceState === "downloading" ? (
+                                    <><Download className="h-4 w-4 mr-2 animate-bounce" /> Downloading...</>
+                                ) : invoiceState === "done" ? (
+                                    <><CheckCircle className="h-4 w-4 mr-2 text-green-600" /> Downloaded!</>
+                                ) : (
+                                    <><FileText className="h-4 w-4 mr-2" /> Download Invoice</>
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+
                     {/* Communication Actions */}
                     <div className="bg-white rounded-lg border border-stone-200 p-6">
                         <h3 className="font-semibold mb-4">Communication</h3>
@@ -451,9 +502,15 @@ M & H Team`;
                                 <MessageCircle className="h-4 w-4 mr-2" />
                                 Send WhatsApp
                             </Button>
-                            <Button variant="outline" className="w-full justify-start">
+                            <Button
+                                variant="outline"
+                                className="w-full justify-start"
+                                onClick={() => {
+                                    setEmailModalOpen(true);
+                                }}
+                            >
                                 <Mail className="h-4 w-4 mr-2" />
-                                Send Email
+                                Email Invoice
                             </Button>
                         </div>
                     </div>
@@ -525,6 +582,14 @@ M & H Team`;
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Invoice Email Modal */}
+            <InvoiceEmailModal
+                open={emailModalOpen}
+                onClose={() => setEmailModalOpen(false)}
+                orderId={order.id}
+                customerEmail={order.user?.email || ""}
+            />
         </div>
     );
 }

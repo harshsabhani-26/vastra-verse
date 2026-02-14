@@ -18,9 +18,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Eye, FileText, MessageCircle, Loader2 } from "lucide-react";
+import { Eye, FileText, MessageCircle, Loader2, Download, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import InvoiceEmailModal from "@/components/admin/InvoiceEmailModal";
 
 interface OrderItem {
     id: string;
@@ -86,15 +87,27 @@ const PAYMENT_STATUS_COLORS: Record<PaymentStatus, string> = {
     FAILED: "bg-red-200 text-red-900 border border-red-400",
 };
 
+type InvoiceState = "idle" | "generating" | "downloading" | "done" | "error";
+
 export default function OrdersListClient({ initialOrders, loading = false }: OrdersListClientProps) {
     const router = useRouter();
     const [orders, setOrders] = useState(initialOrders);
     const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
+    // Invoice state
+    const [invoiceStates, setInvoiceStates] = useState<Record<string, InvoiceState>>({});
+    const [emailModalOpen, setEmailModalOpen] = useState(false);
+    const [emailModalOrderId, setEmailModalOrderId] = useState<string>("");
+    const [emailModalEmail, setEmailModalEmail] = useState<string>("");
+
     // Update orders when initialOrders changes
     useEffect(() => {
         setOrders(initialOrders);
     }, [initialOrders]);
+
+    const setInvoiceState = (orderId: string, state: InvoiceState) => {
+        setInvoiceStates(prev => ({ ...prev, [orderId]: state }));
+    };
 
     const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
         setUpdatingOrderId(orderId);
@@ -107,7 +120,6 @@ export default function OrdersListClient({ initialOrders, loading = false }: Ord
             });
 
             if (response.ok) {
-                // We don't need the response body since we optimistically update UI
                 setOrders(orders.map((order) =>
                     order.id === orderId ? { ...order, status: newStatus } : order
                 ));
@@ -177,23 +189,101 @@ M & H Team`;
         window.open(whatsappUrl, "_blank");
     };
 
-    const handleInvoice = async (orderId: string) => {
-        if (!confirm("Generate and email invoice to customer?")) return;
+    const handleInvoice = async (order: Order) => {
+        // Prevent double-click
+        if (invoiceStates[order.id] === "generating" || invoiceStates[order.id] === "downloading") {
+            return;
+        }
+
+        setInvoiceState(order.id, "generating");
 
         try {
-            const response = await fetch(`/api/admin/orders/${orderId}/invoice`, {
+            // Step 1: Download PDF
+            const response = await fetch(`/api/admin/orders/${order.id}/invoice?mode=download`, {
                 method: "POST",
             });
-            const data = await response.json();
 
-            if (response.ok) {
-                alert("Invoice sent successfully!");
-            } else {
-                alert(`Failed to send invoice: ${data.error}`);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: "Failed to generate invoice" }));
+                throw new Error(errorData.error || "Failed to generate invoice");
             }
-        } catch (error) {
+
+            setInvoiceState(order.id, "downloading");
+
+            // Step 2: Auto-download the PDF
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `invoice-${order.id}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            setInvoiceState(order.id, "done");
+
+            // Step 3: Show email modal after download
+            const customerEmail = order.user?.email || "";
+            setEmailModalOrderId(order.id);
+            setEmailModalEmail(customerEmail);
+            setEmailModalOpen(true);
+
+            // Reset button state after 3 seconds
+            setTimeout(() => {
+                setInvoiceState(order.id, "idle");
+            }, 3000);
+
+        } catch (error: any) {
             console.error("Invoice Error:", error);
-            alert("Error sending invoice");
+            setInvoiceState(order.id, "error");
+            alert(error.message || "Error generating invoice");
+
+            // Reset error state after 3 seconds
+            setTimeout(() => {
+                setInvoiceState(order.id, "idle");
+            }, 3000);
+        }
+    };
+
+    const getInvoiceButtonContent = (orderId: string) => {
+        const state = invoiceStates[orderId] || "idle";
+        switch (state) {
+            case "generating":
+                return (
+                    <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="sr-only">Generating...</span>
+                    </>
+                );
+            case "downloading":
+                return (
+                    <>
+                        <Download className="h-4 w-4 animate-bounce" />
+                        <span className="sr-only">Downloading...</span>
+                    </>
+                );
+            case "done":
+                return (
+                    <>
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="sr-only">Done</span>
+                    </>
+                );
+            case "error":
+                return (
+                    <>
+                        <FileText className="h-4 w-4 text-red-500" />
+                        <span className="sr-only">Error</span>
+                    </>
+                );
+            default:
+                return (
+                    <>
+                        <FileText className="h-4 w-4" />
+                        <span className="sr-only">Generate Invoice</span>
+                    </>
+                );
         }
     };
 
@@ -336,10 +426,14 @@ M & H Team`;
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={() => handleInvoice(order.id)}
-                                                title="Generate Invoice"
+                                                onClick={() => handleInvoice(order)}
+                                                title="Generate & Download Invoice"
+                                                disabled={
+                                                    invoiceStates[order.id] === "generating" ||
+                                                    invoiceStates[order.id] === "downloading"
+                                                }
                                             >
-                                                <FileText className="h-4 w-4" />
+                                                {getInvoiceButtonContent(order.id)}
                                             </Button>
                                             <Button
                                                 variant="ghost"
@@ -370,6 +464,14 @@ M & H Team`;
                     </TableBody>
                 </Table>
             </div>
+
+            {/* Invoice Email Modal */}
+            <InvoiceEmailModal
+                open={emailModalOpen}
+                onClose={() => setEmailModalOpen(false)}
+                orderId={emailModalOrderId}
+                customerEmail={emailModalEmail}
+            />
         </>
     );
 }
