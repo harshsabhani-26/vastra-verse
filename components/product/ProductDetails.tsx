@@ -60,7 +60,7 @@ export function ProductDetails({ product, initialIsWishlisted = false }: Product
         addItem({
             id: product.id,
             name: product.name,
-            price: Number(product.price),
+            price: Number(product.finalPrice || product.price),
             image: product.images?.[0]?.url || "/images/placeholder.jpg",
             quantity: 1,
             color: selectedColor || "Default"

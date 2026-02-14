@@ -175,7 +175,7 @@ export const useCartStore = create<CartStore>()(
                     const mergedItems: CartItem[] = serverCart.items.map((dbItem: any) => ({
                         id: dbItem.productId,
                         name: dbItem.product.name,
-                        price: Number(dbItem.product.price), // Ensure number
+                        price: Number(dbItem.product.finalPrice || dbItem.product.price), // Ensure number
                         image: dbItem.product.images?.[0]?.url || '/placeholder.jpg', // Need to fetch image
                         quantity: dbItem.quantity,
                         cartItemId: dbItem.id

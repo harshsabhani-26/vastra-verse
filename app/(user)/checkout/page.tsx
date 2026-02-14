@@ -977,7 +977,7 @@ export default function CheckoutPage() {
 
                             <div className="border-t border-stone-200 pt-4 space-y-2 mb-8">
                                 <div className="flex justify-between text-sm text-stone-600">
-                                    <span>Subtotal ({cartItems.length} Items)</span>
+                                    <span>Subtotal ({cartItems.reduce((acc, item) => acc + item.quantity, 0)} Items)</span>
                                     <span>₹{subtotal.toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between text-xs text-stone-500">
