@@ -506,8 +506,18 @@ export async function checkUserPhoneVerification(phone: string) {
         where: { id: session.user.id },
     });
 
-    if (user && user.phone === phone && user.phoneVerified) {
-        return { isVerified: true };
+    if (user && user.phone && user.phoneVerified) {
+        // Sanitize numbers for comparison
+        const cleanInput = phone.replace(/\D/g, '');
+        const cleanStored = user.phone.replace(/\D/g, '');
+
+        // Match last 10 digits to be safe against prefixes
+        const inputLast10 = cleanInput.slice(-10);
+        const storedLast10 = cleanStored.slice(-10);
+
+        if (inputLast10.length === 10 && inputLast10 === storedLast10) {
+            return { isVerified: true };
+        }
     }
 
     return { isVerified: false };
