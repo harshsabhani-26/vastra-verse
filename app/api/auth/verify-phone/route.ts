@@ -29,15 +29,21 @@ export async function POST(req: NextRequest) {
             console.log('Verifying token:', token);
         }
 
+        if (!process.env.MSG91_AUTH_KEY) {
+            console.error('MSG91_AUTH_KEY is missing in environment variables');
+            return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+        }
+
         // Verify the token with MSG91
         const verifyResponse = await fetch('https://control.msg91.com/api/v5/widget/verifyAccessToken', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
+                'authkey': process.env.MSG91_AUTH_KEY // Also send in header as per some MSG91 docs
             },
             body: JSON.stringify({
-                authkey: process.env.MSG91_AUTH_KEY!,
+                authkey: process.env.MSG91_AUTH_KEY,
                 'access-token': token,
             }),
         });
