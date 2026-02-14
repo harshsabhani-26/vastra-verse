@@ -12,94 +12,114 @@ import type { InvoiceData } from "@/lib/invoice-data-builder";
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface InvoiceEmailResult {
-    success: boolean;
-    messageId?: string;
-    error?: string;
+  success: boolean;
+  messageId?: string;
+  error?: string;
 }
 
 // ─── Transporter ─────────────────────────────────────────────────────────────
 
 function createTransporter() {
-    return nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
-    });
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
 }
 
 // ─── Main Export ─────────────────────────────────────────────────────────────
 
 export async function sendInvoiceEmail(
-    data: InvoiceData,
-    pdfBuffer: Buffer
+  data: InvoiceData,
+  pdfBuffer: Buffer
 ): Promise<InvoiceEmailResult> {
-    try {
-        // ── Validate ──
-        if (!data.customer.email) {
-            return { success: false, error: "Customer email not found" };
-        }
-
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            return { success: false, error: "Email credentials not configured (EMAIL_USER / EMAIL_PASS)" };
-        }
-
-        const transporter = createTransporter();
-        const brandColor = "#1a4d3a";
-        const siteUrl = process.env.NEXTAUTH_URL || "https://vastraverse.in";
-
-        const mailOptions = {
-            from: `"${data.store.brandName}" <${process.env.EMAIL_USER}>`,
-            to: data.customer.email,
-            subject: `Your Invoice — ${data.store.brandName} (${data.invoiceNumber})`,
-            html: buildEmailHTML({
-                brandName: data.store.brandName,
-                brandColor,
-                siteUrl,
-                customerName: data.customer.name,
-                orderId: data.orderId,
-                invoiceNumber: data.invoiceNumber,
-                grandTotal: data.totals.grandTotal,
-                paymentMethod: data.payment.method,
-                supportEmail: data.store.supportEmail,
-            }),
-            attachments: [
-                {
-                    filename: `${data.invoiceNumber}.pdf`,
-                    content: pdfBuffer,
-                    contentType: "application/pdf",
-                },
-            ],
-        };
-
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`[Invoice Email] Sent to ${data.customer.email}, messageId: ${info.messageId}`);
-        return { success: true, messageId: info.messageId };
-    } catch (error: any) {
-        console.error("[Invoice Email] Error:", error.message || error);
-        return { success: false, error: error.message || "Failed to send email" };
+  try {
+    // ── Validate ──
+    if (!data.customer.email) {
+      return { success: false, error: "Customer email not found" };
     }
+
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error("[Invoice Email] CONFIGURATION ERROR: EMAIL_USER or EMAIL_PASS environment variables are missing");
+      console.error("[Invoice Email] Please add these variables to your Railway project: https://railway.app");
+      console.error("[Invoice Email] Required: EMAIL_USER=your-email@gmail.com, EMAIL_PASS=your-gmail-app-password");
+      return {
+        success: false,
+        error: "Email service not configured. Please contact administrator to set up EMAIL_USER and EMAIL_PASS environment variables in Railway."
+      };
+    }
+
+    const transporter = createTransporter();
+    const brandColor = "#1a4d3a";
+    const siteUrl = process.env.NEXTAUTH_URL || "https://vastraverse.in";
+
+    const mailOptions = {
+      from: `"${data.store.brandName}" <${process.env.EMAIL_USER}>`,
+      to: data.customer.email,
+      subject: `Your Invoice — ${data.store.brandName} (${data.invoiceNumber})`,
+      html: buildEmailHTML({
+        brandName: data.store.brandName,
+        brandColor,
+        siteUrl,
+        customerName: data.customer.name,
+        orderId: data.orderId,
+        invoiceNumber: data.invoiceNumber,
+        grandTotal: data.totals.grandTotal,
+        paymentMethod: data.payment.method,
+        supportEmail: data.store.supportEmail,
+      }),
+      attachments: [
+        {
+          filename: `${data.invoiceNumber}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`[Invoice Email] Sent to ${data.customer.email}, messageId: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+  } catch (error: any) {
+    console.error("[Invoice Email] Error:", error.message || error);
+
+    // Provide specific guidance for common Gmail errors
+    let userMessage = error.message || "Failed to send email";
+
+    if (error.code === "EAUTH" || error.responseCode === 535) {
+      console.error("[Invoice Email] AUTHENTICATION ERROR: Invalid Gmail credentials");
+      console.error("[Invoice Email] If using Gmail, you MUST use an App Password, not your regular password");
+      console.error("[Invoice Email] Create App Password: https://myaccount.google.com/apppasswords");
+      userMessage = "Gmail authentication failed. Please verify EMAIL_PASS is a valid Gmail App Password (not regular password).";
+    } else if (error.code === "ECONNECTION" || error.code === "ETIMEDOUT") {
+      console.error("[Invoice Email] CONNECTION ERROR: Cannot reach Gmail SMTP server");
+      userMessage = "Cannot connect to Gmail servers. Please check your internet connection or try again later.";
+    }
+
+    return { success: false, error: userMessage };
+  }
 }
 
 // ─── Email HTML Template ─────────────────────────────────────────────────────
 
 interface EmailTemplateProps {
-    brandName: string;
-    brandColor: string;
-    siteUrl: string;
-    customerName: string;
-    orderId: string;
-    invoiceNumber: string;
-    grandTotal: number;
-    paymentMethod: string;
-    supportEmail: string;
+  brandName: string;
+  brandColor: string;
+  siteUrl: string;
+  customerName: string;
+  orderId: string;
+  invoiceNumber: string;
+  grandTotal: number;
+  paymentMethod: string;
+  supportEmail: string;
 }
 
 function buildEmailHTML(p: EmailTemplateProps): string {
-    const formattedTotal = `₹${p.grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
+  const formattedTotal = `₹${p.grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
 
-    return `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">

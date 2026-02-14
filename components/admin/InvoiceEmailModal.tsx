@@ -107,8 +107,22 @@ export default function InvoiceEmailModal({
                                 </p>
                             </div>
                             {error && (
-                                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-2">
+                                    <p className="text-sm font-semibold text-red-800">❌ Email Failed</p>
                                     <p className="text-sm text-red-700">{error}</p>
+                                    {error.includes("not configured") && (
+                                        <p className="text-xs text-red-600 mt-2">
+                                            💡 <strong>Admin:</strong> Add EMAIL_USER and EMAIL_PASS to Railway environment variables.
+                                        </p>
+                                    )}
+                                    {error.includes("authentication") && (
+                                        <p className="text-xs text-red-600 mt-2">
+                                            💡 <strong>Tip:</strong> Gmail requires an App Password, not your regular password. Generate one at{" "}
+                                            <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" className="underline">
+                                                Google Account
+                                            </a>
+                                        </p>
+                                    )}
                                 </div>
                             )}
                         </div>
