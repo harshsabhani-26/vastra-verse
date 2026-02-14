@@ -46,6 +46,7 @@ interface SavedAddress {
 }
 
 import { useRouter } from "next/navigation";
+import { useTaxSettings } from "@/hooks/use-tax-settings";
 
 export default function CheckoutPage() {
     const router = useRouter();
@@ -56,6 +57,7 @@ export default function CheckoutPage() {
     const [step, setStep] = useState<'shipping' | 'payment'>('shipping');
     const [mounted, setMounted] = useState(false);
     const [processing, setProcessing] = useState(false); // Prevent double payments
+    const { settings, loading: taxLoading } = useTaxSettings();
     const { toast } = useToast();
 
     // Form Stats
@@ -378,7 +380,13 @@ export default function CheckoutPage() {
                 // Include discount and coupon if applied
                 const discount = appliedCoupon?.discount || 0;
                 payload.append("discount", discount.toString());
-                const taxAmount = subtotal * 0.18;
+
+                // Calculate tax using dynamic settings
+                // Assuming intra-state (CGST + SGST) for now as address logic is complex
+                // You might want to compare formData.state with settings.stateOfReg
+                const gstRate = settings.gstEnabled ? (settings.cgstRate + settings.sgstRate) : 0;
+                const taxAmount = subtotal * (gstRate / 100);
+
                 const finalTotal = subtotal + taxAmount - discount + shippingCharges;
                 payload.append("total", finalTotal.toString());
 

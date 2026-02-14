@@ -79,13 +79,14 @@ export async function createOrder(formData: FormData) {
         redirect("/login?callbackUrl=/cart&error=session_expired");
     }
 
-    // Calculate GST (18% default rate)
-    const gstRate = 18;
-    const storeState = process.env.STORE_STATE || "Gujarat";
+    // Calculate GST
+    const settings = await prisma.taxSettings.findFirst();
+    const gstRate = settings?.gstEnabled ? (Number(settings.cgstRate) + Number(settings.sgstRate)) : 18;
+    const storeState = settings?.stateOfReg || process.env.STORE_STATE || "Gujarat";
     const isIntraState = state.toLowerCase() === storeState.toLowerCase();
 
-    // GST is already included in the subtotal, so we need to extract it
-    const gstAmount = (subtotal * gstRate) / (100 + gstRate);
+    // GST is calculated on top of subtotal (Exclusive Tax)
+    const gstAmount = (subtotal * gstRate) / 100;
 
     let cgst = 0;
     let sgst = 0;

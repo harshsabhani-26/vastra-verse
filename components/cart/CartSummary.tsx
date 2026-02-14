@@ -8,6 +8,7 @@ import { toast } from "react-hot-toast"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
+import { useTaxSettings } from "@/hooks/use-tax-settings"
 
 export function CartSummary() {
     const { items, totalItems, totalPrice, appliedCoupon, setCoupon, removeCoupon } = useCartStore();
@@ -17,6 +18,7 @@ export function CartSummary() {
     const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
     const router = useRouter();
     const { data: session } = useSession();
+    const { settings, loading } = useTaxSettings();
 
     useEffect(() => {
         setIsMounted(true);
@@ -167,14 +169,23 @@ export function CartSummary() {
                 </div>
 
                 {/* Tax Breakdown */}
-                <div className="flex justify-between text-xs text-text-muted mb-2">
-                    <span>CGST (9%)</span>
-                    <span>₹{(subtotal * 0.09).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
-                <div className="flex justify-between text-xs text-text-muted mb-4">
-                    <span>SGST (9%)</span>
-                    <span>₹{(subtotal * 0.09).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
+                {loading ? (
+                    <div className="space-y-2 mb-4">
+                        <div className="h-4 bg-gray-100 rounded animate-pulse"></div>
+                        <div className="h-4 bg-gray-100 rounded animate-pulse"></div>
+                    </div>
+                ) : (
+                    <>
+                        <div className="flex justify-between text-xs text-text-muted mb-2">
+                            <span>CGST ({settings.cgstRate}%)</span>
+                            <span>₹{(subtotal * (settings.cgstRate / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between text-xs text-text-muted mb-4">
+                            <span>SGST ({settings.sgstRate}%)</span>
+                            <span>₹{(subtotal * (settings.sgstRate / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                    </>
+                )}
 
                 {/* Discount */}
                 {appliedCoupon && (
@@ -190,7 +201,13 @@ export function CartSummary() {
                 {/* Payable Amount */}
                 <div className="flex justify-between text-base font-bold text-primary mb-6 pt-4 border-t border-primary/20">
                     <span className="font-serif">Total</span>
-                    <span className="text-xl font-serif">₹{(subtotal + (subtotal * 0.18) - discount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                    <span className="text-xl font-serif">
+                        {loading ? (
+                            <span className="h-6 w-20 bg-gray-100 rounded animate-pulse inline-block"></span>
+                        ) : (
+                            `₹${(subtotal + (subtotal * ((settings.cgstRate + settings.sgstRate) / 100)) - discount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
+                        )}
+                    </span>
                 </div>
 
                 {/* Terms Checkbox */}
