@@ -108,7 +108,11 @@ export async function POST(req: NextRequest) {
         // with the new phoneVerified status after receiving this response
         return NextResponse.json({ success: true, message: 'Phone verified successfully', phone: verifiedPhone });
     } catch (error) {
-        console.error('Phone verification error:', error);
-        return NextResponse.json({ error: 'Verification failed' }, { status: 500 });
+        console.error('Phone verification error detailed:', {
+            message: (error as Error).message,
+            stack: (error as Error).stack,
+            cause: (error as Error).cause
+        });
+        return NextResponse.json({ error: 'Verification failed', details: (error as Error).message }, { status: 500 });
     }
 }
