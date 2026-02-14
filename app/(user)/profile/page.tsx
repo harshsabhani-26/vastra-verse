@@ -1,5 +1,7 @@
 import { AccountSidebar } from "@/components/account/AccountSidebar";
 import { ProfileForm } from "@/components/account/ProfileForm";
+
+export const dynamic = "force-dynamic";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";

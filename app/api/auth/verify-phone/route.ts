@@ -70,14 +70,24 @@ export async function POST(req: NextRequest) {
         // Clean up formatting
         if (verifiedPhone) {
             verifiedPhone = verifiedPhone.toString();
+            // Remove any non-digit characters
+            verifiedPhone = verifiedPhone.replace(/\D/g, '');
+
             // If it starts with 91 and is 12 digits, strip the 91
             if (verifiedPhone.length === 12 && verifiedPhone.startsWith('91')) {
                 verifiedPhone = verifiedPhone.substring(2);
             }
+            // If it starts with 0 and is 11 digits, strip the 0
+            if (verifiedPhone.length === 11 && verifiedPhone.startsWith('0')) {
+                verifiedPhone = verifiedPhone.substring(1);
+            }
         }
 
-        if (!verifiedPhone) {
-            console.error('Could not determine verified phone number from MSG91 response or client request');
+        if (!verifiedPhone || verifiedPhone.length !== 10) {
+            console.error('Could not determine a valid 10-digit verified phone number', {
+                raw: verifyData,
+                processed: verifiedPhone
+            });
             return NextResponse.json({ error: 'Could not determine verified phone number' }, { status: 400 });
         }
 

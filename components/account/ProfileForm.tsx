@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { updateProfile } from "@/app/actions/account";
 import { useState, useTransition, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { Check, Mail, Phone, User as UserIcon, Loader2 } from "lucide-react";
 
@@ -22,6 +23,7 @@ interface MSG91Config {
 }
 
 export function ProfileForm({ user, msg91Config }: { user: UserData; msg91Config: MSG91Config }) {
+    const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
     // Split name
@@ -44,6 +46,15 @@ export function ProfileForm({ user, msg91Config }: { user: UserData; msg91Config
     const [currentPhone, setCurrentPhone] = useState(user.phoneVerified ? (user.phone || "") : "");
     const [isEditing, setIsEditing] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false);
+
+    // Sync state when user prop updates (e.g. after router.refresh())
+    useEffect(() => {
+        if (user.phoneVerified && user.phone) {
+            setCurrentPhone(user.phone);
+            setIsEditing(false);
+            setIsVerifying(false);
+        }
+    }, [user.phoneVerified, user.phone]);
 
     // Derived state: User is verified only if user.phoneVerified is true AND the input matches the saved phone
     // However, since we now blank the input if unverified, currentPhone will be empty or user typed.
@@ -240,7 +251,7 @@ export function ProfileForm({ user, msg91Config }: { user: UserData; msg91Config
                                                 const responseData = await res.json();
                                                 if (res.ok) {
                                                     toast.success('Phone verified successfully!');
-                                                    window.location.reload();
+                                                    router.refresh();
                                                 } else {
                                                     toast.error(responseData.error || 'Verification failed');
                                                     setIsVerifying(false);
