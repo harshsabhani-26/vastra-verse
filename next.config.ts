@@ -32,7 +32,7 @@ const nextConfig: NextConfig = {
   },
 
   // Fix Prisma compatibility with Turbopack
-  serverExternalPackages: ['@prisma/client', 'prisma'],
+  serverExternalPackages: ['@prisma/client', 'prisma', 'pdfkit'],
 
   // Experimental optimizations
   experimental: {

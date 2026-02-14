@@ -7,14 +7,14 @@
  *   mode=email    → sends invoice email to customer
  * 
  * Features:
- *   - Admin authentication required
+ *   - Admin authentication (email-based via ADMIN_EMAIL)
  *   - Server-side PDF generation (PDFKit)
- *   - Audit logging
+ *   - Audit logging to ActivityLog
  *   - Error-safe responses
  */
 
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import prisma from "@/lib/prisma";
 import { generateInvoicePDFBuffer } from "@/lib/invoice/generator";
 import { sendInvoiceEmailWithPDF } from "@/lib/email/send-invoice";
@@ -24,27 +24,23 @@ export async function POST(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        // ---- Auth ----
-        const session = await auth();
-        if (!session?.user || session.user.role !== "ADMIN") {
+        // ---- Auth (email-based admin check) ----
+        let session;
+        try {
+            session = await requireAdmin();
+        } catch {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         const { id } = await params;
 
-        // ---- Get mode from body or URL ----
+        // ---- Get mode from URL ----
         let mode = "download";
         try {
             const url = new URL(req.url);
             mode = url.searchParams.get("mode") || "download";
         } catch {
-            // If URL parsing fails, try body
-            try {
-                const body = await req.clone().json();
-                mode = body.mode || "download";
-            } catch {
-                mode = "download";
-            }
+            mode = "download";
         }
 
         // ---- Fetch Order ----
@@ -81,9 +77,6 @@ export async function POST(
                     orderBy: { createdAt: "desc" },
                     take: 1,
                 },
-                timeline: {
-                    orderBy: { createdAt: "desc" },
-                },
             },
         });
 
@@ -92,47 +85,59 @@ export async function POST(
         }
 
         // ---- Generate PDF ----
-        const pdfBuffer = await generateInvoicePDFBuffer(order as any);
+        let pdfBuffer: Buffer;
+        try {
+            pdfBuffer = await generateInvoicePDFBuffer(order as any);
+        } catch (pdfError: any) {
+            console.error("[Invoice API] PDF generation failed:", pdfError);
+            return NextResponse.json(
+                { error: "Failed to generate invoice PDF", details: pdfError.message },
+                { status: 500 }
+            );
+        }
 
-        // ---- Audit Log: INVOICE_GENERATED ----
-        await prisma.activityLog.create({
-            data: {
-                userId: session.user.id,
-                userEmail: session.user.email || undefined,
-                action: "INVOICE_GENERATED",
-                description: `Invoice generated for order ${id}`,
-                resourceType: "Order",
-                resourceId: id,
-                status: "SUCCESS",
-            },
-        });
+        // ---- Audit Log (non-blocking, errors don't block response) ----
+        const logAudit = async (action: string, description: string, status: string = "SUCCESS", errorMessage?: string) => {
+            try {
+                await prisma.activityLog.create({
+                    data: {
+                        userId: session.user?.id,
+                        userEmail: session.user?.email || undefined,
+                        action,
+                        description,
+                        resourceType: "Order",
+                        resourceId: id,
+                        status,
+                        errorMessage,
+                    },
+                });
+            } catch (logErr) {
+                console.error("[Invoice API] Audit log failed:", logErr);
+            }
+        };
+
+        const logTimeline = async (event: string, details: string) => {
+            try {
+                await prisma.orderTimeline.create({
+                    data: {
+                        orderId: id,
+                        event,
+                        details,
+                        createdBy: session.user?.id,
+                    },
+                });
+            } catch (logErr) {
+                console.error("[Invoice API] Timeline log failed:", logErr);
+            }
+        };
 
         // =====================
         // MODE: DOWNLOAD
         // =====================
         if (mode === "download") {
-            // Audit log: INVOICE_DOWNLOADED
-            await prisma.activityLog.create({
-                data: {
-                    userId: session.user.id,
-                    userEmail: session.user.email || undefined,
-                    action: "INVOICE_DOWNLOADED",
-                    description: `Invoice downloaded for order ${id}`,
-                    resourceType: "Order",
-                    resourceId: id,
-                    status: "SUCCESS",
-                },
-            });
-
-            // Add timeline entry
-            await prisma.orderTimeline.create({
-                data: {
-                    orderId: id,
-                    event: "Invoice Generated & Downloaded",
-                    details: `Invoice PDF downloaded by admin`,
-                    createdBy: session.user.id,
-                },
-            });
+            // Non-blocking audit + timeline
+            logAudit("INVOICE_DOWNLOADED", `Invoice downloaded for order ${id}`);
+            logTimeline("Invoice Downloaded", "Invoice PDF downloaded by admin");
 
             // Return PDF response
             return new Response(new Uint8Array(pdfBuffer), {
@@ -170,28 +175,8 @@ export async function POST(
             });
 
             if (result.success) {
-                // Audit log: INVOICE_EMAILED
-                await prisma.activityLog.create({
-                    data: {
-                        userId: session.user.id,
-                        userEmail: session.user.email || undefined,
-                        action: "INVOICE_EMAILED",
-                        description: `Invoice emailed to ${customerEmail} for order ${id}`,
-                        resourceType: "Order",
-                        resourceId: id,
-                        status: "SUCCESS",
-                    },
-                });
-
-                // Timeline entry
-                await prisma.orderTimeline.create({
-                    data: {
-                        orderId: id,
-                        event: "Invoice Emailed",
-                        details: `Invoice sent to ${customerEmail} by admin`,
-                        createdBy: session.user.id,
-                    },
-                });
+                logAudit("INVOICE_EMAILED", `Invoice emailed to ${customerEmail} for order ${id}`);
+                logTimeline("Invoice Emailed", `Invoice sent to ${customerEmail} by admin`);
 
                 return NextResponse.json({
                     success: true,
@@ -199,19 +184,7 @@ export async function POST(
                     messageId: result.messageId,
                 });
             } else {
-                // Log failure
-                await prisma.activityLog.create({
-                    data: {
-                        userId: session.user.id,
-                        userEmail: session.user.email || undefined,
-                        action: "INVOICE_EMAILED",
-                        description: `Failed to email invoice for order ${id}: ${result.error}`,
-                        resourceType: "Order",
-                        resourceId: id,
-                        status: "FAILED",
-                        errorMessage: result.error,
-                    },
-                });
+                logAudit("INVOICE_EMAILED", `Failed to email invoice for order ${id}: ${result.error}`, "FAILED", result.error);
 
                 return NextResponse.json(
                     { error: result.error || "Failed to send email" },
@@ -225,7 +198,7 @@ export async function POST(
             { status: 400 }
         );
     } catch (error: any) {
-        console.error("[Invoice API] Error:", error);
+        console.error("[Invoice API] Unhandled error:", error?.message || error);
         return NextResponse.json(
             { error: "Internal Server Error" },
             { status: 500 }
