@@ -292,7 +292,12 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
             // Brand footer
             y += 18;
             doc.fontSize(8).fillColor(BRAND_COLOR).font("Helvetica-Bold");
-            doc.text(`${data.store.businessName} — ${data.store.brandName}`, L, y, {
+
+            const footerText = data.store.businessName === data.store.brandName
+                ? data.store.brandName
+                : `${data.store.businessName} — ${data.store.brandName}`;
+
+            doc.text(footerText, L, y, {
                 width: CW,
                 align: "center",
             });

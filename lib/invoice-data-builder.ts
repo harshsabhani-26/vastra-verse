@@ -117,14 +117,14 @@ const DEFAULT_STORE: InvoiceStoreConfig = {
     tagline: "Premium Indian Textiles & Sarees",
     logoUrl: null,
     gstin: "N/A",
-    businessName: "M & H Silk Heritage",
+    businessName: "Vastra Verse",
     address: "Surat, Gujarat",
     city: "Surat",
     state: "Gujarat",
     country: "India",
     zipCode: "395006",
     supportEmail: "support@vastraverse.in",
-    supportPhone: "+91-XXXXXXXXXX",
+    supportPhone: "+91-8200634078",
 };
 
 const DEFAULT_TAX: InvoiceTaxConfig = {
