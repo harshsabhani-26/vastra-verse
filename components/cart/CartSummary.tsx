@@ -168,12 +168,12 @@ export function CartSummary() {
 
                 {/* Tax Breakdown */}
                 <div className="flex justify-between text-xs text-text-muted mb-2">
-                    <span>CGST (9%) (Included)</span>
-                    <span>₹{((subtotal - (subtotal / 1.18)) / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span>CGST (9%)</span>
+                    <span>₹{(subtotal * 0.09).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-xs text-text-muted mb-4">
-                    <span>SGST (9%) (Included)</span>
-                    <span>₹{((subtotal - (subtotal / 1.18)) / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span>SGST (9%)</span>
+                    <span>₹{(subtotal * 0.09).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
 
                 {/* Discount */}
@@ -190,7 +190,7 @@ export function CartSummary() {
                 {/* Payable Amount */}
                 <div className="flex justify-between text-base font-bold text-primary mb-6 pt-4 border-t border-primary/20">
                     <span className="font-serif">Total</span>
-                    <span className="text-xl font-serif">₹{total.toLocaleString('en-IN')}</span>
+                    <span className="text-xl font-serif">₹{(subtotal + (subtotal * 0.18) - discount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
                 </div>
 
                 {/* Terms Checkbox */}

@@ -378,7 +378,8 @@ export default function CheckoutPage() {
                 // Include discount and coupon if applied
                 const discount = appliedCoupon?.discount || 0;
                 payload.append("discount", discount.toString());
-                const finalTotal = subtotal - discount + shippingCharges;
+                const taxAmount = subtotal * 0.18;
+                const finalTotal = subtotal + taxAmount - discount + shippingCharges;
                 payload.append("total", finalTotal.toString());
 
                 if (appliedCoupon) {
@@ -981,16 +982,16 @@ export default function CheckoutPage() {
                                     <span>₹{subtotal.toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between text-xs text-stone-500">
-                                    <span>CGST (9%) (Included)</span>
-                                    <span>₹{((subtotal - (subtotal / 1.18)) / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span>CGST (9%)</span>
+                                    <span>₹{(subtotal * 0.09).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 </div>
                                 <div className="flex justify-between text-xs text-stone-500">
-                                    <span>SGST (9%) (Included)</span>
-                                    <span>₹{((subtotal - (subtotal / 1.18)) / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span>SGST (9%)</span>
+                                    <span>₹{(subtotal * 0.09).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 </div>
                                 <div className="flex justify-between text-sm font-bold text-[#1C1917]">
-                                    <span>Payable Amount</span>
-                                    <span>₹{getFinalTotal().toLocaleString()}</span>
+                                    <span>Total</span>
+                                    <span>₹{(subtotal + (subtotal * 0.18) + shippingCharges - (appliedCoupon?.discount || 0)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
                                 </div>
                             </div>
 

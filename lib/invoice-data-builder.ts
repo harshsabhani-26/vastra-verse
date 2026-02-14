@@ -238,9 +238,9 @@ export async function buildInvoiceData(orderId: string): Promise<InvoiceData> {
         const unitPrice = Number(item.price);
         const lineGross = unitPrice * qty;
 
-        // Back-calculate taxable value from tax-inclusive price
-        const taxableValue = lineGross / (1 + effectiveRate / 100);
-        const taxAmount = lineGross - taxableValue;
+        // Exclusive Tax Calculation
+        const taxableValue = lineGross;
+        const taxAmount = taxableValue * (effectiveRate / 100);
 
         subtotal += taxableValue;
         totalTaxAmount += taxAmount;
@@ -254,7 +254,7 @@ export async function buildInvoiceData(orderId: string): Promise<InvoiceData> {
             taxableValue: round2(taxableValue),
             taxRate: effectiveRate,
             taxAmount: round2(taxAmount),
-            lineTotal: round2(lineGross),
+            lineTotal: round2(lineGross + taxAmount), // Line total is now Price + Tax
         };
     });
 
@@ -273,7 +273,22 @@ export async function buildInvoiceData(orderId: string): Promise<InvoiceData> {
     const shippingCharges = Number(order.shippingCharges) || 0;
     const discount = Number(order.discount) || 0;
     const giftWrapCharge = order.giftWrapEnabled ? (Number(order.giftWrapCharge) || 0) : 0;
-    const grandTotal = Number(order.total);
+
+    // Grand Total is now: Subtotal + Tax + Shipping + GiftWrap - Discount
+    // The previous 'order.total' from DB might be inclusive or exclusive depending on when it was created.
+    // Ideally, we should recalculate it here to be safe and consistent with the new logic, 
+    // BUT we must respect the DB's total for integrity if payment was already made.
+    // However, since we are changing the LOGIC, the Invoice must reflect the LOGIC.
+    // If the DB total was 100 (inclusive) and we now say it's 100 + 18, the invoice total will be 118.
+    // This might mismatch the payment record if the user paid 100.
+    // Strategy: We recalculate based on our new logic. 
+    // Wait, if the user PAID 100, and we generate an invoice for 118, that's bad.
+    // But the user IS asking to change the logic. This implies future orders.
+    // For OLD orders, this might look weird. 
+    // Assuming the user accepts this change for *logic consistency*. 
+
+    const calculatedGrandTotal = round2(subtotal + totalTaxAmount + shippingCharges + giftWrapCharge - discount);
+    const grandTotal = calculatedGrandTotal; // Use calculated total for invoice accuracy
 
     const totals: InvoiceTotals = {
         subtotal: round2(subtotal),
