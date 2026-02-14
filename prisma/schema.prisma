@@ -1,3 +1,7 @@
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
   log      = ["warn", "error"]
@@ -43,6 +47,7 @@ model User {
   notifications           Notification[]
   notificationPreferences NotificationPreferences?
   orders                  Order[]
+  returnRequests          ReturnRequest[]
   sessions                Session[]
   wishlist                Wishlist[]
   cart                    Cart?
@@ -264,6 +269,7 @@ model Order {
   timeline           OrderTimeline[]
   payments           Payment[]
   refunds            Refund[]
+  returnRequests     ReturnRequest[]
 
   @@index([createdAt])
   @@index([shippingState])
@@ -276,13 +282,57 @@ model Order {
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  productId String
-  quantity  Int
-  price     Decimal
-  order     Order   @relation(fields: [orderId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
+  id           String       @id @default(cuid())
+  orderId      String
+  productId    String
+  quantity     Int
+  price        Decimal
+  order        Order        @relation(fields: [orderId], references: [id])
+  product      Product      @relation(fields: [productId], references: [id])
+  returnItems  ReturnItem[]
+}
+
+model ReturnRequest {
+  id                String           @id @default(cuid())
+  orderId           String
+  userId            String
+  reason            ReturnReason
+  description       String?
+  status            ReturnStatus     @default(REQUESTED)
+  inspectionStatus  InspectionStatus @default(PENDING)
+  refundAmount      Decimal          @default(0)
+  requestedAt       DateTime         @default(now())
+  approvedAt        DateTime?
+  rejectedAt        DateTime?
+  receivedAt        DateTime?
+  refundInitiatedAt DateTime?
+  refundCompletedAt DateTime?
+  adminNotes        String?
+  
+  order             Order            @relation(fields: [orderId], references: [id])
+  user              User             @relation(fields: [userId], references: [id])
+  items             ReturnItem[]
+  refunds           Refund[]
+  
+  @@index([orderId])
+  @@index([userId])
+  @@index([status])
+  @@index([inspectionStatus])
+  @@index([requestedAt])
+}
+
+model ReturnItem {
+  id              String        @id @default(cuid())
+  returnRequestId String
+  orderItemId     String
+  quantity        Int           // Quantity to return (partial support)
+  refundAmount    Decimal
+  
+  returnRequest   ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+  orderItem       OrderItem     @relation(fields: [orderItemId], references: [id])
+  
+  @@index([returnRequestId])
+  @@index([orderItemId])
 }
 
 model ProductImage {
@@ -367,7 +417,7 @@ model Payment {
   @@index([status])
   @@index([method])
   @@index([gatewayOrderId])
-  @@ index([status, createdAt])
+  @@index([status, createdAt])
 }
 
 model Refund {
@@ -395,6 +445,8 @@ model Refund {
   updatedAt       DateTime         @updatedAt
   order           Order            @relation(fields: [orderId], references: [id])
   payment         Payment          @relation(fields: [paymentId], references: [id])
+  returnRequest   ReturnRequest?   @relation(fields: [returnRequestId], references: [id])
+  returnRequestId String?
 
   @@index([paymentId])
   @@index([orderId])
@@ -946,4 +998,30 @@ enum ContactPriority {
   NORMAL
   HIGH
   URGENT
+}
+
+enum ReturnStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  ITEM_RECEIVED
+  REFUND_PENDING
+  REFUND_COMPLETED
+  CLOSED
+}
+
+enum ReturnReason {
+  SIZE_ISSUE
+  DEFECTIVE
+  WRONG_PRODUCT
+  DAMAGED
+  NOT_AS_EXPECTED
+  OTHER
+}
+
+enum InspectionStatus {
+  PENDING
+  PASSED
+  FAILED
+  NOT_APPLICABLE
 }

@@ -6,6 +6,8 @@ import { ArrowLeft, MapPin, CreditCard, Package, Truck, Phone, Mail, Calendar, C
 import { format } from "date-fns";
 import { TrackingTimeline } from "@/components/order/TrackingTimeline";
 import { Badge } from "@/components/ui/badge";
+import { canRequestReturn } from "@/lib/return-eligibility";
+import ReturnAction from "@/components/account/ReturnAction";
 
 export default async function OrderDetailsPage(props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -33,7 +35,8 @@ export default async function OrderDetailsPage(props: { params: Promise<{ id: st
                     }
                 }
             },
-            timeline: true
+            timeline: true,
+            returnRequests: true // Fetch return requests for eligibility check
         }
     });
 
@@ -264,6 +267,40 @@ export default async function OrderDetailsPage(props: { params: Promise<{ id: st
                                 </div>
                             </div>
                         </div>
+
+                        {/* Return Action */}
+                        {canRequestReturn(order as any).isEligible && (
+                            <div className="bg-background p-6 rounded-sm border border-primary/5 shadow-luxury">
+                                <h2 className="text-[10px] uppercase tracking-[0.2em] font-bold text-primary mb-6 flex items-center gap-2 border-b border-primary/5 pb-2">
+                                    <Clock className="w-4 h-4 text-primary/60" />
+                                    Return Order
+                                </h2>
+                                <p className="text-xs text-text-muted mb-4">
+                                    Eligible for return within 7 days of delivery.
+                                </p>
+                                <ReturnAction orderId={order.id} />
+                            </div>
+                        )}
+
+                        {/* Active Return Status */}
+                        {order.returnRequests && order.returnRequests.length > 0 && (
+                            <div className="bg-background p-6 rounded-sm border border-primary/5 shadow-luxury">
+                                <h2 className="text-[10px] uppercase tracking-[0.2em] font-bold text-primary mb-6 flex items-center gap-2 border-b border-primary/5 pb-2">
+                                    Return Status
+                                </h2>
+                                <div className="space-y-3">
+                                    {order.returnRequests.map(req => (
+                                        <div key={req.id} className="p-3 bg-surface/50 rounded-sm border border-primary/10">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">{req.status.replace(/_/g, " ")}</span>
+                                                <span className="text-[10px] text-text-muted">{format(new Date(req.requestedAt), 'MMM dd')}</span>
+                                            </div>
+                                            <p className="text-xs text-text-muted truncate">{req.description || req.reason}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Help Section */}
                         <div className="bg-surface/30 p-8 rounded-sm border border-primary/5 text-center shadow-sm">
