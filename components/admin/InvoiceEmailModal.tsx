@@ -33,11 +33,19 @@ export default function InvoiceEmailModal({
         setError(null);
 
         try {
+            // Add timeout to prevent infinite loading
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
             const response = await fetch(
                 `/api/admin/orders/${orderId}/invoice?mode=email`,
-                { method: "POST" }
+                {
+                    method: "POST",
+                    signal: controller.signal
+                }
             );
 
+            clearTimeout(timeoutId);
             const data = await response.json();
 
             if (response.ok && data.success) {
@@ -45,8 +53,12 @@ export default function InvoiceEmailModal({
             } else {
                 setError(data.error || "Failed to send email");
             }
-        } catch (err) {
-            setError("Network error. Please try again.");
+        } catch (err: any) {
+            if (err.name === 'AbortError') {
+                setError("Request timed out. The email server may be taking too long to respond. Please check Railway environment variables are configured.");
+            } else {
+                setError("Network error. Please try again.");
+            }
         } finally {
             setSending(false);
         }
