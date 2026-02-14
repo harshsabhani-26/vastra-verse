@@ -980,6 +980,14 @@ export default function CheckoutPage() {
                                     <span>Subtotal ({cartItems.length} Items)</span>
                                     <span>₹{subtotal.toLocaleString()}</span>
                                 </div>
+                                <div className="flex justify-between text-xs text-stone-500">
+                                    <span>CGST (9%)</span>
+                                    <span>₹{((subtotal - (subtotal / 1.18)) / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                </div>
+                                <div className="flex justify-between text-xs text-stone-500">
+                                    <span>SGST (9%)</span>
+                                    <span>₹{((subtotal - (subtotal / 1.18)) / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                </div>
                                 <div className="flex justify-between text-sm font-bold text-[#1C1917]">
                                     <span>Payable Amount</span>
                                     <span>₹{getFinalTotal().toLocaleString()}</span>
