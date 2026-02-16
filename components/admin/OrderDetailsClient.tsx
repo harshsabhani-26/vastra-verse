@@ -65,7 +65,7 @@ interface Order {
         name: string | null;
         email: string | null;
         phone: string | null;
-    };
+    } | null;
     items: OrderItem[];
     notes: OrderNote[];
     timeline: TimelineEvent[];
@@ -192,14 +192,14 @@ export default function OrderDetailsClient({ order }: { order: Order }) {
     };
 
     const handleWhatsApp = () => {
-        const phone = order.customerPhone || order.user.phone;
+        const phone = order.customerPhone || order.user?.phone;
         if (!phone) {
             alert("No phone number available");
             return;
         }
 
         const cleanPhone = phone.replace(/[^0-9]/g, "");
-        const message = `Hello ${order.customerName || order.user.name || "Customer"},
+        const message = `Hello ${order.customerName || order.user?.name || "Customer"},
 
 Your order ${order.id} status: ${order.status}
 Total: ₹${Number(order.total).toLocaleString()}
