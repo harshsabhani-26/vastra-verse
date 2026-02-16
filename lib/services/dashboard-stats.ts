@@ -55,134 +55,165 @@ export const DashboardStats = {
      * Get all KPI metrics for dashboard cards
      */
     getKPIs: async (): Promise<KPIStats> => {
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
+        try {
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
 
-        const yesterdayStart = new Date();
-        yesterdayStart.setDate(yesterdayStart.getDate() - 1);
-        yesterdayStart.setHours(0, 0, 0, 0);
+            const yesterdayStart = new Date();
+            yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+            yesterdayStart.setHours(0, 0, 0, 0);
 
-        const yesterdayEnd = new Date();
-        yesterdayEnd.setDate(yesterdayEnd.getDate() - 1);
-        yesterdayEnd.setHours(23, 59, 59, 999);
+            const yesterdayEnd = new Date();
+            yesterdayEnd.setDate(yesterdayEnd.getDate() - 1);
+            yesterdayEnd.setHours(23, 59, 59, 999);
 
-        const monthStart = new Date();
-        monthStart.setDate(1);
-        monthStart.setHours(0, 0, 0, 0);
+            const monthStart = new Date();
+            monthStart.setDate(1);
+            monthStart.setHours(0, 0, 0, 0);
 
-        const [
-            todayOrders,
-            todayRevenueAgg,
-            yesterdayOrders,
-            yesterdayRevenueAgg,
-            monthlyRevenueAgg,
-            pendingOrders,
-            ordersToShip,
-            returnsPending,
-            refundsPending,
-            shipmentsInTransit,
-            failedDeliveries,
-            lowStockProducts,
-        ] = await Promise.all([
-            // Today's orders
-            prisma.order.count({
-                where: { createdAt: { gte: todayStart } },
-            }),
-            // Today's revenue
-            prisma.order.aggregate({
-                where: { createdAt: { gte: todayStart } },
-                _sum: { total: true },
-            }),
-            // Yesterday's orders (for trend)
-            prisma.order.count({
-                where: { createdAt: { gte: yesterdayStart, lte: yesterdayEnd } },
-            }),
-            // Yesterday's revenue (for trend)
-            prisma.order.aggregate({
-                where: { createdAt: { gte: yesterdayStart, lte: yesterdayEnd } },
-                _sum: { total: true },
-            }),
-            // Monthly revenue
-            prisma.order.aggregate({
-                where: { createdAt: { gte: monthStart } },
-                _sum: { total: true },
-            }),
-            // Pending orders
-            prisma.order.count({
-                where: { status: 'PENDING' },
-            }),
-            // Orders to ship (confirmed but no shipment)
-            prisma.order.count({
-                where: {
-                    status: { in: ['CONFIRMED', 'PACKED'] },
-                },
-            }),
-            // Returns awaiting approval
-            prisma.returnRequest.count({
-                where: { status: 'REQUESTED' },
-            }),
-            // Refunds pending
-            prisma.refund.count({
-                where: { status: { in: ['PENDING', 'APPROVED'] } },
-            }),
-            // Shipments in transit
-            prisma.shipment.count({
-                where: { status: 'IN_TRANSIT' },
-            }),
-            // Failed deliveries
-            prisma.shipment.count({
-                where: { status: 'FAILED' },
-            }),
-            // Low stock products (< 10 units)
-            prisma.product.count({
-                where: { stock: { lt: 10 }, status: 'PUBLISHED' },
-            }),
-        ]);
+            const [
+                todayOrders,
+                todayRevenueAgg,
+                yesterdayOrders,
+                yesterdayRevenueAgg,
+                monthlyRevenueAgg,
+                pendingOrders,
+                ordersToShip,
+                returnsPending,
+                refundsPending,
+                shipmentsInTransit,
+                failedDeliveries,
+                lowStockProducts,
+            ] = await Promise.all([
+                // Today's orders
+                prisma.order.count({
+                    where: { createdAt: { gte: todayStart } },
+                }),
+                // Today's revenue
+                prisma.order.aggregate({
+                    where: { createdAt: { gte: todayStart } },
+                    _sum: { total: true },
+                }),
+                // Yesterday's orders (for trend)
+                prisma.order.count({
+                    where: { createdAt: { gte: yesterdayStart, lte: yesterdayEnd } },
+                }),
+                // Yesterday's revenue (for trend)
+                prisma.order.aggregate({
+                    where: { createdAt: { gte: yesterdayStart, lte: yesterdayEnd } },
+                    _sum: { total: true },
+                }),
+                // Monthly revenue
+                prisma.order.aggregate({
+                    where: { createdAt: { gte: monthStart } },
+                    _sum: { total: true },
+                }),
+                // Pending orders
+                prisma.order.count({
+                    where: { status: 'PENDING' },
+                }),
+                // Orders to ship (confirmed but no shipment)
+                prisma.order.count({
+                    where: {
+                        status: { in: ['CONFIRMED', 'PACKED'] },
+                    },
+                }),
+                // Returns awaiting approval
+                prisma.returnRequest.count({
+                    where: { status: 'REQUESTED' },
+                }),
+                // Refunds pending
+                prisma.refund.count({
+                    where: { status: { in: ['PENDING', 'APPROVED'] } },
+                }),
+                // Shipments in transit
+                prisma.shipment.count({
+                    where: { status: 'IN_TRANSIT' },
+                }),
+                // Failed deliveries
+                prisma.shipment.count({
+                    where: { status: 'FAILED' },
+                }),
+                // Low stock products (< 10 units)
+                prisma.product.count({
+                    where: { stock: { lt: 10 }, status: 'PUBLISHED' },
+                }),
+            ]);
 
-        return {
-            todayOrders,
-            todayRevenue: Number(todayRevenueAgg._sum.total || 0),
-            yesterdayOrders,
-            yesterdayRevenue: Number(yesterdayRevenueAgg._sum.total || 0),
-            monthlyRevenue: Number(monthlyRevenueAgg._sum.total || 0),
-            pendingOrders,
-            ordersToShip,
-            returnsPending,
-            refundsPending,
-            shipmentsInTransit,
-            failedDeliveries,
-            lowStockProducts,
-        };
+            return {
+                todayOrders,
+                todayRevenue: Number(todayRevenueAgg._sum.total || 0),
+                yesterdayOrders,
+                yesterdayRevenue: Number(yesterdayRevenueAgg._sum.total || 0),
+                monthlyRevenue: Number(monthlyRevenueAgg._sum.total || 0),
+                pendingOrders,
+                ordersToShip,
+                returnsPending,
+                refundsPending,
+                shipmentsInTransit,
+                failedDeliveries,
+                lowStockProducts,
+            };
+        } catch (error) {
+            console.error('[DashboardStats] Failed to fetch KPIs:', error);
+            // Return safe defaults on error
+            return {
+                todayOrders: 0,
+                todayRevenue: 0,
+                yesterdayOrders: 0,
+                yesterdayRevenue: 0,
+                monthlyRevenue: 0,
+                pendingOrders: 0,
+                ordersToShip: 0,
+                returnsPending: 0,
+                refundsPending: 0,
+                shipmentsInTransit: 0,
+                failedDeliveries: 0,
+                lowStockProducts: 0,
+            };
+        }
     },
 
     /**
      * Get action required items for admin
      */
     getActionRequired: async (): Promise<ActionRequired> => {
-        const [
-            ordersAwaitingConfirmation,
-            returnsAwaitingApproval,
-            refundsAwaitingApproval,
-            shipmentsReadyToShip,
-            failedShipments,
-            lowStockItems,
-        ] = await Promise.all([
-            prisma.order.count({ where: { status: 'PENDING' } }),
-            prisma.returnRequest.count({ where: { status: 'REQUESTED' } }),
-            prisma.refund.count({ where: { status: 'PENDING' } }),
-            prisma.shipment.count({ where: { status: 'READY_TO_SHIP' } }),
-            prisma.shipment.count({ where: { status: 'FAILED' } }),
-            prisma.product.count({ where: { stock: { lt: 5 }, status: 'PUBLISHED' } }),
-        ]);
+        try {
+            const [
+                ordersAwaitingConfirmation,
+                returnsAwaitingApproval,
+                refundsAwaitingApproval,
+                shipmentsReadyToShip,
+                failedShipments,
+                lowStockItems,
+            ] = await Promise.all([
+                prisma.order.count({ where: { status: 'PENDING' } }),
+                prisma.returnRequest.count({ where: { status: 'REQUESTED' } }),
+                prisma.refund.count({ where: { status: 'PENDING' } }),
+                prisma.shipment.count({ where: { status: 'READY_TO_SHIP' } }),
+                prisma.shipment.count({ where: { status: 'FAILED' } }),
+                prisma.product.count({ where: { stock: { lt: 5 }, status: 'PUBLISHED' } }),
+            ]);
 
-        return {
-            ordersAwaitingConfirmation,
-            returnsAwaitingApproval,
-            refundsAwaitingApproval,
-            shipmentsReadyToShip,
-            failedShipments,
-            lowStockItems,
-        };
+            return {
+                ordersAwaitingConfirmation,
+                returnsAwaitingApproval,
+                refundsAwaitingApproval,
+                shipmentsReadyToShip,
+                failedShipments,
+                lowStockItems,
+            };
+        } catch (error) {
+            console.error('[DashboardStats] Failed to fetch action required:', error);
+            return {
+                ordersAwaitingConfirmation: 0,
+                returnsAwaitingApproval: 0,
+                refundsAwaitingApproval: 0,
+                shipmentsReadyToShip: 0,
+                failedShipments: 0,
+                lowStockItems: 0,
+            };
+        }
     },
 
     /**
@@ -225,11 +256,16 @@ export const DashboardStats = {
      * Get system alerts
      */
     getSystemAlerts: async () => {
-        return prisma.systemAlert.findMany({
-            where: { isResolved: false },
-            orderBy: { createdAt: 'desc' },
-            take: 10,
-        });
+        try {
+            return await prisma.systemAlert.findMany({
+                where: { isResolved: false },
+                orderBy: { createdAt: 'desc' },
+                take: 10,
+            });
+        } catch (error) {
+            console.error('[DashboardStats] Failed to fetch system alerts:', error);
+            return []; // Return empty array on error to prevent dashboard crash
+        }
     },
 
     /**
