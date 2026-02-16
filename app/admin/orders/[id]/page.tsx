@@ -59,9 +59,13 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
         notFound();
     }
 
-    // Serialize the order data
+    // Serialize the order data - explicitly construct to avoid passing Prisma Decimal objects
+    // Next.js server components CANNOT serialize Prisma Decimal types to client components
     const serializedOrder = {
-        ...order,
+        id: order.id,
+        status: order.status,
+        paymentStatus: order.paymentStatus,
+        paymentMethod: order.paymentMethod,
         total: order.total.toString(),
         subtotal: order.subtotal?.toString() || "0",
         cgst: order.cgst?.toString() || "0",
@@ -71,25 +75,39 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
         gstRate: order.gstRate?.toString() || "18",
         discount: order.discount?.toString() || "0",
         giftWrapCharge: order.giftWrapCharge?.toString() || "0",
+        customerName: order.customerName,
+        customerPhone: order.customerPhone,
+        shippingAddress: order.shippingAddress,
+        trackingNumber: order.trackingNumber,
+        courierName: order.courierName,
+        cancellationReason: order.cancellationReason,
+        refundStatus: order.refundStatus,
         createdAt: order.createdAt.toISOString(),
         updatedAt: order.updatedAt.toISOString(),
         cancelledAt: order.cancelledAt?.toISOString() || null,
+        user: order.user,
         items: order.items.map(item => ({
-            ...item,
+            id: item.id,
+            quantity: item.quantity,
             price: item.price.toString(),
             product: {
-                ...item.product,
+                id: item.product.id,
+                name: item.product.name,
                 price: item.product.price.toString(),
-                discount: item.product.discount?.toString() || null,
-                finalPrice: item.product.finalPrice?.toString() || null,
+                images: item.product.images.map(img => ({ url: img.url })),
             }
         })),
         notes: order.notes.map(note => ({
-            ...note,
+            id: note.id,
+            content: note.content,
+            createdBy: note.createdBy,
             createdAt: note.createdAt.toISOString()
         })),
         timeline: order.timeline.map(event => ({
-            ...event,
+            id: event.id,
+            event: event.event,
+            details: event.details,
+            createdBy: event.createdBy,
             createdAt: event.createdAt.toISOString()
         })),
         shipments: order.shipments.map(shipment => ({
@@ -99,18 +117,10 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
             courierName: shipment.courierName || undefined,
             labelUrl: shipment.labelUrl || undefined,
             trackingUrl: shipment.trackingUrl || undefined,
-            createdAt: shipment.createdAt.toISOString(),
-            updatedAt: shipment.updatedAt.toISOString(),
             pickupScheduledAt: shipment.pickupScheduledAt?.toISOString() || undefined,
             shippedAt: shipment.shippedAt?.toISOString() || undefined,
             deliveredAt: shipment.deliveredAt?.toISOString() || undefined,
-            cancelledAt: shipment.cancelledAt?.toISOString() || undefined,
-            returnInitiatedAt: shipment.returnInitiatedAt?.toISOString() || undefined,
             estimatedDeliveryAt: shipment.estimatedDeliveryAt?.toISOString() || undefined,
-            weight: shipment.weight?.toString() || undefined,
-            length: shipment.length?.toString() || undefined,
-            breadth: shipment.breadth?.toString() || undefined,
-            height: shipment.height?.toString() || undefined
         }))
     };
 
@@ -120,3 +130,4 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
         </div>
     );
 }
+
