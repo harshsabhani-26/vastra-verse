@@ -42,12 +42,20 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
                 }
             }
         });
-    } catch (error) {
-        console.error('[OrderDetailsPage] Failed to fetch order:', error);
-        notFound(); // Show 404 page on database errors
+    } catch (error: any) {
+        console.error('[OrderDetailsPage] Database error fetching order:', {
+            orderId: id,
+            error: error.message,
+            stack: error.stack
+        });
+
+        // For database connection errors, throw to trigger error.tsx
+        throw new Error(`Failed to load order details: ${error.message}`);
     }
 
+    // If order not found, show 404
     if (!order) {
+        console.log('[OrderDetailsPage] Order not found:', id);
         notFound();
     }
 
