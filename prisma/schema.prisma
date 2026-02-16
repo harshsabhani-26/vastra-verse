@@ -1,4 +1,3 @@
-
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -270,6 +269,7 @@ model Order {
   payments           Payment[]
   refunds            Refund[]
   returnRequests     ReturnRequest[]
+  shipments          Shipment[]
 
   @@index([createdAt])
   @@index([shippingState])
@@ -282,14 +282,120 @@ model Order {
 }
 
 model OrderItem {
-  id           String       @id @default(cuid())
-  orderId      String
-  productId    String
-  quantity     Int
-  price        Decimal
-  order        Order        @relation(fields: [orderId], references: [id])
-  product      Product      @relation(fields: [productId], references: [id])
-  returnItems  ReturnItem[]
+  id          String       @id @default(cuid())
+  orderId     String
+  productId   String
+  quantity    Int
+  price       Decimal
+  order       Order        @relation(fields: [orderId], references: [id])
+  product     Product      @relation(fields: [productId], references: [id])
+  returnItems ReturnItem[]
+}
+
+model Shipment {
+  id                  String         @id @default(cuid())
+  orderId             String
+  providerShipmentId  String?        @unique
+  awbNumber           String?        @unique
+  courierName         String?
+  labelUrl            String?
+  trackingUrl         String?
+  status              ShipmentStatus @default(PENDING)
+  isReturn            Boolean        @default(false)
+  pickupScheduledAt   DateTime?
+  shippedAt           DateTime?
+  deliveredAt         DateTime?
+  cancelledAt         DateTime?
+  returnInitiatedAt   DateTime?
+  estimatedDeliveryAt DateTime?
+  weight              Decimal?       @default(0) // in kg
+  length              Decimal?       @default(0) // in cm
+  breadth             Decimal?       @default(0) // in cm
+  height              Decimal?       @default(0) // in cm
+
+  // Cost & Weight Tracking
+  actualWeight     Decimal? @default(0) // Actual weight from courier
+  volumetricWeight Decimal? @default(0) // (L*B*H)/5000
+  chargeableWeight Decimal? @default(0) // Max of actual vs volumetric
+  shippingCost     Decimal? @default(0) // Forward shipping cost
+  rtoCost          Decimal? @default(0) // Return shipping cost
+
+  // Detailed Financial Breakdown
+  codCollectionFee  Decimal? @default(0) // COD collection charges
+  insuranceFee      Decimal? @default(0) // Insurance charges
+  fuelSurcharge     Decimal? @default(0) // Fuel surcharge
+  totalShippingCost Decimal? @default(0) // Total = shipping + rto + fees
+  profitImpact      Decimal? @default(0) // Profit after shipping costs
+
+  // COD Reconciliation
+  codRemittance          Decimal?             @default(0) // Amount to be remitted
+  codCollectedAmount     Decimal?             @default(0) // Amount actually collected
+  codSettledAmount       Decimal?             @default(0) // Amount settled to bank
+  codSettlementDate      DateTime? // Date of settlement
+  codTransactionId       String? // Bank transaction ID
+  codSettlementStatus    CodSettlementStatus? @default(PENDING) // Settlement tracking
+  codSettlementReference String? // Reference from payment gateway/bank
+
+  // Pickup Management
+  pickupConfirmedAt DateTime? // When pickup was confirmed
+  pickupManifestId  String? // Manifest ID from courier
+  courierAgentName  String? // Agent who picked up
+
+  providerResponse   Json? // Store raw API response
+  trackingData       Json? // Store tracking timeline
+  cancellationReason String?
+  failureReason      String?
+  createdBy          String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  order              Order               @relation(fields: [orderId], references: [id])
+  codReconciliations CodReconciliation[]
+
+  @@index([orderId])
+  @@index([awbNumber])
+  @@index([status])
+  @@index([isReturn])
+  @@index([createdAt])
+  @@index([codSettlementStatus])
+}
+
+model CourierPerformance {
+  id              String   @id @default(cuid())
+  courierId       String? // Provider-specific courier ID
+  courierName     String   @unique
+  avgDeliveryTime Decimal  @default(0) // Average delivery time in days
+  successRate     Decimal  @default(0) // Percentage of successful deliveries
+  rtoRate         Decimal  @default(0) // Return-to-origin rate percentage
+  score           Decimal  @default(0) // Composite performance score (0-100)
+  totalShipments  Int      @default(0) // Total shipments processed
+  lastUpdated     DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([courierName])
+  @@index([score])
+  @@index([lastUpdated])
+}
+
+model CodReconciliation {
+  id                  String    @id @default(cuid())
+  shipmentId          String
+  codAmount           Decimal // Expected COD amount
+  collectedDate       DateTime? // When courier collected
+  settlementDate      DateTime? // When settled to merchant
+  settlementReference String? // Bank/gateway reference
+  settlementStatus    String    @default("PENDING") // PENDING, SETTLED, DISPUTED
+  gapAmount           Decimal   @default(0) // Difference between expected and settled
+  metadata            Json? // Additional reconciliation data
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  @@index([shipmentId])
+  @@index([settlementStatus])
+  @@index([collectedDate])
+  @@index([settlementDate])
 }
 
 model ReturnRequest {
@@ -308,12 +414,12 @@ model ReturnRequest {
   refundInitiatedAt DateTime?
   refundCompletedAt DateTime?
   adminNotes        String?
-  
-  order             Order            @relation(fields: [orderId], references: [id])
-  user              User             @relation(fields: [userId], references: [id])
-  items             ReturnItem[]
-  refunds           Refund[]
-  
+
+  order   Order        @relation(fields: [orderId], references: [id])
+  user    User         @relation(fields: [userId], references: [id])
+  items   ReturnItem[]
+  refunds Refund[]
+
   @@index([orderId])
   @@index([userId])
   @@index([status])
@@ -322,15 +428,15 @@ model ReturnRequest {
 }
 
 model ReturnItem {
-  id              String        @id @default(cuid())
+  id              String  @id @default(cuid())
   returnRequestId String
   orderItemId     String
-  quantity        Int           // Quantity to return (partial support)
+  quantity        Int // Quantity to return (partial support)
   refundAmount    Decimal
-  
-  returnRequest   ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
-  orderItem       OrderItem     @relation(fields: [orderItemId], references: [id])
-  
+
+  returnRequest ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+  orderItem     OrderItem     @relation(fields: [orderItemId], references: [id])
+
   @@index([returnRequestId])
   @@index([orderItemId])
 }
@@ -421,36 +527,44 @@ model Payment {
 }
 
 model Refund {
-  id              String           @id @default(cuid())
-  paymentId       String
-  orderId         String
-  amount          Decimal
-  reason          String
-  status          RefundStatusEnum @default(PENDING)
-  gatewayRefundId String?          @unique
-  gatewayStatus   String?
-  requestedBy     String
-  requestedAt     DateTime         @default(now())
-  approvedBy      String?
-  approvedAt      DateTime?
-  approvalNotes   String?
-  processedBy     String?
-  processedAt     DateTime?
-  processingNotes String?
-  rejectedBy      String?
-  rejectedAt      DateTime?
-  rejectionReason String?
-  metadata        Json?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  order           Order            @relation(fields: [orderId], references: [id])
-  payment         Payment          @relation(fields: [paymentId], references: [id])
-  returnRequest   ReturnRequest?   @relation(fields: [returnRequestId], references: [id])
-  returnRequestId String?
+  id                    String           @id @default(cuid())
+  paymentId             String
+  orderId               String
+  amount                Decimal
+  reason                String
+  status                RefundStatusEnum @default(PENDING)
+  refundMethod          RefundMethodEnum @default(AUTOMATIC)
+  gatewayRefundId       String?          @unique
+  gatewayStatus         String?
+  // Manual Refund Fields (COD)
+  manualRefundUpiId     String?
+  manualRefundBankName  String?
+  manualRefundAccountNo String?
+  manualRefundIfsc      String?
+  manualRefundNotes     String?
+  requestedBy           String
+  requestedAt           DateTime         @default(now())
+  approvedBy            String?
+  approvedAt            DateTime?
+  approvalNotes         String?
+  processedBy           String?
+  processedAt           DateTime?
+  processingNotes       String?
+  rejectedBy            String?
+  rejectedAt            DateTime?
+  rejectionReason       String?
+  metadata              Json?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  order                 Order            @relation(fields: [orderId], references: [id])
+  payment               Payment          @relation(fields: [paymentId], references: [id])
+  returnRequest         ReturnRequest?   @relation(fields: [returnRequestId], references: [id])
+  returnRequestId       String?
 
   @@index([paymentId])
   @@index([orderId])
   @@index([status])
+  @@index([refundMethod])
 }
 
 model PaymentGatewaySettings {
@@ -729,6 +843,22 @@ model NotificationPreferences {
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model SystemAlert {
+  id         String   @id @default(cuid())
+  type       String   // GATEWAY_DOWN, API_ERROR, WEBHOOK_FAILURE, DATABASE_ERROR, EMAIL_FAILURE
+  severity   String   // INFO, WARNING, ERROR, CRITICAL
+  message    String
+  details    Json?
+  isResolved Boolean  @default(false)
+  resolvedAt DateTime?
+  resolvedBy String?
+  createdAt  DateTime @default(now())
+
+  @@index([isResolved])
+  @@index([severity])
+  @@index([createdAt])
+}
+
 model BackupLog {
   id           String       @id @default(cuid())
   filename     String       @unique
@@ -855,6 +985,7 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   RETURNED
+  REFUNDED
   CANCELLED
 }
 
@@ -901,6 +1032,7 @@ enum PaymentMethodEnum {
 enum RefundStatusEnum {
   PENDING
   APPROVED
+  INITIATED
   PROCESSING
   PROCESSED
   REJECTED
@@ -920,19 +1052,44 @@ enum CouponStatus {
 }
 
 enum NotificationType {
+  // Order Events
   NEW_ORDER
   ORDER_STATUS_CHANGED
   ORDER_CANCELLED
+  ORDER_CONFIRMED
+  // Payment Events
   PAYMENT_RECEIVED
   PAYMENT_FAILED
+  // Stock Events
   LOW_STOCK_ALERT
   OUT_OF_STOCK
+  STOCK_REPLENISHED
+  // Return Events
   RETURN_REQUEST
+  RETURN_APPROVED
+  RETURN_REJECTED
+  // Refund Events
   REFUND_PROCESSED
+  REFUND_INITIATED
+  REFUND_COMPLETED
+  // Shipment Events
+  SHIPMENT_CREATED
+  SHIPMENT_PICKUP_SCHEDULED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  DELIVERY_FAILED
+  RTO_INITIATED
+  COURIER_EXCEPTION
+  // COD Events
+  COD_SETTLEMENT_MISMATCH
+  // Customer Events
   NEW_USER_SIGNUP
   NEW_APPOINTMENT
+  // Admin/System Events
   ADMIN_ACTION
   SYSTEM_ALERT
+  WEBHOOK_FAILURE
+  GATEWAY_ERROR
 }
 
 enum NotificationPriority {
@@ -1024,4 +1181,50 @@ enum InspectionStatus {
   PASSED
   FAILED
   NOT_APPLICABLE
+}
+
+enum RefundMethodEnum {
+  AUTOMATIC
+  MANUAL_UPI
+  MANUAL_BANK
+  STORE_CREDIT
+}
+
+enum ShipmentStatus {
+  PENDING
+  READY_TO_SHIP
+  PICKUP_SCHEDULED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+  CANCELLED
+  RETURN_INITIATED
+  RETURN_PICKED
+  RETURN_DELIVERED
+}
+
+enum CodSettlementStatus {
+  PENDING
+  COLLECTED
+  SETTLED
+  DISPUTED
+  FAILED
+}
+
+model MigrationLog {
+  id          String   @id @default(cuid())
+  version     String
+  type        String   // MIGRATION, SEED, ROLLBACK
+  executedAt  DateTime @default(now())
+  executedBy  String?
+  status      String   // SUCCESS, FAILED, ROLLED_BACK
+  environment String   // development, staging, production
+  duration    Int?     // milliseconds
+  notes       String?
+
+  @@index([version])
+  @@index([executedAt])
+  @@index([status])
+  @@index([environment])
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { AccountSidebar } from "@/components/account/AccountSidebar";
@@ -99,9 +100,11 @@ export default async function OrdersPage() {
                                                     <div key={item.id} className="flex gap-6 items-center group">
                                                         <div className="w-16 h-20 bg-secondary/5 rounded-sm overflow-hidden shrink-0 border border-primary/5 relative">
                                                             {item.product.images && item.product.images.length > 0 ? (
-                                                                <img
+                                                                <Image
                                                                     src={item.product.images[0].url}
                                                                     alt={item.product.name}
+                                                                    width={64}
+                                                                    height={80}
                                                                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                                                 />
                                                             ) : (

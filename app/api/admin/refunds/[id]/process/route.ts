@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
+import { EventDispatcher } from "@/lib/services/event-dispatcher";
 
 /**
  * PUT /api/admin/refunds/[id]/process
@@ -83,6 +84,13 @@ export async function PUT(
                 createdBy: session.user.id,
             },
         });
+
+        // Fire event notification (non-blocking)
+        EventDispatcher.refundCompleted({
+            id: refundId,
+            orderId: refund.orderId,
+            amount: Number(refund.amount),
+        }).catch(() => { });
 
         return NextResponse.json({
             success: true,

@@ -242,7 +242,7 @@ export function ProductDetails({ product, initialIsWishlisted = false }: Product
                     onClick={() => toggleSection('delivery')}
                 >
                     <p className="text-sm text-text-muted">
-                        We offer free shipping on all orders above ₹5,000 within India. International shipping is calculated at checkout. Returns are accepted within 7 days of delivery for store credit only.
+                        We offer free shipping on all orders above ₹5,000 within India. International shipping is calculated at checkout. Returns are only accepted for wrong or defective products delivered within 7 days of receipt.
                     </p>
                 </AccordionItem>
 

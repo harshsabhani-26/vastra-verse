@@ -77,6 +77,7 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
     SHIPPED: "bg-indigo-200 text-indigo-900 border border-indigo-300",
     DELIVERED: "bg-green-200 text-green-900 border border-green-300",
     RETURNED: "bg-orange-200 text-orange-900 border border-orange-300",
+    REFUNDED: "bg-gray-200 text-gray-900 border border-gray-300",
     CANCELLED: "bg-red-200 text-red-900 border border-red-300",
 };
 

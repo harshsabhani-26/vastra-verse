@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, Save, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
+import Image from "next/image";
 
 interface GatewaySettings {
     id: string;
@@ -127,9 +128,11 @@ export default function PaymentSettingsPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-3">
-                        <img
+                        <Image
                             src="https://razorpay.com/favicon.png"
                             alt="Razorpay"
+                            width={24}
+                            height={24}
                             className="w-6 h-6"
                         />
                         Razorpay Configuration

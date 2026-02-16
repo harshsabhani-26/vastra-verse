@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import toast from "react-hot-toast";
 import { Upload, Loader2 } from "lucide-react";
+import Image from "next/image";
 
 interface BannerFormProps {
     banner?: HeroBanner;
@@ -212,7 +213,7 @@ export function BannerForm({ banner }: BannerFormProps) {
                         <div className="border-2 border-dashed border-stone-300 rounded-lg p-8 text-center">
                             {imagePreview ? (
                                 <div className="space-y-4">
-                                    <img src={imagePreview} alt="Preview" className="max-h-48 mx-auto rounded" />
+                                    <Image src={imagePreview} alt="Preview" width={480} height={150} className="max-h-48 mx-auto rounded object-contain" />
                                     <Button type="button" variant="outline" onClick={() => {
                                         setImagePreview("");
                                         setFormData(prev => ({ ...prev, imageUrl: "" }));

@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { checkUserExists, authenticate, register, googleSignIn } from "@/lib/actions";
 import { GoogleLogo } from "@/components/auth/GoogleLogo";
 import toast from "react-hot-toast";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, ArrowRight, Mail } from "lucide-react";
 
 export function UnifiedAuthForm() {
@@ -16,6 +16,8 @@ export function UnifiedAuthForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [userName, setUserName] = useState("");
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get("callbackUrl") || "/";
 
     // Login state
     const [showPassword, setShowPassword] = useState(false);
@@ -260,7 +262,7 @@ export function UnifiedAuthForm() {
                     <Button
                         variant="outline"
                         type="button"
-                        onClick={() => googleSignIn()}
+                        onClick={() => googleSignIn(callbackUrl)}
                         className="w-full h-12 border-primary/10 text-primary hover:bg-surface flex items-center justify-center gap-3 rounded-sm font-medium transition-all"
                     >
                         <GoogleLogo />
@@ -272,6 +274,7 @@ export function UnifiedAuthForm() {
             {step === "LOGIN" && (
                 <form action={handleLogin} className="space-y-6">
                     <input type="hidden" name="email" value={email} />
+                    <input type="hidden" name="redirectTo" value={callbackUrl} />
 
                     <div className="space-y-2">
                         <div className="flex justify-between items-center">

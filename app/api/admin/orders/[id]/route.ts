@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { OrderStatus, PaymentStatus, PaymentStatusEnum, PaymentMethodEnum } from "@prisma/client";
+import { EventDispatcher } from "@/lib/services/event-dispatcher";
 
 export async function GET(
     request: NextRequest,
@@ -244,6 +245,24 @@ export async function PATCH(
                 }
             }
         }
+
+        // ── Fire-and-forget event notifications ─────────────────────────
+        try {
+            if (status === "CONFIRMED") {
+                EventDispatcher.orderConfirmed(params.id).catch(() => { });
+            }
+            if (status === "CANCELLED") {
+                EventDispatcher.orderCancelled(params.id, "Admin cancelled").catch(() => { });
+            }
+            if (paymentStatus === "PAID" && order) {
+                EventDispatcher.paymentReceived({
+                    id: order.payments?.[0]?.id || params.id,
+                    orderId: params.id,
+                    amount: Number(order.total),
+                    method: order.paymentMethod || "COD",
+                }).catch(() => { });
+            }
+        } catch { } // Never block order response
 
         return NextResponse.json({ success: true });
     } catch (error) {

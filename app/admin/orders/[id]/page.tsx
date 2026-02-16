@@ -32,6 +32,10 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
             },
             timeline: {
                 orderBy: { createdAt: 'desc' }
+            },
+            shipments: {
+                orderBy: { createdAt: 'desc' },
+                take: 1
             }
         }
     });
@@ -72,6 +76,26 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
         timeline: order.timeline.map(event => ({
             ...event,
             createdAt: event.createdAt.toISOString()
+        })),
+        shipments: order.shipments.map(shipment => ({
+            id: shipment.id,
+            status: shipment.status,
+            awbNumber: shipment.awbNumber || undefined,
+            courierName: shipment.courierName || undefined,
+            labelUrl: shipment.labelUrl || undefined,
+            trackingUrl: shipment.trackingUrl || undefined,
+            createdAt: shipment.createdAt.toISOString(),
+            updatedAt: shipment.updatedAt.toISOString(),
+            pickupScheduledAt: shipment.pickupScheduledAt?.toISOString() || undefined,
+            shippedAt: shipment.shippedAt?.toISOString() || undefined,
+            deliveredAt: shipment.deliveredAt?.toISOString() || undefined,
+            cancelledAt: shipment.cancelledAt?.toISOString() || undefined,
+            returnInitiatedAt: shipment.returnInitiatedAt?.toISOString() || undefined,
+            estimatedDeliveryAt: shipment.estimatedDeliveryAt?.toISOString() || undefined,
+            weight: shipment.weight?.toString() || undefined,
+            length: shipment.length?.toString() || undefined,
+            breadth: shipment.breadth?.toString() || undefined,
+            height: shipment.height?.toString() || undefined
         }))
     };
 

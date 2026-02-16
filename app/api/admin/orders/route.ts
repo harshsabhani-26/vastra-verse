@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
             // 3. Hide PENDING orders if they are Prepaid (failed/abandoned)
             OR: [
                 { paymentStatus: "PAID" },
+                { paymentStatus: "REFUNDED" },
                 {
                     AND: [
                         { paymentStatus: "PENDING" },

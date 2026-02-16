@@ -39,7 +39,7 @@ export default function FAQPage() {
                                 <span className="transition-transform group-open:rotate-180">▼</span>
                             </summary>
                             <p className="text-stone-600 mt-4 text-sm leading-relaxed">
-                                We accept returns within 14 days of delivery for unused items with original tags. Please visit our Returns & Exchange page for more details.
+                                Returns are only accepted for wrong or defective products delivered within 7 days of receipt. We do not accept returns for change of mind or size issues. Please visit our Returns & Exchange page for more details.
                             </p>
                         </details>
                     </div>

@@ -17,6 +17,7 @@ import {
     Key,
     Activity,
 } from "lucide-react";
+import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -371,9 +372,11 @@ export default function UserAuthTracking() {
                                     <div className="grid grid-cols-12 gap-4 p-4 hover:bg-stone-50 transition-colors">
                                         <div className="col-span-3 flex items-center gap-3">
                                             {user.image ? (
-                                                <img
+                                                <Image
                                                     src={user.image}
                                                     alt={user.name || "User"}
+                                                    width={40}
+                                                    height={40}
                                                     className="w-10 h-10 rounded-full object-cover"
                                                 />
                                             ) : (

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { requireAdmin, unauthorizedResponse } from "@/lib/auth-utils";
+import { EventDispatcher } from "@/lib/services/event-dispatcher";
 
 /**
  * GET /api/admin/refunds
@@ -171,6 +172,13 @@ export async function POST(request: NextRequest) {
                 createdBy: session.user.id,
             },
         });
+
+        // Fire event notification (non-blocking)
+        EventDispatcher.refundInitiated({
+            id: refund.id,
+            orderId,
+            amount: Number(amount),
+        }).catch(() => { });
 
         return NextResponse.json({
             success: true,

@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { ReturnStatus, InspectionStatus } from "@prisma/client";
 import { processReturnRefund } from "@/lib/refund-service";
 import { restoreInventoryForReturn } from "@/lib/inventory-restore";
+import { EventDispatcher } from "@/lib/services/event-dispatcher";
 
 export async function PATCH(
     req: Request,
@@ -18,11 +19,13 @@ export async function PATCH(
 
         const { id } = await params;
         const body = await req.json();
-        const { action, adminNotes } = body;
-        // Action: APPROVE, REJECT, MARK_RECEIVED, INSPECTION_PASS, INSPECTION_FAIL, PROCESS_REFUND
+        const { action, adminNotes, refundDetails } = body;
+        // Action: APPROVE, REJECT, MARK_RECEIVED, INSPECTION_PASS, INSPECTION_FAIL, 
+        //         PROCESS_REFUND (online), PROCESS_COD_REFUND (manual), CONFIRM_COD_REFUND
 
         const returnRequest = await prisma.returnRequest.findUnique({
-            where: { id }
+            where: { id },
+            include: { order: true }
         });
 
         if (!returnRequest) {
@@ -35,6 +38,11 @@ export async function PATCH(
             case "APPROVE":
                 updateData.status = "APPROVED";
                 updateData.approvedAt = new Date();
+                // Fire event notification
+                EventDispatcher.returnApproved({
+                    id,
+                    orderId: returnRequest.orderId,
+                }).catch(() => { });
                 break;
 
             case "REJECT":
@@ -60,6 +68,13 @@ export async function PATCH(
 
                 // Restore inventory
                 await restoreInventoryForReturn(id);
+
+                // Update Order Status to RETURNED
+                // This reflects that the item has been received and approved
+                await prisma.order.update({
+                    where: { id: returnRequest.orderId },
+                    data: { status: "RETURNED" }
+                });
                 break;
 
             case "INSPECTION_FAIL":
@@ -82,13 +97,60 @@ export async function PATCH(
                     );
                 }
 
-                // Call Refund Service
-                const result = await processReturnRefund(id, session.user.id);
+                // Automatic refund (online) or manual (COD)
+                const result = await processReturnRefund(id, session.user.id, refundDetails);
                 if (!result.success) {
                     return NextResponse.json({ error: result.error }, { status: 400 });
                 }
-                // The service handles status updates (REFUND_COMPLETED)
-                return NextResponse.json({ success: true, refundId: result.refundId });
+                return NextResponse.json({
+                    success: true,
+                    refundId: result.refundId,
+                    message: result.message
+                });
+
+            case "PROCESS_COD_REFUND":
+                // Manual COD refund
+                if (returnRequest.inspectionStatus !== "PASSED") {
+                    return NextResponse.json(
+                        { error: "Return must pass inspection before refund" },
+                        { status: 400 }
+                    );
+                }
+
+                if (!refundDetails) {
+                    return NextResponse.json(
+                        { error: "Refund details required (method, UPI/Bank info)" },
+                        { status: 400 }
+                    );
+                }
+
+                const codResult = await processReturnRefund(id, session.user.id, refundDetails);
+                if (!codResult.success) {
+                    return NextResponse.json({ error: codResult.error }, { status: 400 });
+                }
+                return NextResponse.json({
+                    success: true,
+                    refundId: codResult.refundId,
+                    message: codResult.message
+                });
+
+            case "CONFIRM_COD_REFUND":
+                // Confirm manual refund was sent
+                const { confirmCODRefund } = await import("@/lib/refund-service");
+                const { refundId } = body;
+
+                if (!refundId) {
+                    return NextResponse.json(
+                        { error: "Refund ID required" },
+                        { status: 400 }
+                    );
+                }
+
+                const confirmResult = await confirmCODRefund(refundId, session.user.id);
+                if (!confirmResult.success) {
+                    return NextResponse.json({ error: confirmResult.error }, { status: 400 });
+                }
+                return NextResponse.json({ success: true, message: confirmResult.message });
 
             default:
                 if (!adminNotes) { // If only updating notes, that's fine

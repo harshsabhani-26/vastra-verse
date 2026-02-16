@@ -13,6 +13,7 @@ import { useSession } from "next-auth/react";
 import { Tag, X, Loader2, Check, Gift, ChevronDown, Phone, MapPin, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Script from "next/script";
+import Image from "next/image";
 
 interface CartItem {
     id: string;
@@ -969,7 +970,7 @@ export default function CheckoutPage() {
                                 {cartItems.map((item) => (
                                     <div key={item.id} className="flex gap-4">
                                         <div className="w-20 h-28 relative bg-stone-100 flex-shrink-0">
-                                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                            <Image src={item.image} alt={item.name} width={80} height={112} className="w-full h-full object-cover" />
                                         </div>
                                         <div className="flex-1">
                                             <h4 className="font-serif text-[#1C1917] text-sm leading-tight mb-1">{item.name}</h4>

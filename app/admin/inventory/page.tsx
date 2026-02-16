@@ -67,8 +67,10 @@ export default function InventoryPage() {
             const data = await response.json();
 
             if (response.ok) {
-                setProducts(data.products || []);
-                calculateStats(data.products || []);
+                // API returns {items, nextCursor, hasNextPage} structure
+                const productList = data.items || data.products || [];
+                setProducts(productList);
+                calculateStats(productList);
             } else {
                 toast.error("Failed to load inventory");
             }

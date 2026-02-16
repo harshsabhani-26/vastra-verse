@@ -8,10 +8,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
+import { useSession } from "next-auth/react";
+import { toast } from "react-hot-toast";
+
 export function CartDrawer() {
     const { items, isOpen, closeCart, removeItem, updateQuantity, totalPrice } = useCartStore();
     const [mounted, setMounted] = useState(false);
     const router = useRouter();
+    const { data: session } = useSession();
 
     useEffect(() => {
         setMounted(true);
@@ -21,6 +25,16 @@ export function CartDrawer() {
     // If needed specifically, we can re-add the sync logic. For now, ensuring UI works.
 
     if (!mounted) return null;
+
+    const handleCheckout = () => {
+        closeCart();
+        if (!session?.user) {
+            toast.error("Please login to proceed to checkout");
+            router.push("/login?callbackUrl=/checkout");
+            return;
+        }
+        router.push("/checkout");
+    };
 
     return (
         <Sheet open={isOpen} onOpenChange={(open) => !open && closeCart()}>
@@ -132,10 +146,7 @@ export function CartDrawer() {
                                     View Bag
                                 </Button>
                                 <Button
-                                    onClick={() => {
-                                        closeCart();
-                                        router.push("/checkout");
-                                    }}
+                                    onClick={handleCheckout}
                                     className="h-12 bg-primary hover:bg-primary-dark text-white rounded-sm uppercase tracking-widest text-[10px] font-bold shadow-luxury hover:shadow-elevated transition-all duration-300"
                                 >
                                     Checkout

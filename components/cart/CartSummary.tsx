@@ -109,6 +109,11 @@ export function CartSummary() {
     };
 
     const handleCheckout = async () => {
+        if (!session?.user) {
+            toast.error("Please login to proceed to checkout");
+            router.push("/login?callbackUrl=/checkout");
+            return;
+        }
         // Coupon is now persisted in Zustand store, no need for sessionStorage
         router.push("/checkout");
     };

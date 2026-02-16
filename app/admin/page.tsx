@@ -1,474 +1,357 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    DollarSign,
-    ShoppingBag,
-    Users,
-    TrendingUp,
-    Package,
-    Truck,
-    CheckCircle,
-    AlertTriangle,
-    Calendar,
-
-    Plus,
-    Eye,
-    FolderOpen
-} from "lucide-react";
-import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import prisma from "@/lib/prisma";
+import { DashboardStats } from "@/lib/services/dashboard-stats";
 import Link from "next/link";
 import Image from "next/image";
-import NotificationBell from "@/components/notifications/NotificationBell";
+import {
+    ShoppingBag,
+    Package,
+    Truck,
+    RotateCcw,
+    CreditCard,
+    AlertTriangle,
+    TrendingUp,
+    TrendingDown,
+    Clock,
+    ArrowRight,
+    DollarSign,
+    Ban,
+    CheckCircle2,
+    XCircle,
+    Eye,
+    Zap,
+    BarChart3,
+} from "lucide-react";
+import DashboardClient from "@/components/admin/DashboardClient";
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboard() {
     const session = await auth();
 
-    // Date helpers
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-
-    const yesterdayStart = new Date();
-    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
-    yesterdayStart.setHours(0, 0, 0, 0);
-
-    const yesterdayEnd = new Date();
-    yesterdayEnd.setDate(yesterdayEnd.getDate() - 1);
-    yesterdayEnd.setHours(23, 59, 59, 999);
-
-    const monthStart = new Date();
-    monthStart.setDate(1);
-    monthStart.setHours(0, 0, 0, 0);
-
-    const lastMonthStart = new Date();
-    lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
-    lastMonthStart.setDate(1);
-    lastMonthStart.setHours(0, 0, 0, 0);
-
-    const lastMonthEnd = new Date(monthStart);
-    lastMonthEnd.setMilliseconds(-1);
-
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const sixtyDaysAgo = new Date();
-    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-
-    // Fetch all metrics
-    const [
-        todaySales,
-        todayOrdersCount,
-        yesterdaySales,
-        yesterdayOrdersCount,
-        totalRevenue,
-        totalOrdersCount,
-        pendingOrdersCount,
-        shippedOrdersCount,
-        deliveredOrdersCount,
-        monthlyRevenue,
-        lastMonthRevenue,
-        totalProductsCount,
-        totalCustomersCount,
-        lowStockCount,
-        recentOrders,
-        bestSellers,
-        categoryStats,
-        dailyRevenue,
-        dailyOrders
-    ] = await Promise.all([
-        // Today's sales
-        prisma.order.aggregate({
-            where: { createdAt: { gte: todayStart } },
-            _sum: { total: true }
-        }),
-        // Today's orders
-        prisma.order.count({
-            where: { createdAt: { gte: todayStart } }
-        }),
-        // Yesterday's sales
-        prisma.order.aggregate({
-            where: { createdAt: { gte: yesterdayStart, lte: yesterdayEnd } },
-            _sum: { total: true }
-        }),
-        // Yesterday's orders
-        prisma.order.count({
-            where: { createdAt: { gte: yesterdayStart, lte: yesterdayEnd } }
-        }),
-        // Total revenue (for AOV calculation)
-        prisma.order.aggregate({
-            _sum: { total: true }
-        }),
-        // Total orders (for AOV calculation)
-        prisma.order.count(),
-        // Pending orders
-        prisma.order.count({
-            where: { status: 'PENDING' }
-        }),
-        // Shipped orders
-        prisma.order.count({
-            where: { status: 'SHIPPED' }
-        }),
-        // Delivered orders
-        prisma.order.count({
-            where: { status: 'DELIVERED' }
-        }),
-        // Monthly revenue
-        prisma.order.aggregate({
-            where: { createdAt: { gte: monthStart } },
-            _sum: { total: true }
-        }),
-        // Last month revenue
-        prisma.order.aggregate({
-            where: { createdAt: { gte: lastMonthStart, lte: lastMonthEnd } },
-            _sum: { total: true }
-        }),
-        // Total products
-        prisma.product.count(),
-        // Total customers
-        prisma.user.count({
-            where: { role: 'USER' }
-        }),
-        // Low stock alerts
-        prisma.product.count({
-            where: { stock: { lt: 10 } }
-        }),
-        // Recent orders
+    // Parallel data fetch
+    const [kpis, actionRequired, systemAlerts, recentOrders, bestSellers] = await Promise.all([
+        DashboardStats.getKPIs(),
+        DashboardStats.getActionRequired(),
+        DashboardStats.getSystemAlerts(),
+        // Recent 8 orders
         prisma.order.findMany({
-            take: 5,
+            take: 8,
             orderBy: { createdAt: 'desc' },
             select: {
                 id: true,
                 total: true,
                 status: true,
                 createdAt: true,
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true
-                    }
-                }
-            }
+                user: { select: { name: true, email: true } },
+            },
         }),
         // Best sellers
         prisma.orderItem.groupBy({
             by: ['productId'],
             _sum: { quantity: true },
             orderBy: { _sum: { quantity: 'desc' } },
-            take: 5
+            take: 5,
         }),
-        // Category stats for most popular
-        prisma.product.groupBy({
-            by: ['categoryId'],
-            _count: true,
-            orderBy: { _count: { categoryId: 'desc' } },
-            take: 1
-        }),
-        // Daily revenue for last 30 days
-        prisma.order.findMany({
-            where: { createdAt: { gte: thirtyDaysAgo } },
-            select: { createdAt: true, total: true }
-        }),
-        // Daily orders for last 30 days
-        prisma.order.findMany({
-            where: { createdAt: { gte: thirtyDaysAgo } },
-            select: { createdAt: true }
-        })
     ]);
 
-    // Get product details for best sellers
-    const bestSellerProducts = await prisma.product.findMany({
-        where: { id: { in: bestSellers.map(bs => bs.productId) } },
-        select: {
-            id: true,
-            name: true,
-            price: true,
-            images: {
-                orderBy: { position: 'asc' },
-                take: 1,
-                select: {
-                    url: true
-                }
-            }
-        }
-    });
-
-    // Get category details for most popular
-    const mostPopularCategory = categoryStats.length > 0
-        ? await prisma.category.findUnique({
-            where: { id: categoryStats[0].categoryId },
-            select: { name: true, id: true }
+    // Get best seller product details
+    const bestSellerProducts = bestSellers.length > 0
+        ? await prisma.product.findMany({
+            where: { id: { in: bestSellers.map((bs: { productId: string }) => bs.productId) } },
+            select: {
+                id: true, name: true, price: true, stock: true,
+                images: { orderBy: { position: 'asc' }, take: 1, select: { url: true } },
+            },
         })
-        : null;
+        : [];
 
-    // Calculate metrics
-    const averageOrderValue = totalOrdersCount > 0
-        ? Number(totalRevenue._sum.total || 0) / totalOrdersCount
-        : 0;
+    // Calculate trends
+    const ordersTrend = kpis.yesterdayOrders > 0
+        ? ((kpis.todayOrders - kpis.yesterdayOrders) / kpis.yesterdayOrders * 100)
+        : kpis.todayOrders > 0 ? 100 : 0;
 
-    // Calculate trend percentages
-    const calculateTrend = (current: number, previous: number) => {
-        if (previous === 0) return current > 0 ? '+100' : '0';
-        const change = ((current - previous) / previous) * 100;
-        return change > 0 ? `+${change.toFixed(1)}` : change.toFixed(1);
-    };
+    const revenueTrend = kpis.yesterdayRevenue > 0
+        ? ((kpis.todayRevenue - kpis.yesterdayRevenue) / kpis.yesterdayRevenue * 100)
+        : kpis.todayRevenue > 0 ? 100 : 0;
 
-    const todaySalesValue = Number(todaySales._sum.total || 0);
-    const yesterdaySalesValue = Number(yesterdaySales._sum.total || 0);
-    const monthlyRevenueValue = Number(monthlyRevenue._sum.total || 0);
-    const lastMonthRevenueValue = Number(lastMonthRevenue._sum.total || 0);
-
-    const salesTrend = calculateTrend(todaySalesValue, yesterdaySalesValue);
-    const ordersTrend = calculateTrend(todayOrdersCount, yesterdayOrdersCount);
-    const monthlyRevenueTrend = calculateTrend(monthlyRevenueValue, lastMonthRevenueValue);
-
-    // Process daily data for graphs
-    const revenueByDay = Array.from({ length: 30 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (29 - i));
-        date.setHours(0, 0, 0, 0);
-
-        const dayRevenue = dailyRevenue
-            .filter(order => {
-                const orderDate = new Date(order.createdAt);
-                orderDate.setHours(0, 0, 0, 0);
-                return orderDate.getTime() === date.getTime();
-            })
-            .reduce((sum, order) => sum + Number(order.total), 0);
-
-        return { date: date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }), value: dayRevenue };
-    });
-
-    const ordersByDay = Array.from({ length: 30 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (29 - i));
-        date.setHours(0, 0, 0, 0);
-
-        const dayOrders = dailyOrders.filter(order => {
-            const orderDate = new Date(order.createdAt);
-            orderDate.setHours(0, 0, 0, 0);
-            return orderDate.getTime() === date.getTime();
-        }).length;
-
-        return { date: date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }), value: dayOrders };
-    });
-
-    const maxRevenue = Math.max(...revenueByDay.map(d => d.value), 1);
-    const maxOrders = Math.max(...ordersByDay.map(d => d.value), 1);
+    // Total urgent actions
+    const totalActions = (Object.values(actionRequired) as number[]).reduce((a: number, b: number) => a + b, 0);
 
     return (
         <div className="space-y-6">
-            {/* Header with Welcome Message */}
+            {/* ─── System Alert Banner ────────────────────────────────────── */}
+            {systemAlerts.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-red-700">
+                        <AlertTriangle size={18} className="shrink-0" />
+                        <span className="font-semibold text-sm">System Alerts</span>
+                        <span className="bg-red-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">{systemAlerts.length}</span>
+                    </div>
+                    <div className="mt-2 space-y-1">
+                        {systemAlerts.slice(0, 3).map((alert: { id: string; severity: string; message: string }) => (
+                            <p key={alert.id} className="text-sm text-red-600 flex items-center gap-2">
+                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.severity === 'CRITICAL' ? 'bg-red-600 animate-pulse' : 'bg-red-400'}`} />
+                                {alert.message}
+                            </p>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ─── Header ────────────────────────────────────────────────── */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-serif text-[#1C1917]">Dashboard</h1>
-                    <p className="text-stone-600 mt-1">
-                        Welcome back, {session?.user?.name || 'Admin'} 👋
+                    <h1 className="text-2xl font-bold text-stone-900 tracking-tight">
+                        Command Center
+                    </h1>
+                    <p className="text-stone-500 text-sm mt-0.5">
+                        Welcome back, {session?.user?.name || 'Admin'} — here&apos;s your operations overview
                     </p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="text-right">
-                        <p className="text-sm text-stone-500">
-                            {new Date().toLocaleDateString('en-IN', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            })}
-                        </p>
-                    </div>
-                    <NotificationBell />
+                <div className="flex items-center gap-2">
+                    {totalActions > 0 && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 flex items-center gap-2">
+                            <Zap size={14} className="text-amber-600" />
+                            <span className="text-xs font-semibold text-amber-700">
+                                {totalActions} action{totalActions !== 1 ? 's' : ''} needed
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Link
-                    href="/admin/products/add"
-                    className="flex items-center gap-3 p-4 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-                >
-                    <Plus className="w-5 h-5" />
-                    <span className="font-medium">Add New Saree</span>
-                </Link>
-                <Link
-                    href="/admin/orders"
-                    className="flex items-center gap-3 p-4 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
-                >
-                    <Eye className="w-5 h-5" />
-                    <span className="font-medium">View Pending Orders</span>
-                </Link>
-                <Link
-                    href="/admin/categories"
-                    className="flex items-center gap-3 p-4 bg-stone-700 text-white rounded-lg hover:bg-stone-800 transition-colors"
-                >
-                    <FolderOpen className="w-5 h-5" />
-                    <span className="font-medium">Manage Collections</span>
-                </Link>
-            </div>
-
-            {/* Metrics Grid - 10 Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <MetricCard
-                    title="Today's Sales"
-                    value={`₹${Number(todaySales._sum.total || 0).toLocaleString()}`}
-                    icon={<DollarSign className="h-4 w-4" />}
-                    trend={`${salesTrend}%`}
-                    trendUp={parseFloat(salesTrend) >= 0}
+            {/* ─── KPI Cards ─────────────────────────────────────────────── */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <KPICard
+                    label="Today's Orders"
+                    value={kpis.todayOrders}
+                    icon={<ShoppingBag size={18} />}
+                    trend={ordersTrend}
+                    color="blue"
                 />
-                <MetricCard
-                    title="Today's Orders"
-                    value={todayOrdersCount.toString()}
-                    icon={<ShoppingBag className="h-4 w-4" />}
-                    trend={`${ordersTrend}%`}
-                    trendUp={parseFloat(ordersTrend) >= 0}
+                <KPICard
+                    label="Today's Revenue"
+                    value={`₹${kpis.todayRevenue.toLocaleString()}`}
+                    icon={<DollarSign size={18} />}
+                    trend={revenueTrend}
+                    color="emerald"
                 />
-                <MetricCard
-                    title="Average Order Value"
-                    value={`₹${Math.round(averageOrderValue).toLocaleString()}`}
-                    icon={<TrendingUp className="h-4 w-4" />}
+                <KPICard
+                    label="Pending Orders"
+                    value={kpis.pendingOrders}
+                    icon={<Clock size={18} />}
+                    color="amber"
+                    urgent={kpis.pendingOrders > 5}
                 />
-                <MetricCard
-                    title="Pending Orders"
-                    value={pendingOrdersCount.toString()}
-                    icon={<Package className="h-4 w-4" />}
-                    iconColor="text-amber-600"
+                <KPICard
+                    label="Orders to Ship"
+                    value={kpis.ordersToShip}
+                    icon={<Package size={18} />}
+                    color="violet"
                 />
-                <MetricCard
-                    title="Shipped Orders"
-                    value={shippedOrdersCount.toString()}
-                    icon={<Truck className="h-4 w-4" />}
-                    iconColor="text-blue-600"
+                <KPICard
+                    label="Returns Pending"
+                    value={kpis.returnsPending}
+                    icon={<RotateCcw size={18} />}
+                    color="orange"
+                    urgent={kpis.returnsPending > 0}
                 />
-                <MetricCard
-                    title="Delivered Orders"
-                    value={deliveredOrdersCount.toString()}
-                    icon={<CheckCircle className="h-4 w-4" />}
-                    iconColor="text-green-600"
+                <KPICard
+                    label="Refunds Pending"
+                    value={kpis.refundsPending}
+                    icon={<CreditCard size={18} />}
+                    color="rose"
+                    urgent={kpis.refundsPending > 0}
                 />
-                <MetricCard
-                    title="Monthly Revenue"
-                    value={`₹${Number(monthlyRevenue._sum.total || 0).toLocaleString()}`}
-                    icon={<Calendar className="h-4 w-4" />}
-                    trend={`${monthlyRevenueTrend}%`}
-                    trendUp={parseFloat(monthlyRevenueTrend) >= 0}
+                <KPICard
+                    label="In Transit"
+                    value={kpis.shipmentsInTransit}
+                    icon={<Truck size={18} />}
+                    color="sky"
                 />
-                <MetricCard
-                    title="Total Products"
-                    value={totalProductsCount.toString()}
-                    icon={<ShoppingBag className="h-4 w-4" />}
-                />
-                <MetricCard
-                    title="Total Customers"
-                    value={totalCustomersCount.toString()}
-                    icon={<Users className="h-4 w-4" />}
-                />
-                <MetricCard
-                    title="Low Stock Alerts"
-                    value={lowStockCount.toString()}
-                    icon={<AlertTriangle className="h-4 w-4" />}
-                    iconColor="text-red-600"
+                <KPICard
+                    label="Failed Deliveries"
+                    value={kpis.failedDeliveries}
+                    icon={<Ban size={18} />}
+                    color="red"
+                    urgent={kpis.failedDeliveries > 0}
                 />
             </div>
 
-            {/* Graphs */}
+            {/* ─── Revenue Overview ──────────────────────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="bg-gradient-to-br from-stone-900 to-stone-800 rounded-xl p-5 text-white lg:col-span-1">
+                    <p className="text-white/50 text-xs font-medium uppercase tracking-wider">Monthly Revenue</p>
+                    <p className="text-3xl font-bold mt-2">₹{kpis.monthlyRevenue.toLocaleString()}</p>
+                    <div className="mt-4 flex items-center gap-4 text-sm">
+                        <div>
+                            <p className="text-white/40 text-xs">Low Stock</p>
+                            <p className="font-semibold text-amber-400">{kpis.lowStockProducts} items</p>
+                        </div>
+                        <div className="w-px h-8 bg-white/10" />
+                        <div>
+                            <p className="text-white/40 text-xs">Failed Deliveries</p>
+                            <p className="font-semibold text-red-400">{kpis.failedDeliveries}</p>
+                        </div>
+                        <div className="w-px h-8 bg-white/10" />
+                        <div>
+                            <p className="text-white/40 text-xs">In Transit</p>
+                            <p className="font-semibold text-sky-400">{kpis.shipmentsInTransit}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="bg-white rounded-xl border border-stone-200 p-5 lg:col-span-2">
+                    <h3 className="text-sm font-semibold text-stone-800 mb-3">Quick Actions</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <QuickAction href="/admin/orders" icon={<Package size={16} />} label="View Orders" color="blue" />
+                        <QuickAction href="/admin/products/add" icon={<ShoppingBag size={16} />} label="Add Product" color="emerald" />
+                        <QuickAction href="/admin/returns" icon={<RotateCcw size={16} />} label="Review Returns" color="orange" />
+                        <QuickAction href="/admin/reports" icon={<BarChart3 size={16} />} label="View Reports" color="violet" />
+                    </div>
+                </div>
+            </div>
+
+            {/* ─── Action Required + Activity Feed ───────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Action Required Panel */}
+                <div className="bg-white rounded-xl border border-stone-200 p-5 lg:col-span-1 order-2 lg:order-1">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-stone-800 flex items-center gap-2">
+                            <Zap size={14} className="text-amber-500" />
+                            Action Required
+                        </h3>
+                        {totalActions > 0 && (
+                            <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                {totalActions}
+                            </span>
+                        )}
+                    </div>
+                    <div className="space-y-2">
+                        <ActionCard
+                            label="Orders Awaiting Confirmation"
+                            count={actionRequired.ordersAwaitingConfirmation}
+                            href="/admin/orders"
+                            color="amber"
+                            icon={<Clock size={14} />}
+                        />
+                        <ActionCard
+                            label="Returns Awaiting Approval"
+                            count={actionRequired.returnsAwaitingApproval}
+                            href="/admin/returns"
+                            color="orange"
+                            icon={<RotateCcw size={14} />}
+                        />
+                        <ActionCard
+                            label="Refunds Pending Approval"
+                            count={actionRequired.refundsAwaitingApproval}
+                            href="/admin/payments"
+                            color="rose"
+                            icon={<CreditCard size={14} />}
+                        />
+                        <ActionCard
+                            label="Shipments Ready to Ship"
+                            count={actionRequired.shipmentsReadyToShip}
+                            href="/admin/shipping-hub"
+                            color="blue"
+                            icon={<Package size={14} />}
+                        />
+                        <ActionCard
+                            label="Failed Shipments"
+                            count={actionRequired.failedShipments}
+                            href="/admin/shipping-hub"
+                            color="red"
+                            icon={<XCircle size={14} />}
+                        />
+                        <ActionCard
+                            label="Critical Low Stock"
+                            count={actionRequired.lowStockItems}
+                            href="/admin/inventory"
+                            color="purple"
+                            icon={<AlertTriangle size={14} />}
+                        />
+                    </div>
+                </div>
+
+                {/* Client-Side Activity Feed + Polling */}
+                <div className="lg:col-span-2 order-1 lg:order-2">
+                    <DashboardClient />
+                </div>
+            </div>
+
+            {/* ─── Recent Orders + Best Sellers ──────────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Revenue Graph */}
-                <div className="bg-white p-6 rounded-lg border border-stone-200">
-                    <h3 className="text-lg font-medium mb-4">Revenue Trend (Last 30 Days)</h3>
-                    <div className="h-48 flex items-end gap-1">
-                        {revenueByDay.map((day, i) => (
-                            <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                                <div className="w-full bg-primary/20 hover:bg-primary/30 transition-colors rounded-t relative group">
-                                    <div
-                                        className="w-full bg-primary rounded-t"
-                                        style={{ height: `${(day.value / maxRevenue) * 180}px` }}
-                                    ></div>
-                                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-stone-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                        ₹{Math.round(day.value).toLocaleString()}
-                                    </div>
-                                </div>
-                                {i % 5 === 0 && (
-                                    <span className="text-[8px] text-stone-400 rotate-45 origin-left">{day.date}</span>
-                                )}
-                            </div>
-                        ))}
+                {/* Recent Orders */}
+                <div className="bg-white rounded-xl border border-stone-200 p-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-stone-800">Recent Orders</h3>
+                        <Link href="/admin/orders" className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+                            View All <ArrowRight size={12} />
+                        </Link>
                     </div>
-                    <div className="mt-4 flex items-center justify-between text-sm">
-                        <span className="text-stone-600">
-                            Total: ₹{revenueByDay.reduce((sum, d) => sum + d.value, 0).toLocaleString()}
-                        </span>
-                        <span className="text-stone-600">
-                            Avg: ₹{Math.round(revenueByDay.reduce((sum, d) => sum + d.value, 0) / 30).toLocaleString()}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Orders Trend Graph */}
-                <div className="bg-white p-6 rounded-lg border border-stone-200">
-                    <h3 className="text-lg font-medium mb-4">Orders Trend (Last 30 Days)</h3>
-                    <div className="h-48 flex items-end gap-1">
-                        {ordersByDay.map((day, i) => (
-                            <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                                <div className="w-full bg-amber-100 hover:bg-amber-200 transition-colors rounded-t relative group">
-                                    <div
-                                        className="w-full bg-amber-600 rounded-t"
-                                        style={{ height: `${(day.value / maxOrders) * 180}px` }}
-                                    ></div>
-                                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-stone-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                        {day.value} orders
-                                    </div>
-                                </div>
-                                {i % 5 === 0 && (
-                                    <span className="text-[8px] text-stone-400 rotate-45 origin-left">{day.date}</span>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                    <div className="mt-4 flex items-center justify-between text-sm">
-                        <span className="text-stone-600">
-                            Total: {ordersByDay.reduce((sum, d) => sum + d.value, 0)} orders
-                        </span>
-                        <span className="text-stone-600">
-                            Avg: {Math.round(ordersByDay.reduce((sum, d) => sum + d.value, 0) / 30)} per day
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Best Sellers & Popular Collection */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Best Selling Sarees */}
-                <div className="bg-white p-6 rounded-lg border border-stone-200">
-                    <h3 className="text-lg font-medium mb-4">Best Selling Sarees</h3>
-                    {bestSellerProducts.length === 0 ? (
-                        <p className="text-sm text-stone-500">No sales data yet.</p>
+                    {recentOrders.length === 0 ? (
+                        <p className="text-sm text-stone-400 py-8 text-center">No orders yet</p>
                     ) : (
-                        <div className="space-y-3">
-                            {bestSellers.map((seller, index) => {
+                        <div className="space-y-2">
+                            {recentOrders.map((order: any) => (
+                                <Link
+                                    key={order.id}
+                                    href={`/admin/orders/${order.id}`}
+                                    className="flex items-center justify-between p-3 rounded-lg hover:bg-stone-50 transition-colors group"
+                                >
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <StatusDot status={order.status} />
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-medium text-stone-800 truncate group-hover:text-blue-600 transition-colors">
+                                                {order.user?.name || order.user?.email || 'Guest'}
+                                            </p>
+                                            <p className="text-[11px] text-stone-400">
+                                                #{order.id.slice(0, 8)} · {formatTimeAgo(order.createdAt)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right shrink-0 ml-3">
+                                        <p className="text-sm font-semibold text-stone-800">₹{Number(order.total).toLocaleString()}</p>
+                                        <OrderStatusBadge status={order.status} />
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Best Sellers */}
+                <div className="bg-white rounded-xl border border-stone-200 p-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-stone-800">Best Sellers</h3>
+                        <Link href="/admin/products" className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+                            All Products <ArrowRight size={12} />
+                        </Link>
+                    </div>
+                    {bestSellerProducts.length === 0 ? (
+                        <p className="text-sm text-stone-400 py-8 text-center">No sales data yet</p>
+                    ) : (
+                        <div className="space-y-2">
+                            {bestSellers.map((seller: any, i: number) => {
                                 const product = bestSellerProducts.find(p => p.id === seller.productId);
                                 if (!product) return null;
-
                                 return (
-                                    <div key={product.id} className="flex items-center gap-3 p-2 hover:bg-stone-50 rounded transition-colors">
-                                        <div className="flex-shrink-0 w-12 h-12 bg-stone-100 rounded overflow-hidden relative">
+                                    <div key={product.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-stone-50 transition-colors">
+                                        <span className="text-xs font-bold text-stone-300 w-5 text-center">#{i + 1}</span>
+                                        <div className="w-10 h-10 bg-stone-100 rounded-lg overflow-hidden relative shrink-0">
                                             {product.images[0] && (
-                                                <Image
-                                                    src={product.images[0].url}
-                                                    alt={product.name}
-                                                    fill
-                                                    className="object-cover"
-                                                    sizes="48px"
-                                                />
+                                                <Image src={product.images[0].url} alt={product.name} fill className="object-cover" sizes="40px" />
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium text-stone-800 truncate">{product.name}</p>
-                                            <p className="text-xs text-stone-500">₹{Number(product.price).toLocaleString()}</p>
+                                            <p className="text-[11px] text-stone-400">₹{Number(product.price).toLocaleString()} · Stock: {product.stock}</p>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-sm font-semibold text-primary">{seller._sum.quantity}</p>
-                                            <p className="text-xs text-stone-500">sold</p>
+                                        <div className="text-right shrink-0">
+                                            <p className="text-sm font-bold text-emerald-600">{seller._sum.quantity}</p>
+                                            <p className="text-[10px] text-stone-400">sold</p>
                                         </div>
                                     </div>
                                 );
@@ -476,88 +359,150 @@ export default async function AdminDashboard() {
                         </div>
                     )}
                 </div>
+            </div>
+        </div>
+    );
+}
 
-                {/* Most Popular Collection */}
-                <div className="bg-white p-6 rounded-lg border border-stone-200">
-                    <h3 className="text-lg font-medium mb-4">Most Popular Collection</h3>
-                    {mostPopularCategory ? (
-                        <div className="text-center py-8">
-                            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-                                <FolderOpen className="w-8 h-8 text-primary" />
-                            </div>
-                            <h4 className="text-2xl font-serif text-stone-800 mb-2">{mostPopularCategory.name}</h4>
-                            <p className="text-stone-600">
-                                {categoryStats[0]._count} products in this collection
-                            </p>
-                            <Link
-                                href={`/admin/categories`}
-                                className="inline-block mt-4 text-sm text-primary hover:underline"
-                            >
-                                View Collection →
-                            </Link>
-                        </div>
-                    ) : (
-                        <p className="text-sm text-stone-500 text-center py-8">No collections yet.</p>
-                    )}
+// ─── Sub-Components ─────────────────────────────────────────────────────────
+
+const colorMap: Record<string, { bg: string; text: string; icon: string; border: string }> = {
+    blue: { bg: 'bg-blue-50', text: 'text-blue-700', icon: 'text-blue-500', border: 'border-blue-100' },
+    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', icon: 'text-emerald-500', border: 'border-emerald-100' },
+    amber: { bg: 'bg-amber-50', text: 'text-amber-700', icon: 'text-amber-500', border: 'border-amber-100' },
+    violet: { bg: 'bg-violet-50', text: 'text-violet-700', icon: 'text-violet-500', border: 'border-violet-100' },
+    orange: { bg: 'bg-orange-50', text: 'text-orange-700', icon: 'text-orange-500', border: 'border-orange-100' },
+    rose: { bg: 'bg-rose-50', text: 'text-rose-700', icon: 'text-rose-500', border: 'border-rose-100' },
+    sky: { bg: 'bg-sky-50', text: 'text-sky-700', icon: 'text-sky-500', border: 'border-sky-100' },
+    red: { bg: 'bg-red-50', text: 'text-red-700', icon: 'text-red-500', border: 'border-red-100' },
+    purple: { bg: 'bg-purple-50', text: 'text-purple-700', icon: 'text-purple-500', border: 'border-purple-100' },
+};
+
+function KPICard({ label, value, icon, trend, color, urgent }: {
+    label: string;
+    value: number | string;
+    icon: React.ReactNode;
+    trend?: number;
+    color: string;
+    urgent?: boolean;
+}) {
+    const c = colorMap[color] || colorMap.blue;
+    return (
+        <div className={`bg-white rounded-xl border ${urgent ? 'border-red-200 ring-1 ring-red-100' : 'border-stone-200'} p-4 hover:shadow-md transition-all duration-200`}>
+            <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-stone-500 uppercase tracking-wide">{label}</span>
+                <div className={`w-8 h-8 rounded-lg ${c.bg} flex items-center justify-center ${c.icon}`}>
+                    {icon}
                 </div>
             </div>
-
-            {/* Recent Orders */}
-            <div className="bg-white p-6 rounded-lg border border-stone-200">
-                <h3 className="text-lg font-medium mb-4">Recent Orders</h3>
-                {recentOrders.length === 0 ? (
-                    <div className="text-sm text-stone-500">No orders yet.</div>
-                ) : (
-                    <div className="space-y-4">
-                        {recentOrders.map(order => (
-                            <div key={order.id} className="flex justify-between items-center py-2 border-b border-stone-100 last:border-0">
-                                <div>
-                                    <p className="font-medium text-sm">{order.user?.name || order.user?.email || 'Guest'}</p>
-                                    <p className="text-xs text-stone-500">{order.id}</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="font-medium text-sm">₹{Number(order.total).toLocaleString()}</p>
-                                    <p className="text-xs text-stone-500">{order.status}</p>
-                                </div>
-                            </div>
-                        ))}
+            <div className="flex items-end justify-between">
+                <p className={`text-2xl font-bold ${urgent ? 'text-red-600' : 'text-stone-900'}`}>
+                    {value}
+                </p>
+                {trend !== undefined && (
+                    <div className={`flex items-center gap-0.5 text-xs font-semibold ${trend >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                        {trend >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                        {Math.abs(trend).toFixed(0)}%
                     </div>
+                )}
+                {urgent && typeof value === 'number' && value > 0 && (
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                 )}
             </div>
         </div>
     );
 }
 
-function MetricCard({
-    title,
-    value,
-    icon,
-    trend,
-    trendUp,
-    iconColor = "text-stone-500"
-}: {
-    title: string;
-    value: string;
+function ActionCard({ label, count, href, color, icon }: {
+    label: string;
+    count: number;
+    href: string;
+    color: string;
     icon: React.ReactNode;
-    trend?: string;
-    trendUp?: boolean;
-    iconColor?: string;
 }) {
+    const c = colorMap[color] || colorMap.blue;
+    if (count === 0) {
+        return (
+            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-stone-50/50">
+                <div className={`w-7 h-7 rounded-md ${c.bg} flex items-center justify-center ${c.icon}`}>{icon}</div>
+                <span className="text-xs text-stone-400 flex-1">{label}</span>
+                <CheckCircle2 size={14} className="text-stone-300" />
+            </div>
+        );
+    }
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-medium text-stone-600">{title}</CardTitle>
-                <div className={iconColor}>{icon}</div>
-            </CardHeader>
-            <CardContent>
-                <div className="text-xl font-bold text-[#1C1917]">{value}</div>
-                {trend && (
-                    <p className={`text-xs mt-1 flex items-center gap-1 ${trendUp ? 'text-green-600' : 'text-red-600'}`}>
-                        <TrendingUp className={`w-3 h-3 ${!trendUp && 'rotate-180'}`} />
-                        {trend}
-                    </p>
-                )}
-            </CardContent>
-        </Card>
+        <Link
+            href={href}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg ${c.bg} border ${c.border} hover:shadow-sm transition-all group`}
+        >
+            <div className={`w-7 h-7 rounded-md bg-white/80 flex items-center justify-center ${c.icon}`}>{icon}</div>
+            <span className={`text-xs font-medium ${c.text} flex-1`}>{label}</span>
+            <span className={`text-sm font-bold ${c.text}`}>{count}</span>
+            <ArrowRight size={12} className={`${c.icon} opacity-0 group-hover:opacity-100 transition-opacity`} />
+        </Link>
     );
+}
+
+function QuickAction({ href, icon, label, color }: {
+    href: string;
+    icon: React.ReactNode;
+    label: string;
+    color: string;
+}) {
+    const c = colorMap[color] || colorMap.blue;
+    return (
+        <Link
+            href={href}
+            className={`flex items-center gap-2 p-3 rounded-lg border border-stone-100 hover:${c.bg} hover:border-${color}-200 transition-all group`}
+        >
+            <span className={`${c.icon} transition-colors`}>{icon}</span>
+            <span className="text-xs font-medium text-stone-700 group-hover:text-stone-900">{label}</span>
+        </Link>
+    );
+}
+
+function StatusDot({ status }: { status: string }) {
+    const colors: Record<string, string> = {
+        PENDING: 'bg-amber-400',
+        CONFIRMED: 'bg-blue-400',
+        PACKED: 'bg-violet-400',
+        SHIPPED: 'bg-sky-400',
+        DELIVERED: 'bg-emerald-400',
+        CANCELLED: 'bg-red-400',
+        RETURNED: 'bg-orange-400',
+        REFUNDED: 'bg-rose-400',
+    };
+    return <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${colors[status] || 'bg-stone-300'}`} />;
+}
+
+function OrderStatusBadge({ status }: { status: string }) {
+    const styles: Record<string, string> = {
+        PENDING: 'bg-amber-50 text-amber-700',
+        CONFIRMED: 'bg-blue-50 text-blue-700',
+        PACKED: 'bg-violet-50 text-violet-700',
+        SHIPPED: 'bg-sky-50 text-sky-700',
+        DELIVERED: 'bg-emerald-50 text-emerald-700',
+        CANCELLED: 'bg-red-50 text-red-700',
+        RETURNED: 'bg-orange-50 text-orange-700',
+        REFUNDED: 'bg-rose-50 text-rose-700',
+    };
+    return (
+        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${styles[status] || 'bg-stone-100 text-stone-600'}`}>
+            {status}
+        </span>
+    );
+}
+
+function formatTimeAgo(date: Date): string {
+    const now = new Date();
+    const diffMs = now.getTime() - new Date(date).getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }

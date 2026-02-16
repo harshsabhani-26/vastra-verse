@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE "Shipment" ADD COLUMN     "actualWeight" DECIMAL(65,30) DEFAULT 0,
+ADD COLUMN     "chargeableWeight" DECIMAL(65,30) DEFAULT 0,
+ADD COLUMN     "codCollectedAmount" DECIMAL(65,30) DEFAULT 0,
+ADD COLUMN     "codRemittance" DECIMAL(65,30) DEFAULT 0,
+ADD COLUMN     "codSettledAmount" DECIMAL(65,30) DEFAULT 0,
+ADD COLUMN     "codSettlementDate" TIMESTAMP(3),
+ADD COLUMN     "codTransactionId" TEXT,
+ADD COLUMN     "rtoCost" DECIMAL(65,30) DEFAULT 0,
+ADD COLUMN     "shippingCost" DECIMAL(65,30) DEFAULT 0,
+ADD COLUMN     "volumetricWeight" DECIMAL(65,30) DEFAULT 0,
+ALTER COLUMN "weight" SET DEFAULT 0,
+ALTER COLUMN "length" SET DEFAULT 0,
+ALTER COLUMN "breadth" SET DEFAULT 0,
+ALTER COLUMN "height" SET DEFAULT 0;

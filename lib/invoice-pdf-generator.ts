@@ -280,7 +280,7 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
             );
             y += 10;
             doc.text(
-                "Terms: All sales are subject to our terms and conditions. Returns accepted within 7 days of delivery.",
+                "Terms: All sales are subject to our terms and conditions. Returns only accepted for wrong or defective products delivered.",
                 L, y, { width: CW, align: "center" }
             );
             y += 10;

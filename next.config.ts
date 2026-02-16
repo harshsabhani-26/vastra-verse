@@ -3,9 +3,10 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   images: {
-    formats: ['image/webp', 'image/avif'],  // Modern formats
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
-    minimumCacheTTL: 60,  // Cache images for 1 minute minimum
+    formats: ['image/avif', 'image/webp'],  // AVIF first (smaller), WebP fallback
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    imageSizes: [96, 128, 256, 384, 512],  // Thumbnails & small images
+    minimumCacheTTL: 31536000,  // 1 year cache for immutable CDN assets
     remotePatterns: [
       {
         protocol: 'https',
@@ -18,6 +19,15 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: '*.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'mwhfunrjmdygkhpwppgt.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'razorpay.com',
       },
     ],
   },

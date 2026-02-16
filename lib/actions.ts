@@ -6,8 +6,8 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 
-export async function googleSignIn() {
-    await signIn("google", { redirectTo: "/" });
+export async function googleSignIn(redirectTo: string = "/") {
+    await signIn("google", { redirectTo });
 }
 
 export async function authenticate(
@@ -15,7 +15,8 @@ export async function authenticate(
     formData: FormData,
 ) {
     try {
-        await signIn("credentials", formData);
+        const formObject = Object.fromEntries(formData);
+        await signIn("credentials", formObject);
     } catch (error) {
         if (error instanceof AuthError) {
             switch (error.type) {

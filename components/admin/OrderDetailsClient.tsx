@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import InvoiceEmailModal from "@/components/admin/InvoiceEmailModal";
+import ShipmentManager from "@/components/admin/ShipmentManager";
 
 interface OrderItem {
     id: string;
@@ -68,6 +69,18 @@ interface Order {
     items: OrderItem[];
     notes: OrderNote[];
     timeline: TimelineEvent[];
+    shipments?: Array<{
+        id: string;
+        awbNumber?: string;
+        courierName?: string;
+        labelUrl?: string;
+        trackingUrl?: string;
+        status: string;
+        pickupScheduledAt?: string;
+        shippedAt?: string;
+        deliveredAt?: string;
+        estimatedDeliveryAt?: string;
+    }>;
 }
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
@@ -77,6 +90,7 @@ const STATUS_COLORS: Record<OrderStatus, string> = {
     SHIPPED: "bg-indigo-100 text-indigo-800",
     DELIVERED: "bg-green-100 text-green-800",
     RETURNED: "bg-orange-100 text-orange-800",
+    REFUNDED: "bg-gray-100 text-gray-800",
     CANCELLED: "bg-red-100 text-red-800",
 };
 
@@ -329,40 +343,13 @@ M & H Team`;
                         </div>
                     </div>
 
-                    {/* Courier & Tracking */}
-                    <div className="bg-white rounded-lg border border-stone-200 p-6">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Truck className="h-5 w-5 text-stone-600" />
-                            <h3 className="font-semibold text-lg">Courier & Tracking</h3>
-                        </div>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-sm text-stone-500 mb-1 block">Courier Name</label>
-                                    <Input
-                                        value={courierName}
-                                        onChange={(e) => setCourierName(e.target.value)}
-                                        placeholder="e.g., FedEx, BlueDart"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-sm text-stone-500 mb-1 block">Tracking Number</label>
-                                    <Input
-                                        value={trackingNumber}
-                                        onChange={(e) => setTrackingNumber(e.target.value)}
-                                        placeholder="Enter tracking number"
-                                    />
-                                </div>
-                            </div>
-                            <Button
-                                onClick={handleUpdateTracking}
-                                disabled={isProcessing}
-                                className="w-full"
-                            >
-                                Update Tracking Information
-                            </Button>
-                        </div>
-                    </div>
+                    {/* Shipment Management */}
+                    <ShipmentManager
+                        orderId={order.id}
+                        orderStatus={order.status}
+                        existingShipment={order.shipments?.[0] || null}
+                        onShipmentCreated={() => router.refresh()}
+                    />
 
                     {/* Timeline */}
                     <div className="bg-white rounded-lg border border-stone-200 p-6">

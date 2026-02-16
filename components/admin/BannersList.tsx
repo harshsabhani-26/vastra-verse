@@ -7,6 +7,7 @@ import { deleteBanner, toggleBannerStatus, type HeroBanner } from "@/app/admin/b
 import { Pencil, Trash2, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 interface BannersListProps {
     initialBanners: HeroBanner[];
@@ -62,9 +63,11 @@ export function BannersList({ initialBanners }: BannersListProps) {
                                         muted
                                     />
                                 ) : banner.imageUrl ? (
-                                    <img
+                                    <Image
                                         src={banner.imageUrl}
                                         alt={banner.ctaLink}
+                                        width={80}
+                                        height={48}
                                         className="w-20 h-12 object-cover rounded"
                                     />
                                 ) : (

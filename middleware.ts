@@ -62,6 +62,16 @@ export default async function middleware(request: NextRequest) {
         }
     }
 
+    // CHECKOUT PROTECTION
+    // Redirect unauthenticated users to login page
+    if (pathname.startsWith("/checkout")) {
+        if (!session?.user) {
+            const loginUrl = new URL("/login", request.url);
+            loginUrl.searchParams.set("callbackUrl", "/checkout");
+            return NextResponse.redirect(loginUrl);
+        }
+    }
+
     return NextResponse.next({
         request: {
             headers: requestHeaders,

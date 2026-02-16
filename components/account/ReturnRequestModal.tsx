@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Package } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface OrderItem {
     id: string;
@@ -27,11 +28,9 @@ interface ReturnRequestModalProps {
 }
 
 const RETURN_REASONS = [
-    { value: "SIZE_ISSUE", label: "Size Issue" },
     { value: "DEFECTIVE", label: "Defective Product" },
     { value: "WRONG_PRODUCT", label: "Wrong Product" },
     { value: "DAMAGED", label: "Damaged in Transit" },
-    { value: "NOT_AS_EXPECTED", label: "Not as Expected" },
     { value: "OTHER", label: "Other" },
 ];
 
@@ -178,9 +177,11 @@ export default function ReturnRequestModal({ isOpen, onClose, orderId }: ReturnR
                                         />
                                         <div className="w-16 h-20 bg-secondary/10 rounded overflow-hidden flex-shrink-0">
                                             {item.product.images && item.product.images.length > 0 ? (
-                                                <img
+                                                <Image
                                                     src={item.product.images[0].url}
                                                     alt={item.product.name}
+                                                    width={64}
+                                                    height={80}
                                                     className="w-full h-full object-cover"
                                                 />
                                             ) : (

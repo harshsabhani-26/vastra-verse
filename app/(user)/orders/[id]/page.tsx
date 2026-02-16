@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, MapPin, CreditCard, Package, Truck, Phone, Mail, Calendar, Clock, Receipt } from "lucide-react";
 import { format } from "date-fns";
 import { TrackingTimeline } from "@/components/order/TrackingTimeline";
@@ -131,9 +132,11 @@ export default async function OrderDetailsPage(props: { params: Promise<{ id: st
                                     <div key={item.id} className="p-6 flex gap-6 items-start group">
                                         <div className="w-20 h-28 bg-secondary/5 rounded-sm overflow-hidden shrink-0 border border-primary/5 relative">
                                             {item.product.images && item.product.images.length > 0 ? (
-                                                <img
+                                                <Image
                                                     src={item.product.images[0].url}
                                                     alt={item.product.name}
+                                                    width={80}
+                                                    height={112}
                                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                                 />
                                             ) : (

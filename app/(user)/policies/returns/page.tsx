@@ -15,7 +15,7 @@ export default function ReturnsPolicyPage() {
 
                     {/* Intro */}
                     <p className="text-stone-600 text-center leading-relaxed text-lg italic">
-                        "At Vastra Verse, we strive to deliver perfection. If you are not entirely satisfied with your purchase, we are here to help."
+                        "At Vastra Verse, we are committed to delivering the exact product you ordered in perfect condition. Returns are accepted only for wrong or defective products."
                     </p>
 
                     {/* Return Window */}
@@ -26,9 +26,9 @@ export default function ReturnsPolicyPage() {
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-xl font-serif text-primary mb-3">7-Day Return & Exchange Window</h2>
+                            <h2 className="text-xl font-serif text-primary mb-3">7-Day Return Window</h2>
                             <p className="text-stone-600 leading-relaxed">
-                                You can raise a return or exchange request within <span className="font-semibold text-stone-800">7 days</span> of receiving your order. Requests raised after this period will not be accepted.
+                                You can raise a return request within <span className="font-semibold text-stone-800">7 days</span> of receiving your order if you receive a wrong or defective product. Requests raised after this period will not be accepted.
                             </p>
                         </div>
                     </div>
@@ -41,21 +41,24 @@ export default function ReturnsPolicyPage() {
                             </div>
                         </div>
                         <div>
-                            <h2 className="text-xl font-serif text-primary mb-3">Eligibility Criteria</h2>
+                            <h2 className="text-xl font-serif text-primary mb-3">Returns Accepted Only For</h2>
                             <ul className="space-y-3 text-stone-600 leading-relaxed ml-2">
                                 <li className="flex gap-3">
                                     <CheckCircle size={18} className="shrink-0 mt-0.5 text-emerald-600" />
-                                    <span>The item must be unused, unworn, and unwashed.</span>
+                                    <span><strong>Wrong Product Delivered:</strong> If you received a different product than what you ordered.</span>
                                 </li>
                                 <li className="flex gap-3">
                                     <CheckCircle size={18} className="shrink-0 mt-0.5 text-emerald-600" />
-                                    <span>All original tags, packaging, and invoices must be intact.</span>
+                                    <span><strong>Defective Product:</strong> If the product has manufacturing defects or quality issues.</span>
                                 </li>
                                 <li className="flex gap-3">
                                     <CheckCircle size={18} className="shrink-0 mt-0.5 text-emerald-600" />
-                                    <span>Products purchased during a clearance sale are not eligible for return.</span>
+                                    <span><strong>Damaged in Transit:</strong> If the product was damaged during shipping.</span>
                                 </li>
                             </ul>
+                            <p className="text-stone-600 leading-relaxed mt-4 text-sm">
+                                <strong className="text-stone-800">Please Note:</strong> We do not accept returns for change of mind, size issues, color preferences, or any reason other than those listed above.
+                            </p>
                         </div>
                     </div>
 
