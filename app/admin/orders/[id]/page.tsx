@@ -4,41 +4,48 @@ import OrderDetailsClient from "@/components/admin/OrderDetailsClient";
 
 export default async function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const order = await prisma.order.findUnique({
-        where: { id },
-        include: {
-            user: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                    phone: true,
-                }
-            },
-            items: {
-                include: {
-                    product: {
-                        include: {
-                            images: {
-                                where: { type: 'MAIN' },
-                                take: 1
+
+    let order;
+    try {
+        order = await prisma.order.findUnique({
+            where: { id },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        phone: true,
+                    }
+                },
+                items: {
+                    include: {
+                        product: {
+                            include: {
+                                images: {
+                                    where: { type: 'MAIN' },
+                                    take: 1
+                                }
                             }
                         }
                     }
+                },
+                notes: {
+                    orderBy: { createdAt: 'desc' }
+                },
+                timeline: {
+                    orderBy: { createdAt: 'desc' }
+                },
+                shipments: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 1
                 }
-            },
-            notes: {
-                orderBy: { createdAt: 'desc' }
-            },
-            timeline: {
-                orderBy: { createdAt: 'desc' }
-            },
-            shipments: {
-                orderBy: { createdAt: 'desc' },
-                take: 1
             }
-        }
-    });
+        });
+    } catch (error) {
+        console.error('[OrderDetailsPage] Failed to fetch order:', error);
+        notFound(); // Show 404 page on database errors
+    }
 
     if (!order) {
         notFound();
