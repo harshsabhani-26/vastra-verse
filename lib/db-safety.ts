@@ -4,7 +4,7 @@
  */
 
 const isProduction = () => process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT === 'production';
-const isStaging = () => process.env.NODE_ENV === 'staging' || process.env.RAILWAY_ENVIRONMENT === 'staging';
+const isStaging = () => process.env.RAILWAY_ENVIRONMENT === 'staging';
 
 export function getEnvironment(): 'development' | 'staging' | 'production' {
     if (isProduction()) return 'production';
