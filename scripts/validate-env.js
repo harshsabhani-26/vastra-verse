@@ -1,5 +1,6 @@
 const required = [
     "DATABASE_URL",
+    "DIRECT_URL",
     "NEXTAUTH_SECRET",
     "RAZORPAY_KEY_ID",
     "RAZORPAY_KEY_SECRET",
@@ -9,7 +10,9 @@ const required = [
 const optional = [
     "SENTRY_DSN",
     "UPSTASH_REDIS_REST_URL",
-    "UPSTASH_REDIS_REST_TOKEN"
+    "UPSTASH_REDIS_REST_TOKEN",
+    "RAZORPAY_WEBHOOK_SECRET",
+    "CRON_SECRET"
 ];
 
 const missingRequired = required.filter(v => !process.env[v]);
