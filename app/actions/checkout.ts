@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { Decimal } from "@prisma/client/runtime/library";
 import { clearCart } from "./cart";
 import { dispatchEvent, SystemEvent } from "@/lib/event-dispatcher";
+import { recordOrderCreated, recordPaymentSuccess } from "@/lib/metrics";
 
 /**
  * CRITICAL FIX: Payment-First Order Creation
@@ -348,6 +349,9 @@ export async function createOrder(formData: FormData) {
         console.error("Failed to dispatch order event:", e);
     }
 
+    // Track business metrics (non-blocking)
+    recordOrderCreated(total);
+
     return { success: true, orderId, isCOD: true };
 }
 
@@ -563,6 +567,10 @@ export async function createOrderAfterPayment(data: {
     } catch (e) {
         console.error("Failed to dispatch prepaid order events:", e);
     }
+
+    // Track business metrics (non-blocking)
+    recordOrderCreated(data.total);
+    recordPaymentSuccess(data.total);
 
     return orderId;
 }

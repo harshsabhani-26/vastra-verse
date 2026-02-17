@@ -5,6 +5,7 @@ import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { logError, logInfo, logPaymentEvent } from "@/lib/logger";
 import { createOrderAfterPayment } from "@/app/actions/checkout";
+import { createAlert } from "@/lib/system-alerts";
 
 /**
  * Razorpay Webhook Handler
@@ -183,6 +184,19 @@ export async function POST(req: Request) {
             reason: payment?.error_description || payment?.error_reason || "unknown",
             errorCode: payment?.error_code,
         });
+
+        // Trigger system alert for payment failure
+        createAlert(
+            'PAYMENT_FAILURE',
+            'WARNING',
+            `Payment failed: ${payment?.error_description || payment?.error_reason || 'Unknown reason'}`,
+            {
+                razorpayPaymentId: payment?.id,
+                errorCode: payment?.error_code,
+                reason: payment?.error_description || payment?.error_reason,
+            }
+        );
+
         return NextResponse.json({ status: "noted" });
     }
 

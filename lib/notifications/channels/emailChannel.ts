@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import prisma from '@/lib/prisma';
+import { createAlert } from '@/lib/system-alerts';
 
 export interface EmailOptions {
   to: string;
@@ -50,6 +51,13 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     return true;
   } catch (error) {
     console.error('Email send error:', error);
+    // Trigger system alert for email failure
+    createAlert(
+      'EMAIL_FAILURE',
+      'WARNING',
+      `Email delivery failed to ${options.to}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      { to: options.to, subject: options.subject }
+    );
     return false;
   }
 }

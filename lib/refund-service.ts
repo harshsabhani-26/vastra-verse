@@ -1,6 +1,7 @@
 
 import prisma from "@/lib/prisma";
 import { RefundMethodEnum, PaymentMethodEnum } from "@prisma/client";
+import { recordRefund } from "@/lib/metrics";
 
 /**
  * Production-Grade Refund Service
@@ -349,6 +350,9 @@ export async function confirmCODRefund(
                 }
             });
         });
+
+        // Track refund metric (non-blocking)
+        recordRefund(Number(refund.amount));
 
         return { success: true, message: "COD refund confirmed successfully" };
 
