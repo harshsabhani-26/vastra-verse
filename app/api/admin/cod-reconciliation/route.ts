@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkUserRateLimit } from '@/lib/rate-limit';
 import { generateDailyReconciliationReport } from "@/services/finance/cod-reconciliation";
 
 /**
@@ -14,6 +15,12 @@ import { generateDailyReconciliationReport } from "@/services/finance/cod-reconc
  */
 export async function GET(req: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(req, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         // Get date from query params (default: today)
         const { searchParams } = new URL(req.url);
         const dateParam = searchParams.get("date");

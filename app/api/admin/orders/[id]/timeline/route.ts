@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkUserRateLimit } from '@/lib/rate-limit';
 import prisma from "@/lib/prisma";
 
 export async function GET(
@@ -6,6 +7,12 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(request, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const { id } = await params;
         const timeline = await prisma.orderTimeline.findMany({
             where: { orderId: id },

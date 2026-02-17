@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkUserRateLimit } from '@/lib/rate-limit';
 import prisma from "@/lib/prisma";
 import { PaymentStatusEnum, PaymentMethodEnum } from "@prisma/client";
 import * as XLSX from "xlsx";
 
 export async function POST(request: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(request, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const formData = await request.formData();
         const file = formData.get("file") as File;
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkUserRateLimit } from '@/lib/rate-limit';
 import { getRTOAnalytics } from "@/services/shipping/rto-management";
 
 /**
@@ -14,6 +15,12 @@ import { getRTOAnalytics } from "@/services/shipping/rto-management";
  */
 export async function GET(req: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(req, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         // Get date range from query params
         const { searchParams } = new URL(req.url);
         const startDateParam = searchParams.get("startDate");

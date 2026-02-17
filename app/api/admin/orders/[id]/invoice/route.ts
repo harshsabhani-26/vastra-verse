@@ -10,18 +10,24 @@
  * Single DB fetch. Single PDF generation. Structured errors.
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import prisma from "@/lib/prisma";
 import { buildInvoiceData, InvoiceError } from "@/lib/invoice-data-builder";
 import { generateInvoicePDF } from "@/lib/invoice-pdf-generator";
 import { sendInvoiceEmail } from "@/lib/email/send-invoice";
+import { checkUserRateLimit } from '@/lib/rate-limit';
 
-export async function POST(
-    req: Request,
+export async function POST(req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(req, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         // ── 1. Auth ──
         let session;
         try {

@@ -161,7 +161,8 @@ async function getAuthToken(): Promise<string> {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password }),
+            signal: AbortSignal.timeout(10000) // 10-second timeout for auth
         });
 
         if (!response.ok) {
@@ -206,7 +207,7 @@ async function makeApiRequest<T>(
                     "Authorization": `Bearer ${token}`,
                     ...options.headers
                 },
-                signal: AbortSignal.timeout(30000) // 30 second timeout
+                signal: AbortSignal.timeout(15000) // 15-second timeout
             });
 
             if (!response.ok) {

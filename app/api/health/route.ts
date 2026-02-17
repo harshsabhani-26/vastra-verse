@@ -1,44 +1,46 @@
-import { NextResponse } from "next/server";
-
 /**
- * Health Check Endpoint
+ * Enhanced Health Check API Endpoint
  * 
- * Used to verify:
- * - Server is running
- * - Environment variables are configured
- * - Basic functionality is operational
+ * Provides comprehensive system health status:
+ * - Database connection
+ * - Redis connection
+ * - Email provider
+ * - Payment gateway
+ * - Shipping provider
  * 
- * Access: /api/health
+ * Access: GET /api/health
+ * Quick check: GET /api/health?quick=true
  */
-export async function GET() {
+
+import { NextRequest, NextResponse } from "next/server";
+import { getSystemHealth, getQuickHealth } from "@/lib/healthcheck";
+
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: NextRequest) {
     try {
-        // Check critical environment variables
-        const envStatus = {
-            database: !!process.env.DATABASE_URL,
-            auth: !!process.env.NEXTAUTH_SECRET && !!process.env.NEXTAUTH_URL,
-            adminEmail: !!process.env.ADMIN_EMAIL,
-        };
+        const isQuick = req.nextUrl.searchParams.get('quick') === 'true';
 
-        const allConfigured = Object.values(envStatus).every(status => status);
+        if (isQuick) {
+            const health = await getQuickHealth();
+            return NextResponse.json(health, {
+                status: health.status === 'healthy' ? 200 : 503,
+            });
+        }
 
-        return NextResponse.json({
-            status: "ok",
-            timestamp: new Date().toISOString(),
-            environment: {
-                configured: allConfigured,
-                details: envStatus,
+        const health = await getSystemHealth();
+
+        return NextResponse.json(health, {
+            status: health.overall === 'healthy' ? 200 : health.overall === 'degraded' ? 200 : 503,
+            headers: {
+                'Cache-Control': 'no-store, no-cache, must-revalidate',
             },
-            nextAuthUrl: process.env.NEXTAUTH_URL || "NOT_SET",
-        }, {
-            status: allConfigured ? 200 : 500,
         });
     } catch (error) {
         return NextResponse.json({
-            status: "error",
-            message: error instanceof Error ? error.message : "Unknown error",
+            overall: 'unhealthy',
             timestamp: new Date().toISOString(),
-        }, {
-            status: 500,
-        });
+            error: error instanceof Error ? error.message : 'Health check failed',
+        }, { status: 503 });
     }
 }

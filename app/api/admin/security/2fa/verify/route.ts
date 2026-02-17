@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkUserRateLimit } from '@/lib/rate-limit';
 import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { verifyTOTP } from '@/lib/security/twoFactor';
 
 export async function POST(request: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(request, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const session = await auth();
 
         if (!session?.user) {

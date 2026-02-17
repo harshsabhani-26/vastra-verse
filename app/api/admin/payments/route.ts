@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkUserRateLimit } from '@/lib/rate-limit';
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { requireAdmin, unauthorizedResponse } from "@/lib/auth-utils";
@@ -7,6 +8,12 @@ import { withQueryLogging } from "@/lib/query-logger";
 
 export async function GET(request: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(request, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const adminCheck = await requireAdmin();
         if (!adminCheck.authorized) {
             return unauthorizedResponse(adminCheck.reason);

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkUserRateLimit } from '@/lib/rate-limit';
 import { auth } from '@/auth';
 import { createBackup, listBackups } from '@/lib/backup/backupService';
 import { requireAdmin, unauthorizedResponse } from '@/lib/auth-utils';
@@ -7,8 +8,14 @@ import { requireAdmin, unauthorizedResponse } from '@/lib/auth-utils';
  * GET /api/admin/backup
  * List all available backups
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(req, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const adminCheck = await requireAdmin();
         if (!adminCheck.authorized) {
             return unauthorizedResponse(adminCheck.reason);
@@ -30,8 +37,14 @@ export async function GET() {
  * POST /api/admin/backup
  * Create a manual backup
  */
-export async function POST() {
+export async function POST(req: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(req, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const adminCheck = await requireAdmin();
         if (!adminCheck.authorized) {
             return unauthorizedResponse(adminCheck.reason);

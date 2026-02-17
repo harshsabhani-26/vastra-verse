@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { DashboardStats } from '@/lib/services/dashboard-stats';
+import { checkUserRateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,8 +9,14 @@ export const dynamic = 'force-dynamic';
  * GET /api/admin/dashboard/alerts
  * Returns active system alerts
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(request, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const session = await auth();
         if (!session || session.user?.role !== 'ADMIN') {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -30,8 +37,14 @@ export async function GET() {
  * POST /api/admin/dashboard/alerts
  * Resolve a system alert
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(request, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const session = await auth();
         if (!session || session.user?.role !== 'ADMIN') {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -1,11 +1,18 @@
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { ReturnStatus } from "@prisma/client";
+import { checkUserRateLimit } from '@/lib/rate-limit';
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(req, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const session = await auth();
         // Role check
         if (!session || session.user.role !== "ADMIN") {

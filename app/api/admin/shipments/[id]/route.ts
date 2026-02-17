@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkUserRateLimit } from '@/lib/rate-limit';
 import { auth } from "@/auth";
 import { schedulePickup, cancelShipment } from "@/lib/shipping-provider";
 import { updateShipmentStatus, findShipmentByAwb } from "@/lib/shipment-service";
@@ -13,6 +14,12 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(req, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const session = await auth();
         if (!session?.user || session.user.role !== "ADMIN") {
             return NextResponse.json(
@@ -135,6 +142,12 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(req, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const session = await auth();
         if (!session?.user || session.user.role !== "ADMIN") {
             return NextResponse.json(

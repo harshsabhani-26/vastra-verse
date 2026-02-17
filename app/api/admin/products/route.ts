@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { requireAdmin, unauthorizedResponse } from "@/lib/auth-utils";
 import { validateCursor, validateLimit } from "@/lib/api-utils";
 import { withQueryLogging } from "@/lib/query-logger";
+import { checkUserRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET /api/admin/products - Cursor-based paginated product list
@@ -16,6 +17,12 @@ import { withQueryLogging } from "@/lib/query-logger";
  */
 export async function GET(req: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(req, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult; // Returns 401 if not authenticated OR 429 if rate limited
+        }
+
         // Admin authentication check
         const adminCheck = await requireAdmin();
         if (!adminCheck.authorized) {

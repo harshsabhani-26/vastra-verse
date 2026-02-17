@@ -104,25 +104,8 @@ async function processOnlineRefund(
     adminId: string
 ): Promise<RefundResult> {
     try {
-        // Import Razorpay dynamically to avoid circular dependencies
-        const Razorpay = require("razorpay");
-
-        const razorpay = new Razorpay({
-            key_id: process.env.RAZORPAY_KEY_ID || "",
-            key_secret: process.env.RAZORPAY_KEY_SECRET || "",
-        });
-
-        // Call Razorpay Refund API
-        const razorpayRefund = await razorpay.payments.refund(gatewayPaymentId, {
-            amount: Math.round(refundAmount * 100), // Convert to paise
-            notes: {
-                returnRequestId: returnRequestId,
-                orderId: orderId,
-            }
-        });
-
-        // 3. Create Refund Record with INITIATED status
-        // DO NOT mark as complete - wait for webhook
+        // 1. Create Refund Record with PENDING status first
+        // We generate a temp ID that will be updated by the worker with real gateway ID
         const refundRecord = await prisma.$transaction(async (tx) => {
             const refund = await tx.refund.create({
                 data: {
@@ -130,10 +113,10 @@ async function processOnlineRefund(
                     orderId: orderId,
                     amount: refundAmount,
                     reason: "Customer Return",
-                    status: "INITIATED", // ✅ Critical: NOT "PROCESSED"
+                    status: "INITIATED",
                     refundMethod: "AUTOMATIC",
-                    gatewayRefundId: razorpayRefund.id,
-                    gatewayStatus: razorpayRefund.status,
+                    gatewayRefundId: `PENDING_${Date.now()}`, // Temporary placeholder
+                    gatewayStatus: "queued",
                     requestedBy: adminId,
                     processedBy: adminId,
                     processedAt: new Date(),
@@ -145,7 +128,7 @@ async function processOnlineRefund(
             await tx.returnRequest.update({
                 where: { id: returnRequestId },
                 data: {
-                    status: "REFUND_PENDING", // Not COMPLETED yet
+                    status: "REFUND_PENDING",
                     refundInitiatedAt: new Date()
                 }
             });
@@ -155,7 +138,7 @@ async function processOnlineRefund(
                 data: {
                     orderId: orderId,
                     event: "REFUND_INITIATED",
-                    details: `Refund initiated via Razorpay. Refund ID: ${razorpayRefund.id}. Waiting for confirmation.`,
+                    details: `Refund queued for processing. Waiting for gateway execution.`,
                     createdBy: adminId
                 }
             });
@@ -163,28 +146,31 @@ async function processOnlineRefund(
             return refund;
         });
 
-        return {
-            success: true,
+        // 2. Enqueue Refund Job
+        // Import dynamically to avoid circular deps if any
+        const { refundQueue } = await import('@/lib/queue');
+
+        await refundQueue().add('process-refund', {
             refundId: refundRecord.id,
-            message: "Refund initiated successfully. Waiting for Razorpay confirmation via webhook."
-        };
-
-    } catch (rpError: any) {
-        console.error("Razorpay Refund Failed:", rpError);
-
-        // Log the failure
-        await prisma.orderTimeline.create({
-            data: {
-                orderId: orderId,
-                event: "REFUND_FAILED",
-                details: `Razorpay refund failed: ${rpError.error?.description || rpError.message}`,
-                createdBy: adminId
-            }
+            paymentId: paymentId,
+            gatewayPaymentId: gatewayPaymentId,
+            amount: refundAmount,
+            orderId: orderId,
+            reason: "Customer Return"
         });
 
         return {
+            success: true,
+            refundId: refundRecord.id,
+            message: "Refund job queued successfully. Background worker will process it shortly."
+        };
+
+    } catch (error: any) {
+        console.error("Refund Queue Error:", error);
+
+        return {
             success: false,
-            error: rpError.error?.description || "Razorpay refund failed. Please try again."
+            error: error.message || "Failed to queue refund. Please try again."
         };
     }
 }

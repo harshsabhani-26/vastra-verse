@@ -1,17 +1,23 @@
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { ReturnStatus, InspectionStatus } from "@prisma/client";
 import { processReturnRefund } from "@/lib/refund-service";
 import { restoreInventoryForReturn } from "@/lib/inventory-restore";
 import { EventDispatcher } from "@/lib/services/event-dispatcher";
+import { checkUserRateLimit } from '@/lib/rate-limit';
 
-export async function PATCH(
-    req: Request,
+export async function PATCH(req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(req, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const session = await auth();
         if (!session || session.user.role !== "ADMIN") {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

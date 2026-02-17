@@ -105,6 +105,7 @@ export async function sendSMSOTP(params: SendSMSParams): Promise<{ success: bool
                 'authkey': MSG91_CONFIG.authKey,
             },
             body: JSON.stringify(payload),
+            signal: AbortSignal.timeout(10000), // 10-second timeout
         });
 
         const data: MSG91Response = await response.json();

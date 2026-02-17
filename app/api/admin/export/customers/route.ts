@@ -1,13 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { exportCustomersToCSV } from '@/lib/csv/csvService';
+import { checkUserRateLimit } from '@/lib/rate-limit';
 
 /**
  * GET /api/admin/export/customers
  * Export all customers as CSV
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(req, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const session = await auth();
 
         if (!session || session.user.role !== 'ADMIN') {

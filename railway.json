@@ -1,14 +1,5 @@
 {
-    "$schema": "https://railway.app/railway.schema.json",
-    "build": {
-        "builder": "NIXPACKS"
-    },
-    "deploy": {
-        "preDeployCommand": "npx prisma migrate deploy",
-        "startCommand": "next start -H 0.0.0.0 -p $PORT",
-        "healthcheckPath": "/api/health",
-        "healthcheckTimeout": 60,
-        "restartPolicyType": "ON_FAILURE",
-        "restartPolicyMaxRetries": 10
-    }
+    "preDeployCommand": "node scripts/validate-env.js && npx prisma migrate deploy",
+    "healthcheckPath": "/api/health",
+    "restartPolicyType": "ON_FAILURE"
 }

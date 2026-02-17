@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getAuthRateLimiter } from '@/lib/rate-limit';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { logError, logRateLimitViolation, logSecurityEvent } from '@/lib/logger';
 import { verifyHCaptchaToken } from '@/lib/hcaptcha';
 
@@ -8,22 +8,12 @@ const MAX_OTP_ATTEMPTS = 5;
 
 export async function POST(request: NextRequest) {
     try {
-        // SECURITY: Rate limiting for OTP verification to prevent brute force
-        const limiter = getAuthRateLimiter();
-        const ip = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "127.0.0.1";
-        const { success, limit, reset, remaining } = await limiter.limit(ip);
-
-        if (!success) {
-            logRateLimitViolation("/api/auth/verify-otp", ip, ip);
-            return new NextResponse("Too Many Requests - Please try again later", {
-                status: 429,
-                headers: {
-                    "X-RateLimit-Limit": limit.toString(),
-                    "X-RateLimit-Remaining": remaining.toString(),
-                    "X-RateLimit-Reset": reset.toString(),
-                },
-            });
+        // SECURITY: Rate limiting for OTP verification (5 req/min)
+        const rateLimitResult = await checkRateLimit(request, 'auth');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
         }
+        const { identifier: ip } = rateLimitResult;
 
         const { email, phone, otp, hcaptchaToken } = await request.json();
 

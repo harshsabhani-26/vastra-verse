@@ -1228,3 +1228,142 @@ model MigrationLog {
   @@index([status])
   @@index([environment])
 }
+
+model WebhookAuditLog {
+  id                String   @id @default(cuid())
+  provider          String   // RAZORPAY, SHIPROCKET, etc.
+  eventType         String   // refund.created, payment.captured, etc.
+  eventId           String?  // Unique event ID from provider
+  status            String   // ACCEPTED, REJECTED
+  rejectionReason   String?  // SIGNATURE_MISSING, SIGNATURE_INVALID, TIMESTAMP_TOO_OLD, REPLAY_ATTACK
+  ipAddress         String?
+  signatureReceived String?
+  signatureExpected String?
+  rawPayload        String?  // Store first 1000 chars for debugging
+  processedAt       DateTime @default(now())
+  metadata          String?  // JSON string for additional context
+
+  @@index([provider])
+  @@index([eventType])
+  @@index([status])
+  @@index([processedAt])
+  @@index([eventId])
+  @@index([provider, status, processedAt])
+}
+
+// ─── Observability Models ───────────────────────────────────────────────────
+
+model ErrorLog {
+  id          String          @id @default(cuid())
+  fingerprint String          // Hash for grouping similar errors
+  message     String
+  stack       String?         // Stack trace (truncated for storage)
+  severity    ErrorSeverity   @default(ERROR)
+  source      String          // API, WORKER, PAYMENT, SHIPPING, WEBHOOK
+  endpoint    String?         // API route or worker name
+  statusCode  Int?            // HTTP status code if applicable
+  userId      String?         // Associated user
+  orderId     String?         // Associated order
+  requestId   String?         // Request correlation ID
+  metadata    Json?           // Additional context
+  resolved    Boolean         @default(false)
+  resolvedAt  DateTime?
+  resolvedBy  String?
+  count       Int             @default(1) // Occurrence count for grouped errors
+  firstSeen   DateTime        @default(now())
+  lastSeen    DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+
+  @@index([fingerprint])
+  @@index([severity])
+  @@index([source])
+  @@index([resolved])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([orderId])
+  @@index([fingerprint, resolved])
+  @@index([source, severity, createdAt])
+}
+
+model BusinessMetric {
+  id        String   @id @default(cuid())
+  name      String   // ORDERS_COUNT, REVENUE, PAYMENT_SUCCESS_RATE, etc.
+  value     Decimal
+  period    String   // HOURLY, DAILY
+  timestamp DateTime // Start of the period
+  metadata  Json?    // Additional breakdown data
+  createdAt DateTime @default(now())
+
+  @@unique([name, period, timestamp])
+  @@index([name, period])
+  @@index([timestamp])
+  @@index([name, timestamp])
+}
+
+model AlertConfiguration {
+  id          String          @id @default(cuid())
+  name        String          @unique
+  type        String          // ERROR_RATE, PAYMENT_FAILURE, QUEUE_FAILURE, LOW_INVENTORY
+  metric      String          // What metric to watch
+  threshold   Decimal         // Threshold value
+  window      Int             @default(60) // Time window in minutes
+  severity    AlertSeverity   @default(WARNING)
+  channels    Json            // Array of channel configs: [{type: "email", target: "..."}, ...]
+  enabled     Boolean         @default(true)
+  cooldown    Int             @default(15) // Minutes between repeated alerts
+  lastFiredAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  history     AlertHistory[]
+
+  @@index([type])
+  @@index([enabled])
+}
+
+model AlertHistory {
+  id              String             @id @default(cuid())
+  configurationId String
+  severity        AlertSeverity
+  message         String
+  details         Json?              // Metric values, context
+  channel         String             // Channel that was notified
+  delivered       Boolean            @default(false)
+  resolved        Boolean            @default(false)
+  resolvedAt      DateTime?
+  resolvedBy      String?
+  firedAt         DateTime           @default(now())
+  configuration   AlertConfiguration @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+
+  @@index([configurationId])
+  @@index([severity])
+  @@index([firedAt])
+  @@index([resolved])
+}
+
+model PerformanceMetric {
+  id        String   @id @default(cuid())
+  type      String   // API, DATABASE, EXTERNAL_API, WEBHOOK
+  name      String   // Route path, query name, or service name
+  duration  Int      // Duration in milliseconds
+  statusCode Int?    // HTTP status code
+  metadata  Json?    // Additional context (method, params, etc.)
+  timestamp DateTime @default(now())
+
+  @@index([type, name])
+  @@index([timestamp])
+  @@index([type, timestamp])
+  @@index([name, timestamp])
+}
+
+enum ErrorSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}

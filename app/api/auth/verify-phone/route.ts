@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { auth } from '@/auth';
-import { getAuthRateLimiter } from '@/lib/rate-limit';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 // Strictly typed response helper to ensure consistency
 const jsonResponse = (data: any, status: number = 200) => {
@@ -10,19 +10,12 @@ const jsonResponse = (data: any, status: number = 200) => {
 
 export async function POST(req: NextRequest) {
     try {
-        // 1. SECURITY: Rate limiting
-        const rateLimiter = getAuthRateLimiter();
-        const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-        const { success: allowed } = await rateLimiter.limit(ip);
-
-        if (!allowed) {
-            console.warn(`[OTP] Rate limit exceeded for IP: ${ip}`);
-            return jsonResponse({
-                success: false,
-                verified: false,
-                error: 'Too many requests. Please try again later.'
-            }, 429);
+        // 1. SECURITY: Rate limiting (5 req/min)
+        const rateLimitResult = await checkRateLimit(req, 'auth');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
         }
+        const { identifier: ip } = rateLimitResult;
 
         // 2. SESSION VALIDATION
         const session = await auth();
@@ -92,8 +85,9 @@ export async function POST(req: NextRequest) {
                 body: JSON.stringify({
                     authkey: process.env.MSG91_AUTH_KEY,
                     'access-token': token,
-                    'mobile': phone ? ('91' + phone) : undefined // Optional support for validating specific number
+                    'mobile': phone ? ('91' + phone) : undefined
                 }),
+                signal: AbortSignal.timeout(10000), // 10-second timeout
             });
 
             msg91Data = await verifyResponse.json();

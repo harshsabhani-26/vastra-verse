@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkUserRateLimit } from '@/lib/rate-limit';
 import { auth } from '@/auth';
 import { getBackupPath } from '@/lib/backup/backupService';
 import * as fs from 'fs/promises';
@@ -9,6 +10,12 @@ import * as fs from 'fs/promises';
  */
 export async function GET(request: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(request, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const session = await auth();
 
         if (!session || session.user.role !== 'ADMIN') {

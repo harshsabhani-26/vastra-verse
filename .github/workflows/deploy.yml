@@ -9,10 +9,10 @@ env:
   DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
 jobs:
-  migrate-and-deploy:
-    name: Migrate & Deploy
+  build-and-deploy:
+    name: Build, Verify & Deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout Code
@@ -30,6 +30,14 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      - name: TypeScript Type Check
+        run: npx tsc --noEmit --pretty
+        continue-on-error: false
+
+      - name: Lint Check
+        run: npx next lint
+        continue-on-error: true  # Don't block deploy on lint warnings
+
       - name: Run Database Migrations
         run: npx prisma migrate deploy
         env:
@@ -43,6 +51,18 @@ jobs:
 
       - name: Build Application
         run: npm run build
+        env:
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
 
-      - name: Verify Build
-        run: echo "✅ Build and migration successful"
+      - name: Verify Build Output
+        run: |
+          echo "✅ Build and migration successful"
+          echo "📦 Build output:"
+          ls -la .next/ | head -20
+
+      - name: Deploy Notification
+        if: success()
+        run: echo "🚀 Deployment pipeline completed successfully at $(date -u)"

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkUserRateLimit } from '@/lib/rate-limit';
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { EventDispatcher } from "@/lib/services/event-dispatcher";
@@ -12,6 +13,12 @@ export async function PUT(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(request, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const { id: refundId } = await params;
         const session = await auth();
 

@@ -1,23 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { ratelimit } from "@/lib/rate-limit";
+import { checkIpRateLimit } from "@/lib/rate-limit";
 import { requireAdmin, unauthorizedResponse } from "@/lib/auth-utils";
+import { cache, CACHE_KEYS, CACHE_TTL } from "@/lib/cache";
+import { invalidateProducts } from "@/lib/cache-invalidation";
 
 // GET /api/products - Public product listing with pagination
-export async function GET(req: Request) {
-    // Rate Limiting
-    const ip = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
-    const { success, limit, reset, remaining } = await ratelimit.limit(ip);
-
-    if (!success) {
-        return new NextResponse("Too Many Requests", {
-            status: 429,
-            headers: {
-                "X-RateLimit-Limit": limit.toString(),
-                "X-RateLimit-Remaining": remaining.toString(),
-                "X-RateLimit-Reset": reset.toString(),
-            },
-        });
+export async function GET(req: NextRequest) {
+    // Rate Limiting (20 req/min for public routes)
+    const rateLimitResult = await checkIpRateLimit(req, 'default');
+    if (rateLimitResult instanceof NextResponse) {
+        return rateLimitResult;
     }
 
     try {
@@ -52,44 +45,57 @@ export async function GET(req: Request) {
             ];
         }
 
-        const [products, total] = await Promise.all([
-            prisma.product.findMany({
-                where,
-                select: {
-                    id: true,
-                    name: true,
-                    price: true,
-                    discount: true,
-                    finalPrice: true,
-                    shortDescription: true,
-                    isFeatured: true,
-                    isNewArrival: true,
-                    isBestSeller: true,
-                    stock: true,
-                    category: {
-                        select: {
-                            id: true,
-                            name: true,
-                            slug: true,
+        // Use Redis cache for default (unfiltered) requests
+        const isDefaultRequest = !categoryId && !isNewArrival && !search && page === 1 && limit === 20;
+        const cacheKey = isDefaultRequest ? CACHE_KEYS.PRODUCTS_ALL : null;
+
+        const fetchProducts = async () => {
+            const [products, total] = await Promise.all([
+                prisma.product.findMany({
+                    where,
+                    select: {
+                        id: true,
+                        name: true,
+                        price: true,
+                        discount: true,
+                        finalPrice: true,
+                        shortDescription: true,
+                        isFeatured: true,
+                        isNewArrival: true,
+                        isBestSeller: true,
+                        stock: true,
+                        category: {
+                            select: {
+                                id: true,
+                                name: true,
+                                slug: true,
+                            }
+                        },
+                        images: {
+                            where: { type: "MAIN" },
+                            take: 1,
+                            select: {
+                                url: true,
+                                alt: true,
+                            }
                         }
                     },
-                    images: {
-                        where: { type: "MAIN" },
-                        take: 1,
-                        select: {
-                            url: true,
-                            alt: true,
-                        }
-                    }
-                },
-                orderBy: {
-                    createdAt: "desc",
-                },
-                skip,
-                take: limit,
-            }),
-            prisma.product.count({ where }),
-        ]);
+                    orderBy: {
+                        createdAt: "desc",
+                    },
+                    skip,
+                    take: limit,
+                }),
+                prisma.product.count({ where }),
+            ]);
+            return { products, total };
+        };
+
+        const result = cacheKey
+            ? await cache.getOrSet(cacheKey, fetchProducts, CACHE_TTL.PRODUCTS_LIST)
+            : await fetchProducts();
+
+        const { products, total } = result;
 
         return NextResponse.json(
             {
@@ -197,6 +203,9 @@ export async function POST(req: Request) {
                 images: true,
             }
         });
+
+        // Invalidate product cache after creation
+        await invalidateProducts();
 
         return NextResponse.json(product);
     } catch (error) {

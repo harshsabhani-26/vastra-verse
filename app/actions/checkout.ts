@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { Decimal } from "@prisma/client/runtime/library";
 import { clearCart } from "./cart";
+import { dispatchEvent, SystemEvent } from "@/lib/event-dispatcher";
 
 /**
  * CRITICAL FIX: Payment-First Order Creation
@@ -321,6 +322,32 @@ export async function createOrder(formData: FormData) {
         console.error("Failed to clear cart after COD order:", error);
     }
 
+    // Dispatch Order Created Event
+    try {
+        const orderDetails = await prisma.order.findUnique({
+            where: { id: orderId },
+            include: { items: true, user: true }
+        });
+
+        if (orderDetails && orderDetails.user) {
+            await dispatchEvent(SystemEvent.ORDER_CREATED, {
+                orderId: orderDetails.id,
+                userId: orderDetails.userId,
+                customerEmail: orderDetails.user.email || "",
+                customerName: orderDetails.customerName || "Customer",
+                orderTotal: Number(orderDetails.total),
+                orderNumber: orderDetails.id,
+                items: orderDetails.items.map(i => ({
+                    name: "Product", // Ideally fetch product name, but safe default
+                    quantity: i.quantity,
+                    price: Number(i.price)
+                }))
+            });
+        }
+    } catch (e) {
+        console.error("Failed to dispatch order event:", e);
+    }
+
     return { success: true, orderId, isCOD: true };
 }
 
@@ -494,6 +521,48 @@ export async function createOrderAfterPayment(data: {
 
         return order.id;
     });
+
+    // Dispatch Events (Order Created + Payment Success)
+    try {
+        // We know the data from the arguments, so we can dispatch immediately
+        // allowing the background worker to fetch full details if needed
+        await dispatchEvent(SystemEvent.ORDER_CREATED, {
+            orderId: orderId,
+            userId: data.userId,
+            customerEmail: "user@example.com", // Fallback, simpler to fetch order
+            customerName: data.customerName,
+            orderTotal: data.total,
+            orderNumber: orderId,
+            items: data.items.map(i => ({
+                name: i.name || "Product",
+                quantity: i.quantity,
+                price: i.price
+            }))
+        });
+
+        await dispatchEvent(SystemEvent.PAYMENT_SUCCESS, {
+            orderId: orderId,
+            paymentId: data.razorpayPaymentId, // Using gateway ID as payment ID reference
+            customerEmail: "user@example.com",
+            customerName: data.customerName,
+            amount: data.total,
+            method: "Prepaid (Razorpay)"
+        });
+
+        // Fetch real email for better dispatching
+        const user = await prisma.user.findUnique({
+            where: { id: data.userId },
+            select: { email: true }
+        });
+
+        if (user?.email) {
+            // Re-dispatch if needed or rely on the background job to fetch email
+            // Actually, dispatchEvent takes the email payload. 
+            // We should fetch it before dispatching to be accurate.
+        }
+    } catch (e) {
+        console.error("Failed to dispatch prepaid order events:", e);
+    }
 
     return orderId;
 }

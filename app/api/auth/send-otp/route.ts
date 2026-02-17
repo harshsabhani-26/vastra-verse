@@ -1,28 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import crypto from 'crypto';
-import { getAuthRateLimiter } from '@/lib/rate-limit';
-import { logError, logRateLimitViolation, logSecurityEvent } from '@/lib/logger';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { logError, logSecurityEvent } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
     try {
-        // SECURITY: Rate limiting for OTP endpoint to prevent abuse
-        const limiter = getAuthRateLimiter();
-        const ip = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "127.0.0.1";
-        const { success, limit, reset, remaining } = await limiter.limit(ip);
-
-        if (!success) {
-            logRateLimitViolation("/api/auth/send-otp", ip, ip);
-            return new NextResponse("Too Many Requests - Please try again later", {
-                status: 429,
-                headers: {
-                    "X-RateLimit-Limit": limit.toString(),
-                    "X-RateLimit-Remaining": remaining.toString(),
-                    "X-RateLimit-Reset": reset.toString(),
-                },
-            });
+        // SECURITY: Comprehensive rate limiting (5 req/min)
+        const rateLimitResult = await checkRateLimit(request, 'auth');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
         }
 
+        const { identifier } = rateLimitResult;
         const body = await request.json();
         const { email, type, hcaptchaToken } = body;
 
@@ -31,7 +21,7 @@ export async function POST(request: NextRequest) {
             const { verifyHCaptchaToken } = await import('@/lib/hcaptcha');
             const isHuman = await verifyHCaptchaToken(hcaptchaToken);
             if (!isHuman) {
-                logSecurityEvent("HCAPTCHA_FAILED", { endpoint: "/api/auth/send-otp", ip });
+                logSecurityEvent("HCAPTCHA_FAILED", { endpoint: "/api/auth/send-otp", ipAddress: identifier });
                 return NextResponse.json(
                     { error: 'Captcha verification failed' },
                     { status: 400 }
@@ -83,7 +73,7 @@ export async function POST(request: NextRequest) {
         logSecurityEvent("OTP_GENERATED", {
             email,
             type,
-            ipAddress: ip,
+            ipAddress: identifier,
         });
 
         // TODO: Send OTP via email

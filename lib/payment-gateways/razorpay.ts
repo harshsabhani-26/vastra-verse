@@ -95,6 +95,7 @@ async function makeRazorpayRequest(
             'Authorization': `Basic ${auth}`,
             'Content-Type': 'application/json',
         },
+        signal: AbortSignal.timeout(10000), // 10-second timeout
         ...(body && { body: JSON.stringify(body) }),
     });
 

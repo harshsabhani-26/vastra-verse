@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { checkUserRateLimit } from '@/lib/rate-limit';
 import { auth } from '@/auth';
 import { createBackup } from '@/lib/backup/backupService';
 
@@ -8,6 +9,12 @@ import { createBackup } from '@/lib/backup/backupService';
  */
 export async function POST(request: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(request, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         // Check for API key or session
         const apiKey = request.headers.get('x-api-key');
         const session = await auth();

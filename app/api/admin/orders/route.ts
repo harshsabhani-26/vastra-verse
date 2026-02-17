@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { auth } from '@/auth';
 import { validateCursor, validateLimit } from '@/lib/api-utils';
 import { withQueryLogging } from '@/lib/query-logger';
+import { checkUserRateLimit } from '@/lib/rate-limit';
 
 /**
  * ADMIN ORDERS API - Get all orders with pagination
@@ -14,6 +15,12 @@ import { withQueryLogging } from '@/lib/query-logger';
  */
 export async function GET(request: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(request, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const session = await auth();
 
         if (!session?.user || session.user.role !== 'ADMIN') {

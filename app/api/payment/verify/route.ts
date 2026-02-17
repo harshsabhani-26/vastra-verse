@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { buildInvoiceData } from "@/lib/invoice-data-builder";
 import { generateInvoicePDF } from "@/lib/invoice-pdf-generator";
 import { sendInvoiceEmail } from "@/lib/email/send-invoice";
-import { getPaymentRateLimiter } from "@/lib/rate-limit";
-import { logError, logPaymentEvent, logRateLimitViolation } from "@/lib/logger";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { logError, logPaymentEvent } from "@/lib/logger";
 import { clearCart } from "@/app/actions/cart";
 import { createOrderAfterPayment } from "@/app/actions/checkout";
 
@@ -24,17 +24,15 @@ import { createOrderAfterPayment } from "@/app/actions/checkout";
  * This ensures failed/cancelled payments NEVER create orphaned orders.
  */
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     try {
-        // SECURITY: Strict rate limiting for payment endpoints
-        const rateLimiter = getPaymentRateLimiter();
-        const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-        const { success } = await rateLimiter.limit(ip);
-
-        if (!success) {
-            logRateLimitViolation("/api/payment/verify", ip, ip);
-            return NextResponse.json({ error: 'Too many payment requests. Please wait.' }, { status: 429 });
+        // SECURITY: Strict rate limiting (3 req/min) for payment verification
+        const rateLimitResult = await checkRateLimit(req, 'paymentVerify');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
         }
+
+        const { identifier } = rateLimitResult;
 
         const session = await auth();
         if (!session?.user?.id) {
@@ -92,7 +90,7 @@ export async function POST(req: Request) {
             logPaymentEvent("PAYMENT_VERIFICATION_FAILED", razorpay_order_id, {
                 reason: "Invalid signature",
                 razorpayOrderId: razorpay_order_id,
-                ipAddress: ip,
+                ipAddress: identifier,
             });
             return NextResponse.json({ error: "Invalid payment signature" }, { status: 400 });
         }

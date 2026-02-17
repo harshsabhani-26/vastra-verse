@@ -86,6 +86,7 @@ const navGroups: NavGroup[] = [
     {
         title: "System",
         items: [
+            { href: "/admin/monitoring", icon: <Activity size={18} />, label: "Monitoring" },
             { href: "/admin/notifications", icon: <Bell size={18} />, label: "Notifications" },
             { href: "/admin/activity-logs", icon: <Activity size={18} />, label: "Activity Logs" },
             { href: "/admin/settings", icon: <Settings size={18} />, label: "Settings" },

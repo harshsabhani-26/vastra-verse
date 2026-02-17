@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkUserRateLimit } from '@/lib/rate-limit';
 import { getCourierRankings } from "@/services/shipping/courier-updater";
 
 /**
@@ -14,6 +15,12 @@ import { getCourierRankings } from "@/services/shipping/courier-updater";
  */
 export async function GET(req: NextRequest) {
     try {
+        // SECURITY: Rate limiting (30 req/min for admin)
+        const rateLimitResult = await checkUserRateLimit(req, 'admin');
+        if (rateLimitResult instanceof NextResponse) {
+            return rateLimitResult;
+        }
+
         const rankings = await getCourierRankings();
 
         return NextResponse.json({
