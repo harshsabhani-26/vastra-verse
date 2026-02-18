@@ -26,11 +26,17 @@ export async function getCart() {
     return cart;
 }
 
+import { getRealTimeStock } from "@/actions/stock";
+
 export async function addToCart(productId: string, quantity: number = 1) {
     const session = await auth();
     if (!session?.user?.id) return { success: false, error: "Not authenticated" };
 
     try {
+        // Validate Stock
+        const stock = await getRealTimeStock(productId);
+        if (stock === -1) return { success: false, error: "Product not found" };
+
         let cart = await prisma.cart.findUnique({
             where: { userId: session.user.id }
         });
@@ -49,6 +55,14 @@ export async function addToCart(productId: string, quantity: number = 1) {
                 }
             }
         });
+
+        const currentQty = existingItem ? existingItem.quantity : 0;
+        if (currentQty + quantity > stock) {
+            return {
+                success: false,
+                error: `Only ${stock} units available (you have ${currentQty})`
+            };
+        }
 
         if (existingItem) {
             await prisma.cartItem.update({
@@ -81,6 +95,19 @@ export async function updateCartItem(itemId: string, quantity: number) {
         if (quantity <= 0) {
             await prisma.cartItem.delete({ where: { id: itemId } });
         } else {
+            // Get product ID from item to check stock
+            const item = await prisma.cartItem.findUnique({
+                where: { id: itemId },
+                select: { productId: true }
+            });
+
+            if (!item) return { success: false, error: "Item not found" };
+
+            const stock = await getRealTimeStock(item.productId);
+            if (quantity > stock) {
+                return { success: false, error: `Only ${stock} units available` };
+            }
+
             await prisma.cartItem.update({
                 where: { id: itemId },
                 data: { quantity }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCartStore } from "@/lib/store";
 import { toast } from "react-hot-toast";
 import { Heart, Share2, Plus, Minus, ShoppingBag } from "lucide-react";
@@ -35,24 +35,53 @@ interface ProductDetailsProps {
 }
 
 export function ProductDetails({ product, initialIsWishlisted = false }: ProductDetailsProps) {
-    const { addItem, openCart } = useCartStore();
+    const { addItem, openCart, items } = useCartStore();
 
     // State
     const [selectedColor, setSelectedColor] = useState<string>(product.colors?.[0] || "");
     const [loading, setLoading] = useState(false);
     const [isWishlisted, setIsWishlisted] = useState(initialIsWishlisted);
     const [deliveryMethod, setDeliveryMethod] = useState<"home" | "store">("home");
+    const [stock, setStock] = useState<number | null>(null);
 
     // Accordion State
     const [openSection, setOpenSection] = useState<string | null>("details");
+
+    useEffect(() => {
+        const fetchStock = async () => {
+            try {
+                // Dynamic import to avoid server-side issues if any, though explicit import is fine for server actions
+                const { getRealTimeStock } = await import("@/actions/stock");
+                const currentStock = await getRealTimeStock(product.id);
+                setStock(currentStock);
+            } catch (error) {
+                console.error("Failed to fetch stock", error);
+                setStock(product.stock); // Fallback to prop
+            }
+        };
+        fetchStock();
+    }, [product.id, product.stock]);
 
     const toggleSection = (section: string) => {
         setOpenSection(openSection === section ? null : section);
     };
 
+    // Calculate availability
+    const cartItem = items.find(item => item.id === product.id);
+    const cartQuantity = cartItem?.quantity || 0;
+    const currentStock = stock !== null ? stock : product.stock; // Prefer real-time
+    const availableToAdd = Math.max(0, currentStock - cartQuantity);
+    const isOutOfStock = currentStock <= 0;
+    const isLimitReached = availableToAdd <= 0;
+
     const handleAddToCart = () => {
         if (product.colors && product.colors.length > 0 && !selectedColor) {
             toast.error("Please select a color");
+            return;
+        }
+
+        if (isLimitReached) {
+            toast.error(`Only ${currentStock} units available (you have ${cartQuantity} in cart)`);
             return;
         }
 
@@ -109,6 +138,26 @@ export function ProductDetails({ product, initialIsWishlisted = false }: Product
                     <p className="text-[10px] text-text-muted mt-1 uppercase tracking-wide">
                         MRP Inclusive of all taxes
                     </p>
+
+                    {/* Stock Status */}
+                    {stock !== null && (
+                        <div className={cn(
+                            "mt-3 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border",
+                            stock > 0 ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"
+                        )}>
+                            {stock > 0 ? (
+                                <span className="flex items-center gap-1.5">
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                    </span>
+                                    Available PCS: {stock}
+                                </span>
+                            ) : (
+                                "Out of Stock"
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -167,15 +216,15 @@ export function ProductDetails({ product, initialIsWishlisted = false }: Product
             <div className="flex gap-4 pt-4">
                 <Button
                     onClick={handleAddToCart}
-                    disabled={loading || product.stock === 0}
+                    disabled={loading || isOutOfStock || isLimitReached}
                     className={cn(
                         "flex-1 h-12 uppercase tracking-[0.2em] text-xs font-medium rounded-sm transition-all duration-300 shadow-luxury",
-                        product.stock === 0
+                        (isOutOfStock || isLimitReached)
                             ? "bg-primary/5 text-text-muted cursor-not-allowed"
                             : "bg-primary hover:bg-primary/90 text-white hover:shadow-elevated"
                     )}
                 >
-                    {loading ? "Adding..." : (product.stock === 0 ? "Out of Stock" : "Add To Cart")}
+                    {loading ? "Adding..." : (isOutOfStock ? "Out of Stock" : (isLimitReached ? "Limit Reached" : "Add To Cart"))}
                 </Button>
                 <button
                     onClick={toggleWishlist}

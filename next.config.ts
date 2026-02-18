@@ -61,6 +61,8 @@ const nextConfig: NextConfig = {
       // Scripts: Only trusted domains for Razorpay, MSG91, hCaptcha
       // NOTE: unsafe-eval kept for Razorpay checkout SDK compatibility
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://api.razorpay.com https://verify.msg91.com https://control.msg91.com https://js.hcaptcha.com https://hcaptcha.com https://cdnjs.cloudflare.com",
+      // Workers: Allow web workers from self and blobs (required for Sentry/Razorpay)
+      "worker-src 'self' blob:",
       // Styles: Self + Google Fonts + MSG91 widget styles
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://verify.msg91.com https://control.msg91.com https://hcaptcha.com https://cdnjs.cloudflare.com",
       // Fonts: Self + Google Fonts + data URIs
