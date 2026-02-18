@@ -56,9 +56,18 @@ export function CartItem() {
                                         className="border border-primary/20 rounded-sm px-2 py-0.5 text-xs bg-background focus:outline-none focus:border-primary text-primary font-medium"
                                     >
                                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                                            <option key={num} value={num}>{num}</option>
+                                            <option
+                                                key={num}
+                                                value={num}
+                                                disabled={item.stock !== undefined && num > item.stock}
+                                            >
+                                                {num} {item.stock !== undefined && num > item.stock ? '(Out of Stock)' : ''}
+                                            </option>
                                         ))}
                                     </select>
+                                    {item.stock !== undefined && item.quantity >= item.stock && (
+                                        <span className="text-[10px] text-red-500 font-medium">Max Limit</span>
+                                    )}
                                 </div>
                                 {item.color && (
                                     <div>

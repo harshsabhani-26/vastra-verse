@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getCart, addToCart, updateCartItem, removeFromCart, syncCart, clearCart as clearServerCart } from '@/app/actions/cart';
+import { toast } from "react-hot-toast";
 
 export interface CartItem {
     id: string; // Product ID
@@ -10,6 +11,7 @@ export interface CartItem {
     quantity: number;
     color?: string;
     cartItemId?: string; // ID from DB CartItem
+    stock?: number; // Available stock
 }
 
 export interface AppliedCoupon {
@@ -72,10 +74,59 @@ export const useCartStore = create<CartStore>()(
                 if (!isGuest) {
                     // Sync with server
                     try {
-                        await addToCart(item.id, item.quantity || 1);
-                    } catch (error) {
+                        const result = await addToCart(item.id, item.quantity || 1);
+                        if (!result || !result.success) {
+                            // Revert optimistic update
+                            console.error("Failed to sync add to cart", result?.error);
+
+                            // Calculate simple revert: subtract quantity or remove
+                            const currentItems = get().items;
+                            const addedQty = item.quantity || 1;
+
+                            // Find the item we just modified
+                            const updatedItem = currentItems.find(i => i.id === item.id);
+
+                            if (updatedItem) {
+                                if (updatedItem.quantity <= addedQty) {
+                                    // Remove if it was new or quantity matches addition
+                                    set({ items: currentItems.filter(i => i.id !== item.id) });
+                                } else {
+                                    // Decrease quantity
+                                    set({
+                                        items: currentItems.map(i =>
+                                            i.id === item.id ? { ...i, quantity: i.quantity - addedQty } : i
+                                        )
+                                    });
+                                }
+                            }
+
+                            // Show error
+                            if (typeof window !== 'undefined') {
+                                // Dynamic import toast to avoid circular dependency or SSR issues if needed
+                                // But toast is usually safe. 
+                                // Assuming toaster is available.
+                                // We can use direct alert or console if toast not available, but user has toast in other files.
+                                // Let's try to use the imported toast if we can, but `lib/store` shouldn't depend on UI components if possible.
+                                // However, `toast` (react-hot-toast) is often used in stores.
+                                // I'll skip toast import here to stay pure-ish and rely on the returning promise?
+                                // Actually, `addItem` is void. User expects it to just work.
+                                // I'll add a simple alert or console error if toast import is missing.
+                                // User used `toast` in `ProductDetails.tsx`.
+                                // Let's add `import { toast } from "react-hot-toast";` at top.
+                            }
+                            // Throwing error might be better so UI can handle? 
+                            // But `addItem` is often fire-and-forget.
+                            // I will throw error so caller can toast?
+                            throw new Error(result?.error || "Failed to add to cart");
+                        }
+                    } catch (error: any) {
                         console.error("Failed to sync add to cart", error);
-                        // Revert? For now, we keep local state as source of truth for UI
+                        // Revert is already done above for logic failures.
+                        // Network failures? We might want to keep optimistic state.
+                        // But for "Stock limit", it's a logic failure.
+                        // If I throw here, does the UI helper catch it?
+                        // `ProductDetails` calls `addItem` but doesn't await/catch usually.
+                        // Let's check `ProductDetails`.
                     }
                 }
             },
@@ -124,7 +175,27 @@ export const useCartStore = create<CartStore>()(
                 }));
 
                 if (!isGuest && itemToUpdate?.cartItemId) {
-                    await updateCartItem(itemToUpdate.cartItemId, quantity);
+                    try {
+                        const result = await updateCartItem(itemToUpdate.cartItemId, quantity);
+                        if (!result || !result.success) {
+                            // Revert
+                            console.error("Failed to update quantity", result?.error);
+                            set((state) => ({
+                                items: state.items.map((i) =>
+                                    i.id === id ? { ...i, quantity: itemToUpdate.quantity } : i
+                                ),
+                            }));
+                            toast.error(result?.error || "Failed to update quantity");
+                        }
+                    } catch (error) {
+                        // Revert on network error too
+                        set((state) => ({
+                            items: state.items.map((i) =>
+                                i.id === id ? { ...i, quantity: itemToUpdate.quantity } : i
+                            ),
+                        }));
+                        toast.error("Failed to update quantity");
+                    }
                 }
             },
 
@@ -178,7 +249,8 @@ export const useCartStore = create<CartStore>()(
                         price: Number(dbItem.product.finalPrice || dbItem.product.price), // Ensure number
                         image: dbItem.product.images?.[0]?.url || '/placeholder.jpg', // Need to fetch image
                         quantity: dbItem.quantity,
-                        cartItemId: dbItem.id
+                        cartItemId: dbItem.id,
+                        stock: dbItem.product.stock
                     }));
 
                     // Note: DB fetch for product details might be minimal. 

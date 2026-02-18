@@ -92,7 +92,8 @@ export function ProductDetails({ product, initialIsWishlisted = false }: Product
             price: Number(product.finalPrice || product.price),
             image: product.images?.[0]?.url || "/images/placeholder.jpg",
             quantity: 1,
-            color: selectedColor || "Default"
+            color: selectedColor || "Default",
+            stock: currentStock
         });
         setLoading(false);
         toast.success("Added to Bag!");
