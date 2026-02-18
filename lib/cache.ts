@@ -5,9 +5,12 @@
  * 
  * Features:
  * - Read-through caching with `getOrSet()`
+ * - Batch operations with `mget()` / `mset()`
+ * - Atomic counters with `incr()` / `decr()`
+ * - Key inspection with `exists()` / `ttl()`
  * - Configurable TTL per key
  * - Pattern-based cache invalidation
- * - Cache hit/miss ratio tracking via metrics service
+ * - Cache hit/miss ratio tracking
  * - Non-blocking writes (fire-and-forget)
  * - JSON serialization built-in
  * 
@@ -19,13 +22,11 @@
  *       return prisma.product.findMany();
  *   }, 300); // 5 min TTL
  * 
- *   // Manual set/get
- *   await cache.set('store:settings', settings, 600);
- *   const settings = await cache.get<StoreSettings>('store:settings');
+ *   // Batch get
+ *   const [prod1, prod2] = await cache.mget<Product>(['products:id:1', 'products:id:2']);
  * 
- *   // Invalidate
- *   await cache.del('products:all');
- *   await cache.invalidatePattern('products:*');
+ *   // Atomic counter
+ *   const views = await cache.incr('views:product:abc');
  */
 
 import { Redis } from '@upstash/redis';
@@ -51,6 +52,11 @@ function getRedis(): Redis {
     return redisClient;
 }
 
+/** Expose raw Redis client for advanced use (rate limiting, pub/sub, etc.) */
+export function getRawRedis(): Redis {
+    return getRedis();
+}
+
 // ============================================================
 // Cache Stats (in-memory, reset on restart)
 // ============================================================
@@ -68,13 +74,37 @@ const stats = {
 // ============================================================
 
 export const CACHE_TTL = {
-    PRODUCTS_LIST: 300,       // 5 min
-    PRODUCT_DETAIL: 300,      // 5 min
-    CATEGORIES: 600,          // 10 min
-    STORE_SETTINGS: 600,      // 10 min
-    HOMEPAGE_DATA: 60,        // 1 min
-    USER_SESSION: 1800,       // 30 min
-    SEARCH_RESULTS: 120,      // 2 min
+    // Products
+    PRODUCTS_LIST: 300,        // 5 min
+    PRODUCT_DETAIL: 300,       // 5 min
+    PRODUCTS_FEATURED: 120,    // 2 min
+
+    // Categories
+    CATEGORIES: 600,           // 10 min
+
+    // Store
+    STORE_SETTINGS: 600,       // 10 min
+    HOMEPAGE_DATA: 60,         // 1 min
+
+    // User / Session
+    USER_SESSION: 1800,        // 30 min
+    USER_CART: 3600,           // 1 hour
+    USER_PREFERENCES: 1800,    // 30 min
+
+    // Orders
+    ORDER_DETAIL: 120,         // 2 min (frequently updated)
+    ORDER_LIST: 60,            // 1 min
+    ORDER_STATUS: 30,          // 30 sec (real-time feel)
+
+    // Search
+    SEARCH_RESULTS: 120,       // 2 min
+
+    // API Response Cache
+    API_RESPONSE: 60,          // 1 min
+    API_RESPONSE_LONG: 300,    // 5 min
+
+    // Idempotency
+    IDEMPOTENCY_KEY: 86400,    // 24 hours
 } as const;
 
 // ============================================================
@@ -82,14 +112,43 @@ export const CACHE_TTL = {
 // ============================================================
 
 export const CACHE_KEYS = {
+    // Products
     PRODUCTS_ALL: 'products:all',
     PRODUCT_BY_SLUG: (slug: string) => `products:slug:${slug}`,
     PRODUCT_BY_ID: (id: string) => `products:id:${id}`,
+    PRODUCTS_FEATURED: 'products:featured',
+    PRODUCTS_BY_CATEGORY: (categorySlug: string) => `products:category:${categorySlug}`,
+    PRODUCT_VIEWS: (productId: string) => `products:views:${productId}`,
+
+    // Categories
     CATEGORIES_ALL: 'categories:all',
+    CATEGORIES_TREE: 'categories:tree',
     CATEGORY_BY_SLUG: (slug: string) => `categories:slug:${slug}`,
+    CATEGORY_BY_ID: (id: string) => `categories:id:${id}`,
+
+    // Store
     STORE_SETTINGS: 'store:settings',
     HOMEPAGE_BANNERS: 'homepage:banners',
     HOMEPAGE_FEATURED: 'homepage:featured',
+
+    // User
+    USER_CART: (userId: string) => `user:cart:${userId}`,
+    USER_PREFS: (userId: string) => `user:prefs:${userId}`,
+    USER_ADDRESSES: (userId: string) => `user:addresses:${userId}`,
+
+    // Orders
+    ORDER_BY_ID: (orderId: string) => `orders:id:${orderId}`,
+    ORDERS_BY_USER: (userId: string) => `orders:user:${userId}`,
+    ORDER_STATUS: (orderId: string) => `orders:status:${orderId}`,
+
+    // Search
+    SEARCH: (query: string) => `search:${query.toLowerCase().trim()}`,
+
+    // API Response
+    API_RESPONSE: (method: string, path: string) => `api:${method}:${path}`,
+
+    // Idempotency
+    IDEMPOTENCY: (key: string) => `idempotency:${key}`,
 } as const;
 
 // ============================================================
@@ -120,6 +179,28 @@ async function get<T>(key: string): Promise<T | null> {
 }
 
 /**
+ * Batch get multiple keys in one round-trip.
+ * Returns array of values (null for misses).
+ */
+async function mget<T>(...keys: string[]): Promise<(T | null)[]> {
+    if (keys.length === 0) return [];
+    try {
+        const redis = getRedis();
+        const values = await redis.mget<(T | null)[]>(...keys);
+
+        for (const v of values) {
+            if (v !== null && v !== undefined) stats.hits++;
+            else stats.misses++;
+        }
+        return values;
+    } catch (err) {
+        stats.errors++;
+        logError('CACHE', err, { operation: 'mget', keyCount: keys.length });
+        return keys.map(() => null);
+    }
+}
+
+/**
  * Set a value in cache with TTL.
  * Non-blocking — errors are logged but not thrown.
  */
@@ -141,6 +222,109 @@ async function set(key: string, value: any, ttlSeconds?: number): Promise<void> 
 }
 
 /**
+ * Batch set multiple key-value pairs with a shared TTL.
+ * Uses pipeline for atomicity.
+ */
+async function mset(entries: { key: string; value: any }[], ttlSeconds?: number): Promise<void> {
+    if (entries.length === 0) return;
+    try {
+        const redis = getRedis();
+        const pipeline = redis.pipeline();
+
+        for (const { key, value } of entries) {
+            if (ttlSeconds) {
+                pipeline.set(key, value, { ex: ttlSeconds });
+            } else {
+                pipeline.set(key, value);
+            }
+        }
+        await pipeline.exec();
+
+        stats.sets += entries.length;
+
+        // Track keys (non-blocking)
+        Promise.all(entries.map(e => trackKey(e.key))).catch(() => { });
+    } catch (err) {
+        stats.errors++;
+        logError('CACHE', err, { operation: 'mset', count: entries.length });
+    }
+}
+
+/**
+ * Atomic increment. Returns the new value.
+ * Useful for counters (view counts, rate limiting).
+ */
+async function incr(key: string): Promise<number> {
+    try {
+        const redis = getRedis();
+        return await redis.incr(key);
+    } catch (err) {
+        stats.errors++;
+        logError('CACHE', err, { operation: 'incr', key });
+        return 0;
+    }
+}
+
+/**
+ * Atomic decrement. Returns the new value.
+ */
+async function decr(key: string): Promise<number> {
+    try {
+        const redis = getRedis();
+        return await redis.decr(key);
+    } catch (err) {
+        stats.errors++;
+        logError('CACHE', err, { operation: 'decr', key });
+        return 0;
+    }
+}
+
+/**
+ * Check if a key exists without fetching.
+ */
+async function exists(key: string): Promise<boolean> {
+    try {
+        const redis = getRedis();
+        const result = await redis.exists(key);
+        return result === 1;
+    } catch (err) {
+        stats.errors++;
+        logError('CACHE', err, { operation: 'exists', key });
+        return false;
+    }
+}
+
+/**
+ * Get remaining TTL (in seconds) for a key.
+ * Returns -2 if key doesn't exist, -1 if no expiry set.
+ */
+async function getTTL(key: string): Promise<number> {
+    try {
+        const redis = getRedis();
+        return await redis.ttl(key);
+    } catch (err) {
+        stats.errors++;
+        logError('CACHE', err, { operation: 'ttl', key });
+        return -2;
+    }
+}
+
+/**
+ * Set expiry on an existing key.
+ */
+async function expire(key: string, ttlSeconds: number): Promise<boolean> {
+    try {
+        const redis = getRedis();
+        const result = await redis.expire(key, ttlSeconds);
+        return result === 1;
+    } catch (err) {
+        stats.errors++;
+        logError('CACHE', err, { operation: 'expire', key });
+        return false;
+    }
+}
+
+/**
  * Delete a specific cache key.
  */
 async function del(key: string): Promise<void> {
@@ -151,6 +335,25 @@ async function del(key: string): Promise<void> {
     } catch (err) {
         stats.errors++;
         logError('CACHE', err, { operation: 'del', key });
+    }
+}
+
+/**
+ * Delete multiple keys at once.
+ */
+async function mdel(...keys: string[]): Promise<void> {
+    if (keys.length === 0) return;
+    try {
+        const redis = getRedis();
+        const pipeline = redis.pipeline();
+        for (const key of keys) {
+            pipeline.del(key);
+        }
+        await pipeline.exec();
+        stats.deletes += keys.length;
+    } catch (err) {
+        stats.errors++;
+        logError('CACHE', err, { operation: 'mdel', count: keys.length });
     }
 }
 
@@ -261,8 +464,16 @@ function resetStats() {
 
 export const cache = {
     get,
+    mget,
     set,
+    mset,
     del,
+    mdel,
+    incr,
+    decr,
+    exists,
+    ttl: getTTL,
+    expire,
     invalidatePattern,
     getOrSet,
     getStats,

@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
-import { buildInvoiceData } from "@/lib/invoice-data-builder";
-import { generateInvoicePDF } from "@/lib/invoice-pdf-generator";
-import { sendInvoiceEmail } from "@/lib/email/send-invoice";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { logError, logPaymentEvent } from "@/lib/logger";
 import { clearCart } from "@/app/actions/cart";
+import { recordPaymentSuccess, recordPaymentFailure, recordOrderCreated } from "@/lib/metrics";
+import { createAlert } from "@/lib/system-alerts";
 import { createOrderAfterPayment } from "@/app/actions/checkout";
+import { inngest } from "@/lib/inngest";
 
 /**
  * CRITICAL FIX: Create Order ONLY After Payment Verification
@@ -92,6 +92,16 @@ export async function POST(req: NextRequest) {
                 razorpayOrderId: razorpay_order_id,
                 ipAddress: identifier,
             });
+
+            // Track payment failure metrics + alert
+            recordPaymentFailure();
+            createAlert(
+                'PAYMENT_FAILURE',
+                'WARNING',
+                `Payment signature verification failed for order ${razorpay_order_id}`,
+                { razorpayOrderId: razorpay_order_id, reason: 'Invalid signature' }
+            );
+
             return NextResponse.json({ error: "Invalid payment signature" }, { status: 400 });
         }
 
@@ -130,38 +140,20 @@ export async function POST(req: NextRequest) {
             removePendingOrderData(razorpay_order_id);
         } catch { /* best-effort cleanup */ }
 
-        // After successful order creation, generate invoice using 3-layer architecture
-        try {
-            // Layer 1: Build typed invoice data (single DB fetch + GST calculation)
-            const invoiceData = await buildInvoiceData(orderId);
+        // After successful order creation, dispatch invoice generation as a background job.
+        // This makes the payment response instant — invoice is generated asynchronously
+        // with automatic retries via Inngest.
+        inngest.send({
+            name: 'invoice/generate',
+            data: {
+                orderId,
+                userId: session.user.id,
+            },
+        }).catch((err) => logError('INNGEST_DISPATCH', err, { orderId }));
 
-            if (process.env.NODE_ENV === "development") {
-                console.log("Generating invoice for order:", orderId);
-            }
-
-            // Layer 2: Render PDF from typed data
-            const pdfBuffer = await generateInvoicePDF(invoiceData);
-
-            // Layer 3: Send email with PDF attachment
-            if (invoiceData.customer.email) {
-                if (process.env.NODE_ENV === "development") {
-                    console.log("Sending invoice email to:", invoiceData.customer.email);
-                }
-                await sendInvoiceEmail(invoiceData, pdfBuffer);
-
-                await prisma.orderTimeline.create({
-                    data: {
-                        orderId: orderId,
-                        event: "Invoice Sent",
-                        details: `Invoice emailed to ${invoiceData.customer.email}`,
-                        createdBy: "system"
-                    }
-                });
-            }
-        } catch (invError) {
-            logError("INVOICE_GENERATION", invError);
-            // Don't fail the request - payment was successful
-        }
+        // Track business metrics (non-blocking)
+        recordOrderCreated(Number(orderData.total));
+        recordPaymentSuccess(Number(orderData.total));
 
         // Log successful payment
         logPaymentEvent("PAYMENT_SUCCESS", orderId, {

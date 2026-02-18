@@ -117,6 +117,34 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Public API routes — cacheable by CDN and browsers
+      {
+        source: '/api/products',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=300, stale-while-revalidate=600',
+          },
+        ],
+      },
+      {
+        source: '/api/products/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=300, stale-while-revalidate=600',
+          },
+        ],
+      },
+      {
+        source: '/api/categories',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=300, stale-while-revalidate=600',
+          },
+        ],
+      },
     ];
   },
 };

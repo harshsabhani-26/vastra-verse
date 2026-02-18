@@ -1,17 +1,25 @@
 const required = [
     "DATABASE_URL",
-    "DIRECT_URL",
     "NEXTAUTH_SECRET",
-    "RAZORPAY_KEY_ID",
-    "RAZORPAY_KEY_SECRET",
     "NODE_ENV"
 ];
 
 const optional = [
+    "DIRECT_URL",
+    "DATABASE_REPLICA_URL",
+    "DATABASE_POOL_SIZE",
+    "RAZORPAY_KEY_ID",
+    "RAZORPAY_KEY_SECRET",
+    "RAZORPAY_WEBHOOK_SECRET",
     "SENTRY_DSN",
     "UPSTASH_REDIS_REST_URL",
     "UPSTASH_REDIS_REST_TOKEN",
-    "RAZORPAY_WEBHOOK_SECRET",
+    "INNGEST_EVENT_KEY",
+    "INNGEST_SIGNING_KEY",
+    "EMAIL_HOST",
+    "EMAIL_USER",
+    "EMAIL_PASS",
+    "MSG91_AUTH_KEY",
     "CRON_SECRET"
 ];
 
@@ -30,5 +38,6 @@ if (missingOptional.length) {
     console.warn("⚠ Optional environment variables not set:");
     missingOptional.forEach(v => console.warn(" -", v));
 } else {
-    console.log("✅ Optional services configured");
+    console.log("✅ All optional services configured");
 }
+

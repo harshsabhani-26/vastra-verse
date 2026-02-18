@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { cache, CACHE_KEYS, CACHE_TTL } from "@/lib/cache";
+import { invalidateProduct } from "@/lib/cache-invalidation";
+
 
 export async function GET(
     req: Request,
@@ -9,66 +12,75 @@ export async function GET(
     try {
         const { id } = await context.params;
 
-        const product = await prisma.product.findUnique({
-            where: { id },
-            select: {
-                id: true,
-                name: true,
-                description: true,
-                price: true,
-                stock: true,
-                categoryId: true,
-                sku: true,
-                discount: true,
-                discountType: true,
-                finalPrice: true,
-                lowStockThreshold: true,
-                status: true,
-                isNewArrival: true,
-                isBestSeller: true,
-                shortDescription: true,
-                fabricType: true,
-                weaveType: true,
-                borderDescription: true,
-                palluDescription: true,
-                hasBlousePiece: true,
-                blouseFabric: true,
-                sareeLength: true,
-                blouseLength: true,
-                colors: true,
-                occasions: true,
-                careInstructions: true,
-                category: {
-                    select: {
-                        id: true,
-                        name: true,
-                    }
-                },
-                images: {
-                    orderBy: { position: 'asc' },
-                    select: {
-                        id: true,
-                        url: true,
-                        type: true,
-                        position: true,
-                        width: true,
-                        height: true,
-                        fileSize: true,
+        const product = await cache.getOrSet(
+            CACHE_KEYS.PRODUCT_BY_ID(id),
+            () => prisma.product.findUnique({
+                where: { id },
+                select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    price: true,
+                    stock: true,
+                    categoryId: true,
+                    sku: true,
+                    discount: true,
+                    discountType: true,
+                    finalPrice: true,
+                    lowStockThreshold: true,
+                    status: true,
+                    isNewArrival: true,
+                    isBestSeller: true,
+                    shortDescription: true,
+                    fabricType: true,
+                    weaveType: true,
+                    borderDescription: true,
+                    palluDescription: true,
+                    hasBlousePiece: true,
+                    blouseFabric: true,
+                    sareeLength: true,
+                    blouseLength: true,
+                    colors: true,
+                    occasions: true,
+                    careInstructions: true,
+                    category: {
+                        select: {
+                            id: true,
+                            name: true,
+                        }
+                    },
+                    images: {
+                        orderBy: { position: 'asc' },
+                        select: {
+                            id: true,
+                            url: true,
+                            type: true,
+                            position: true,
+                            width: true,
+                            height: true,
+                            fileSize: true,
+                        }
                     }
                 }
-            }
-        });
+            }),
+            CACHE_TTL.PRODUCT_DETAIL
+        );
 
         if (!product) {
             return new NextResponse("Product not found", { status: 404 });
         }
 
-        return NextResponse.json(product);
+        return NextResponse.json(product, {
+            headers: {
+                "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+            },
+        });
     } catch (error) {
         console.error("[PRODUCT_GET]", error);
         return new NextResponse("Internal Error", { status: 500 });
     }
 }
+
 
 export async function PUT(
     req: Request,
@@ -181,6 +193,9 @@ export async function PUT(
             }
         });
 
+        // Invalidate cache after update
+        await invalidateProduct(id);
+
         return NextResponse.json(product);
     } catch (error) {
         console.error("[PRODUCT_PUT]", error);
@@ -206,6 +221,9 @@ export async function DELETE(
         await prisma.product.delete({
             where: { id }
         });
+
+        // Invalidate cache after deletion
+        await invalidateProduct(id);
 
         return new NextResponse(null, { status: 204 });
     } catch (error) {

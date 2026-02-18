@@ -18,7 +18,12 @@
     "db:seed": "node prisma/seed.js",
     "db:seed:prod": "NODE_ENV=production node prisma/seed.js",
     "postinstall": "prisma generate",
-    "ci": "npm install && npx prisma generate && npm run build"
+    "ci": "npm install && npx prisma generate && npm run build",
+    "test:load": "node tests/load/run.js load",
+    "test:stress": "node tests/load/run.js stress",
+    "test:spike": "node tests/load/run.js spike",
+    "test:smoke": "node tests/load/run.js smoke",
+    "test:report": "node tests/load/generate-report.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
@@ -60,6 +65,7 @@
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.26.2",
+    "inngest": "^3.52.1",
     "jspdf": "^4.0.0",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.562.0",
