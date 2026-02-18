@@ -4,12 +4,12 @@
         "builder": "NIXPACKS"
     },
     "deploy": {
-        "startCommand": "export DIRECT_URL=${DIRECT_URL:-$DATABASE_URL} && npx prisma generate && npx prisma migrate deploy && npm start",
+        "preDeployCommand": "export DIRECT_URL=${DIRECT_URL:-$DATABASE_URL} && node scripts/validate-env.js && npx prisma migrate deploy",
+        "startCommand": "export DIRECT_URL=${DIRECT_URL:-$DATABASE_URL} && npx prisma generate && npm start",
         "healthcheckPath": "/api/health",
         "healthcheckTimeout": 120,
         "restartPolicyType": "ON_FAILURE",
         "restartPolicyMaxRetries": 10,
         "numReplicas": 1
-    },
-    "preDeployCommand": "export DIRECT_URL=${DIRECT_URL:-$DATABASE_URL} && node scripts/validate-env.js && npx prisma migrate deploy"
+    }
 }
