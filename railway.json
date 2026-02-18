@@ -4,7 +4,7 @@
         "builder": "NIXPACKS"
     },
     "deploy": {
-        "startCommand": "npx prisma generate && npx prisma migrate deploy && npm start",
+        "startCommand": "export DIRECT_URL=${DIRECT_URL:-$DATABASE_URL} && npx prisma generate && npx prisma migrate deploy && npm start",
         "healthcheckPath": "/api/health",
         "healthcheckTimeout": 120,
         "restartPolicyType": "ON_FAILURE",
