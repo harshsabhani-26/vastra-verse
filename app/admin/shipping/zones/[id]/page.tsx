@@ -89,7 +89,7 @@ export default function EditZonePage({ params }: { params: { id: string } }) {
                     <ArrowLeft size={20} />
                 </Link>
                 <div>
-                    <h2 className="text-3xl font-serif text-[#1C1917]">Edit Shipping Zone</h2>
+                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Edit Shipping Zone</h2>
                     <p className="text-stone-600 mt-1">Update zone configuration and delivery rules</p>
                 </div>
             </div>

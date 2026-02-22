@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { checkUserRateLimit } from '@/lib/rate-limit';
+import { invalidateProduct } from "@/lib/cache-invalidation";
 
 // PATCH /api/admin/products/[id] - Update product (especially stock)
 export async function PATCH(req: NextRequest,
@@ -36,6 +38,12 @@ export async function PATCH(req: NextRequest,
                 },
             },
         });
+
+        // Invalidate in-memory/Redis cache AND Next.js unstable_cache
+        await invalidateProduct(id);
+        revalidateTag('products', {} as any);
+        revalidateTag('new-arrivals', {} as any);
+        revalidateTag('best-sellers', {} as any);
 
         return NextResponse.json({
             success: true,

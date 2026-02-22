@@ -11,7 +11,7 @@ export default async function BannersPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-serif text-[#1C1917]">Hero Banners</h1>
+                    <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Hero Banners</h1>
                     <p className="text-stone-600 mt-1">Manage homepage hero slider banners</p>
                 </div>
                 <Link href="/admin/banners/new">

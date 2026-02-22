@@ -49,15 +49,19 @@ export async function onRequestError(
     });
 
     // Also send to custom error tracker (DB-backed)
-    const { captureApiError } = await import("@/lib/error-tracker");
-    captureApiError(error, {
-        endpoint: context.routePath || request.path,
-        statusCode: 500,
-        metadata: {
-            method: request.method,
-            routerKind: context.routerKind,
-            routeType: context.routeType,
-            renderSource: context.renderSource,
-        },
-    });
+    // Only available in Node.js runtime — error-tracker uses Node's `crypto` module
+    // which is not supported in Edge Runtime.
+    if (process.env.NEXT_RUNTIME === "nodejs") {
+        const { captureApiError } = await import("@/lib/error-tracker");
+        captureApiError(error, {
+            endpoint: context.routePath || request.path,
+            statusCode: 500,
+            metadata: {
+                method: request.method,
+                routerKind: context.routerKind,
+                routeType: context.routeType,
+                renderSource: context.renderSource,
+            },
+        });
+    }
 }

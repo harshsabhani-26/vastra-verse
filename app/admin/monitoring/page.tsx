@@ -137,7 +137,7 @@ export default function MonitoringDashboard() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
+                    <h1 className="text-xl md:text-2xl font-bold tracking-tight text-stone-900 flex items-center gap-2">
                         <Activity className="w-6 h-6 text-amber-500" />
                         System Monitoring
                     </h1>
@@ -147,15 +147,15 @@ export default function MonitoringDashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                     {lastRefresh && (
-                        <span className="text-xs text-stone-400">
+                        <span className="text-sm text-stone-400">
                             Updated {lastRefresh.toLocaleTimeString()}
                         </span>
                     )}
                     <button
                         onClick={fetchData}
-                        className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-stone-200 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-50 transition-colors shadow-sm"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-stone-200 rounded-lg text-base font-medium text-stone-600 hover:bg-stone-50 transition-colors shadow-sm"
                     >
-                        <RefreshCcw className="w-4 h-4" />
+                        <RefreshCcw className="w-5 h-5" />
                         Refresh
                     </button>
                 </div>
@@ -260,8 +260,8 @@ function SystemHealthCard({ health }: { health: SystemHealth }) {
                                 }`}>
                                 <Icon className="w-5 h-5" />
                             </div>
-                            <p className="text-xs font-medium text-stone-700">{label}</p>
-                            <p className="text-[10px] text-stone-400 mt-0.5">
+                            <p className="text-sm font-medium text-stone-700">{label}</p>
+                            <p className="text-xs text-stone-400 mt-0.5">
                                 {svc.latencyMs > 0 ? `${svc.latencyMs}ms` : svc.status}
                             </p>
                         </div>
@@ -279,14 +279,14 @@ function ErrorRateCard({ errorData }: { errorData: MonitoringData['errors'] | un
     return (
         <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-stone-900 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-red-500" />
+                <h3 className="text-base font-semibold text-stone-900 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-500" />
                     Error Rate
                 </h3>
-                <span className="text-xs text-stone-400">Last hour</span>
+                <span className="text-sm text-stone-400">Last hour</span>
             </div>
 
-            <div className="text-3xl font-bold text-stone-900 mb-3">{rate.total}</div>
+            <div className="text-2xl font-bold tracking-tight text-stone-900 mb-3">{rate.total}</div>
 
             {/* By Severity */}
             <div className="space-y-2">
@@ -334,27 +334,27 @@ function PerformanceCard({ performance }: { performance: MonitoringData['perform
     return (
         <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-stone-900 flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-amber-500" />
+                <h3 className="text-base font-semibold text-stone-900 flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-amber-500" />
                     Performance
                 </h3>
-                <span className="text-xs text-stone-400">Last hour</span>
+                <span className="text-sm text-stone-400">Last hour</span>
             </div>
 
             <div className="space-y-3">
                 {metrics.map(({ label, data, color }) => (
                     <div key={label} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <span className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold ${color}`}>
+                            <span className={`w-8 h-8 rounded-md flex items-center justify-center text-sm font-bold ${color}`}>
                                 {label[0]}
                             </span>
-                            <span className="text-sm text-stone-700">{label}</span>
+                            <span className="text-base text-stone-700">{label}</span>
                         </div>
                         <div className="text-right">
-                            <span className="text-sm font-mono font-semibold text-stone-900">
+                            <span className="text-base font-mono font-semibold text-stone-900">
                                 {data.avg}ms
                             </span>
-                            <span className="text-xs text-stone-400 ml-2">
+                            <span className="text-sm text-stone-400 ml-2">
                                 p95: {data.p95}ms
                             </span>
                         </div>
@@ -379,21 +379,21 @@ function BusinessMetricsCard({ business }: { business: MonitoringData['business'
     return (
         <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-stone-900 flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-emerald-500" />
+                <h3 className="text-base font-semibold text-stone-900 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-emerald-500" />
                     Business Metrics
                 </h3>
-                <span className="text-xs text-stone-400">Today</span>
+                <span className="text-sm text-stone-400">Today</span>
             </div>
 
             <div className="space-y-3">
                 {metrics.map(({ label, value, icon: Icon, color }) => (
                     <div key={label} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Icon className={`w-4 h-4 ${color}`} />
-                            <span className="text-sm text-stone-600">{label}</span>
+                            <Icon className={`w-5 h-5 ${color}`} />
+                            <span className="text-base text-stone-600">{label}</span>
                         </div>
-                        <span className="text-sm font-semibold text-stone-900">{value}</span>
+                        <span className="text-base font-semibold text-stone-900">{value}</span>
                     </div>
                 ))}
             </div>
@@ -404,13 +404,13 @@ function BusinessMetricsCard({ business }: { business: MonitoringData['business'
 function RecentErrorsCard({ errors }: { errors: MonitoringData['errors']['recent'] | undefined }) {
     if (!errors?.errors?.length) {
         return (
-            <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-5">
-                <h3 className="font-semibold text-stone-900 flex items-center gap-2 mb-4">
-                    <ShieldAlert className="w-4 h-4 text-red-500" />
+            <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-6">
+                <h3 className="text-base font-semibold text-stone-900 flex items-center gap-2 mb-4">
+                    <ShieldAlert className="w-5 h-5 text-red-500" />
                     Recent Errors
                 </h3>
-                <div className="text-center py-8 text-stone-400 text-sm">
-                    <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-400" />
+                <div className="text-center py-8 text-stone-400 text-base">
+                    <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-emerald-400" />
                     No unresolved errors
                 </div>
             </div>
@@ -418,39 +418,39 @@ function RecentErrorsCard({ errors }: { errors: MonitoringData['errors']['recent
     }
 
     return (
-        <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-5">
+        <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-stone-900 flex items-center gap-2">
-                    <ShieldAlert className="w-4 h-4 text-red-500" />
+                <h3 className="text-base font-semibold text-stone-900 flex items-center gap-2">
+                    <ShieldAlert className="w-5 h-5 text-red-500" />
                     Recent Errors
                 </h3>
-                <span className="text-xs text-stone-400">{errors.total} total</span>
+                <span className="text-sm text-stone-400">{errors.total} total</span>
             </div>
 
-            <div className="space-y-2 max-h-80 overflow-y-auto">
+            <div className="space-y-3 max-h-80 overflow-y-auto">
                 {errors.errors.map((err: any) => (
-                    <div key={err.id} className="p-3 bg-stone-50 rounded-lg border border-stone-100">
+                    <div key={err.id} className="p-4 bg-stone-50 rounded-lg border border-stone-100">
                         <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-stone-900 truncate">
+                                <p className="text-base font-medium text-stone-900 truncate">
                                     {err.message}
                                 </p>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${err.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' :
+                                <div className="flex items-center gap-2 mt-1.5">
+                                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${err.severity === 'CRITICAL' ? 'bg-red-100 text-red-700' :
                                         err.severity === 'ERROR' ? 'bg-orange-100 text-orange-700' :
                                             'bg-amber-100 text-amber-700'
                                         }`}>
                                         {err.severity}
                                     </span>
-                                    <span className="text-[10px] text-stone-400">{err.source}</span>
+                                    <span className="text-sm text-stone-400">{err.source}</span>
                                     {err.endpoint && (
-                                        <span className="text-[10px] text-stone-400 font-mono">{err.endpoint}</span>
+                                        <span className="text-sm text-stone-400 font-mono">{err.endpoint}</span>
                                     )}
                                 </div>
                             </div>
                             <div className="text-right shrink-0">
-                                <span className="text-xs font-mono text-stone-500">×{err.count}</span>
-                                <p className="text-[10px] text-stone-400 mt-0.5">
+                                <span className="text-sm font-mono text-stone-500">×{err.count}</span>
+                                <p className="text-xs text-stone-400 mt-0.5">
                                     {new Date(err.lastSeen).toLocaleTimeString()}
                                 </p>
                             </div>
@@ -468,28 +468,28 @@ function QueueStatusCard({ queues }: { queues: Record<string, any> | null | unde
     }
 
     return (
-        <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-5">
-            <h3 className="font-semibold text-stone-900 flex items-center gap-2 mb-4">
-                <Activity className="w-4 h-4 text-blue-500" />
+        <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-6">
+            <h3 className="text-base font-semibold text-stone-900 flex items-center gap-2 mb-4">
+                <Activity className="w-5 h-5 text-blue-500" />
                 Queue Status
             </h3>
 
             <div className="space-y-2">
                 {Object.entries(queues).map(([name, stats]: [string, any]) => (
-                    <div key={name} className="flex items-center justify-between py-2 border-b border-stone-50 last:border-0">
-                        <span className="text-sm font-medium text-stone-700 capitalize">{name}</span>
+                    <div key={name} className="flex items-center justify-between py-3 border-b border-stone-100 last:border-0">
+                        <span className="text-base font-medium text-stone-700 capitalize">{name}</span>
                         {stats.error ? (
-                            <span className="text-xs text-red-500">Error</span>
+                            <span className="text-sm text-red-500">Error</span>
                         ) : (
-                            <div className="flex items-center gap-3 text-xs">
+                            <div className="flex items-center gap-4 text-sm">
                                 <span className="text-stone-400">
-                                    W:<span className="font-mono font-semibold text-stone-600">{stats.waiting}</span>
+                                    W: <span className="font-mono font-semibold text-stone-600">{stats.waiting}</span>
                                 </span>
                                 <span className="text-stone-400">
-                                    A:<span className="font-mono font-semibold text-blue-600">{stats.active}</span>
+                                    A: <span className="font-mono font-semibold text-blue-600">{stats.active}</span>
                                 </span>
                                 <span className="text-stone-400">
-                                    F:<span className={`font-mono font-semibold ${stats.failed > 0 ? 'text-red-600' : 'text-stone-600'}`}>{stats.failed}</span>
+                                    F: <span className={`font-mono font-semibold ${stats.failed > 0 ? 'text-red-600' : 'text-stone-600'}`}>{stats.failed}</span>
                                 </span>
                             </div>
                         )}
@@ -503,13 +503,13 @@ function QueueStatusCard({ queues }: { queues: Record<string, any> | null | unde
 function RecentAlertsCard({ alerts }: { alerts: any[] | null | undefined }) {
     if (!alerts?.length) {
         return (
-            <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-5">
-                <h3 className="font-semibold text-stone-900 flex items-center gap-2 mb-4">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-6">
+                <h3 className="text-base font-semibold text-stone-900 flex items-center gap-2 mb-4">
+                    <AlertTriangle className="w-5 h-5 text-amber-500" />
                     Recent Alerts
                 </h3>
-                <div className="text-center py-4 text-stone-400 text-sm">
-                    <Check className="w-6 h-6 mx-auto mb-1 text-emerald-400" />
+                <div className="text-center py-6 text-stone-400 text-base">
+                    <Check className="w-8 h-8 mx-auto mb-2 text-emerald-400" />
                     No recent alerts
                 </div>
             </div>
@@ -517,23 +517,23 @@ function RecentAlertsCard({ alerts }: { alerts: any[] | null | undefined }) {
     }
 
     return (
-        <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-5">
-            <h3 className="font-semibold text-stone-900 flex items-center gap-2 mb-4">
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
+        <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-6">
+            <h3 className="text-base font-semibold text-stone-900 flex items-center gap-2 mb-4">
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
                 Recent Alerts
             </h3>
 
             <div className="space-y-2 max-h-48 overflow-y-auto">
                 {alerts.map((alert: any) => (
-                    <div key={alert.id} className="flex items-center gap-3 p-2 rounded-lg bg-stone-50">
+                    <div key={alert.id} className="flex items-center gap-3 p-3 rounded-lg bg-stone-50">
                         {alert.resolved ? (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                            <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                         ) : (
-                            <XCircle className={`w-4 h-4 shrink-0 ${alert.severity === 'CRITICAL' ? 'text-red-500' : 'text-amber-500'}`} />
+                            <XCircle className={`w-5 h-5 shrink-0 ${alert.severity === 'CRITICAL' ? 'text-red-500' : 'text-amber-500'}`} />
                         )}
                         <div className="flex-1 min-w-0">
-                            <p className="text-xs text-stone-700 truncate">{alert.message}</p>
-                            <p className="text-[10px] text-stone-400">
+                            <p className="text-sm text-stone-700 truncate">{alert.message}</p>
+                            <p className="text-xs text-stone-400">
                                 {alert.configuration?.name} · {new Date(alert.firedAt).toLocaleTimeString()}
                             </p>
                         </div>
@@ -548,20 +548,20 @@ function ErrorTrendsChart({ trends }: { trends: Array<{ hour: string; count: num
     const maxCount = Math.max(...trends.map(t => t.count), 1);
 
     return (
-        <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-5">
-            <h3 className="font-semibold text-stone-900 flex items-center gap-2 mb-4">
-                <BarChart3 className="w-4 h-4 text-stone-500" />
+        <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-6">
+            <h3 className="text-base font-semibold text-stone-900 flex items-center gap-2 mb-4">
+                <BarChart3 className="w-5 h-5 text-stone-500" />
                 Error Trends
-                <span className="text-xs text-stone-400 font-normal">Last 24 hours</span>
+                <span className="text-sm text-stone-400 font-normal">Last 24 hours</span>
             </h3>
 
-            <div className="flex items-end gap-1 h-32">
+            <div className="flex items-end gap-1 h-40">
                 {trends.map((t, i) => {
                     const height = (t.count / maxCount) * 100;
                     const hourLabel = t.hour.split('T')[1]?.substring(0, 2) || '';
                     return (
                         <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                            <span className="text-[9px] text-stone-400 font-mono">{t.count > 0 ? t.count : ''}</span>
+                            <span className="text-xs text-stone-400 font-mono">{t.count > 0 ? t.count : ''}</span>
                             <div
                                 className={`w-full rounded-t transition-all ${t.count === 0 ? 'bg-stone-100' :
                                     t.count > maxCount * 0.8 ? 'bg-red-400' :
@@ -571,7 +571,7 @@ function ErrorTrendsChart({ trends }: { trends: Array<{ hour: string; count: num
                                 style={{ height: `${Math.max(height, 2)}%` }}
                             />
                             {i % 4 === 0 && (
-                                <span className="text-[9px] text-stone-400">{hourLabel}h</span>
+                                <span className="text-xs text-stone-400">{hourLabel}h</span>
                             )}
                         </div>
                     );
@@ -583,13 +583,13 @@ function ErrorTrendsChart({ trends }: { trends: Array<{ hour: string; count: num
 
 function EmptyCard({ title, icon: Icon }: { title: string; icon: any }) {
     return (
-        <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-5">
-            <h3 className="font-semibold text-stone-900 flex items-center gap-2 mb-4">
-                <Icon className="w-4 h-4 text-stone-400" />
+        <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-6">
+            <h3 className="text-base font-semibold text-stone-900 flex items-center gap-2 mb-4">
+                <Icon className="w-5 h-5 text-stone-400" />
                 {title}
             </h3>
-            <div className="text-center py-6 text-stone-400 text-sm">
-                <Clock className="w-6 h-6 mx-auto mb-2 text-stone-300" />
+            <div className="text-center py-8 text-stone-400 text-base">
+                <Clock className="w-8 h-8 mx-auto mb-2 text-stone-300" />
                 No data available yet
             </div>
         </div>

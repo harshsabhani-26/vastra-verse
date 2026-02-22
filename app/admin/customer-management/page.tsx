@@ -41,8 +41,8 @@ export default function CustomerManagementPage() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-serif text-stone-900">Customer Management</h1>
-                <p className="text-stone-600 mt-2">Manage appointments, contacts, customers, and authentication</p>
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-stone-900">Customer Management</h1>
+                <p className="text-sm text-stone-500 mt-2">Manage appointments, contacts, customers, and authentication</p>
             </div>
 
             {/* Cards Grid */}
@@ -53,20 +53,20 @@ export default function CustomerManagementPage() {
                         <Link
                             key={section.href}
                             href={section.href}
-                            className="group bg-white border border-stone-200 rounded-lg p-6 hover:border-stone-300 hover:shadow-md transition-all duration-200"
+                            className="group bg-white border-2 border-stone-100 rounded-xl p-5 hover:border-stone-200 hover:shadow-lg transition-all duration-200"
                         >
                             <div className="flex items-start gap-4">
-                                <div className={`${section.bgColor} p-3 rounded-lg`}>
+                                <div className={`${section.bgColor} p-3 rounded-lg flex-shrink-0`}>
                                     <Icon className={`${section.color} w-6 h-6`} />
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="text-lg font-semibold text-stone-900 group-hover:text-stone-700 transition-colors">
+                                    <h3 className="text-lg font-bold tracking-tight text-stone-900 group-hover:text-stone-700 transition-colors">
                                         {section.title}
                                     </h3>
-                                    <p className="text-sm text-stone-600 mt-1">
+                                    <p className="text-sm text-stone-500 mt-1.5">
                                         {section.description}
                                     </p>
-                                    <div className="mt-4 inline-flex items-center text-sm font-medium text-stone-900 group-hover:text-stone-700">
+                                    <div className={`mt-4 inline-flex items-center text-sm font-semibold ${section.color} group-hover:underline`}>
                                         Configure →
                                     </div>
                                 </div>

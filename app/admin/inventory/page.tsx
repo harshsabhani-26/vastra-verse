@@ -205,7 +205,7 @@ export default function InventoryPage() {
     if (loading) {
         return (
             <div className="space-y-6">
-                <h2 className="text-3xl font-serif text-[#1C1917]">Inventory Management</h2>
+                <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Inventory Management</h2>
                 <div className="text-center py-12 text-stone-500">Loading inventory...</div>
             </div>
         );
@@ -215,7 +215,7 @@ export default function InventoryPage() {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-serif text-[#1C1917]">Inventory Management</h2>
+                <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Inventory Management</h2>
                 <Button onClick={exportToCSV} variant="outline">
                     <Download className="w-4 h-4 mr-2" />
                     Export CSV
@@ -225,14 +225,14 @@ export default function InventoryPage() {
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <Card>
-                    <CardHeader className="pb-2">
+                    <CardHeader className="pb-3">
                         <CardTitle className="text-sm font-medium text-stone-600">
                             Total Products
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-2">
-                            <Package className="w-4 h-4 text-blue-500" />
+                            <Package className="w-5 h-5 text-blue-500" />
                             <div className="text-2xl font-bold text-[#1C1917]">
                                 {stats.totalProducts}
                             </div>
@@ -241,14 +241,14 @@ export default function InventoryPage() {
                 </Card>
 
                 <Card>
-                    <CardHeader className="pb-2">
+                    <CardHeader className="pb-3">
                         <CardTitle className="text-sm font-medium text-stone-600">
                             Low Stock Items
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-amber-500" />
+                            <AlertTriangle className="w-5 h-5 text-amber-500" />
                             <div className="text-2xl font-bold text-amber-600">
                                 {stats.lowStock}
                             </div>
@@ -257,14 +257,14 @@ export default function InventoryPage() {
                 </Card>
 
                 <Card>
-                    <CardHeader className="pb-2">
+                    <CardHeader className="pb-3">
                         <CardTitle className="text-sm font-medium text-stone-600">
                             Out of Stock
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-2">
-                            <XCircle className="w-4 h-4 text-red-500" />
+                            <XCircle className="w-5 h-5 text-red-500" />
                             <div className="text-2xl font-bold text-red-600">
                                 {stats.outOfStock}
                             </div>
@@ -273,14 +273,14 @@ export default function InventoryPage() {
                 </Card>
 
                 <Card>
-                    <CardHeader className="pb-2">
+                    <CardHeader className="pb-3">
                         <CardTitle className="text-sm font-medium text-stone-600">
                             Total Stock Value
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-green-500" />
+                            <TrendingUp className="w-5 h-5 text-green-500" />
                             <div className="text-2xl font-bold text-green-600">
                                 ₹{stats.totalValue.toLocaleString("en-IN")}
                             </div>
@@ -339,25 +339,25 @@ export default function InventoryPage() {
                         <table className="w-full">
                             <thead className="border-b border-stone-200 bg-stone-50">
                                 <tr>
-                                    <th className="text-left p-4 text-sm font-medium text-stone-600">
+                                    <th className="text-left p-3 text-sm font-medium text-stone-600">
                                         SKU
                                     </th>
-                                    <th className="text-left p-4 text-sm font-medium text-stone-600">
+                                    <th className="text-left p-3 text-sm font-medium text-stone-600">
                                         Product
                                     </th>
-                                    <th className="text-left p-4 text-sm font-medium text-stone-600">
+                                    <th className="text-left p-3 text-sm font-medium text-stone-600">
                                         Category
                                     </th>
-                                    <th className="text-center p-4 text-sm font-medium text-stone-600">
+                                    <th className="text-center p-3 text-sm font-medium text-stone-600">
                                         Stock
                                     </th>
-                                    <th className="text-center p-4 text-sm font-medium text-stone-600">
+                                    <th className="text-center p-3 text-sm font-medium text-stone-600">
                                         Threshold
                                     </th>
-                                    <th className="text-center p-4 text-sm font-medium text-stone-600">
+                                    <th className="text-center p-3 text-sm font-medium text-stone-600">
                                         Status
                                     </th>
-                                    <th className="text-right p-4 text-sm font-medium text-stone-600">
+                                    <th className="text-right p-3 text-sm font-medium text-stone-600">
                                         Actions
                                     </th>
                                 </tr>
@@ -367,32 +367,32 @@ export default function InventoryPage() {
                                     const status = getStockStatus(product);
                                     return (
                                         <tr key={product.id} className="border-b border-stone-100">
-                                            <td className="p-4 text-sm text-stone-600">
+                                            <td className="p-3 text-sm text-stone-600">
                                                 {product.sku || product.id.slice(0, 8).toUpperCase()}
                                             </td>
-                                            <td className="p-4 text-sm font-medium text-stone-900">
+                                            <td className="p-3 text-sm font-medium text-stone-900">
                                                 {product.name}
                                             </td>
-                                            <td className="p-4 text-sm text-stone-600">
+                                            <td className="p-3 text-sm text-stone-600">
                                                 {product.category.name}
                                             </td>
-                                            <td className="p-4 text-center text-sm font-semibold text-stone-900">
+                                            <td className="p-3 text-center text-sm font-semibold text-stone-900">
                                                 {product.stock}
                                             </td>
-                                            <td className="p-4 text-center text-sm text-stone-600">
+                                            <td className="p-3 text-center text-sm text-stone-600">
                                                 {product.lowStockThreshold || 10}
                                             </td>
-                                            <td className="p-4 text-center">
+                                            <td className="p-3 text-center">
                                                 <span
-                                                    className={`inline-block px-2 py-1 rounded text-xs font-medium ${status.color}`}
+                                                    className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${status.color}`}
                                                 >
                                                     {status.label}
                                                 </span>
                                             </td>
-                                            <td className="p-4 text-right">
+                                            <td className="p-3 text-right">
                                                 <Button
-                                                    size="sm"
                                                     variant="outline"
+                                                    size="sm"
                                                     onClick={() => openAdjustModal(product)}
                                                 >
                                                     Adjust Stock

@@ -332,7 +332,7 @@ M & H Team`;
                         ) : (
                             orders.map((order) => (
                                 <TableRow key={order.id}>
-                                    <TableCell className="font-medium text-[#1C1917] font-mono text-xs">
+                                    <TableCell className="font-medium text-[#1C1917] font-mono text-sm">
                                         {order.id.slice(0, 8)}...
                                     </TableCell>
                                     <TableCell>
@@ -340,12 +340,12 @@ M & H Team`;
                                             <div className="font-medium">
                                                 {order.customerName || order.user?.name || "Guest"}
                                             </div>
-                                            <div className="text-xs text-stone-500">
+                                            <div className="text-sm text-stone-500">
                                                 {order.user?.email}
                                             </div>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-sm">
+                                    <TableCell className="text-base">
                                         {formatDate(order.createdAt)}
                                     </TableCell>
                                     <TableCell>{order.items.length}</TableCell>
@@ -361,7 +361,7 @@ M & H Team`;
                                             disabled={updatingOrderId === order.id}
                                         >
                                             <SelectTrigger
-                                                className={`w-[120px] h-8 text-xs ${PAYMENT_STATUS_COLORS[order.paymentStatus]} border-0`}
+                                                className={`w-[120px] h-8 text-sm ${PAYMENT_STATUS_COLORS[order.paymentStatus]} border-0`}
                                             >
                                                 {updatingOrderId === order.id ? (
                                                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -374,7 +374,7 @@ M & H Team`;
                                                     <SelectItem
                                                         key={status}
                                                         value={status}
-                                                        className="hover:bg-stone-50 cursor-pointer py-2 text-xs focus:bg-stone-100"
+                                                        className="hover:bg-stone-50 cursor-pointer py-2 text-sm focus:bg-stone-100"
                                                     >
                                                         {status}
                                                     </SelectItem>
@@ -391,7 +391,7 @@ M & H Team`;
                                             disabled={updatingOrderId === order.id}
                                         >
                                             <SelectTrigger
-                                                className={`w-[130px] h-8 text-xs ${STATUS_COLORS[order.status]} border-0`}
+                                                className={`w-[130px] h-8 text-sm ${STATUS_COLORS[order.status]} border-0`}
                                             >
                                                 {updatingOrderId === order.id ? (
                                                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -404,7 +404,7 @@ M & H Team`;
                                                     <SelectItem
                                                         key={status}
                                                         value={status}
-                                                        className="hover:bg-stone-50 cursor-pointer py-2 text-xs focus:bg-stone-100"
+                                                        className="hover:bg-stone-50 cursor-pointer py-2 text-sm focus:bg-stone-100"
                                                     >
                                                         {status}
                                                     </SelectItem>

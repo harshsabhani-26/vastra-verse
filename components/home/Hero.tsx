@@ -44,9 +44,10 @@ interface HeroProps {
         imageUrl: string;
         videoUrl?: string | null;
     }>;
+    heroBg?: string | null;
 }
 
-export function Hero({ banners }: HeroProps) {
+export function Hero({ banners, heroBg }: HeroProps) {
     // Use database banners or fall back to default
     const slides = banners && banners.length > 0
         ? banners.map((b, idx) => ({
@@ -67,107 +68,130 @@ export function Hero({ banners }: HeroProps) {
 
     const [currentSlide, setCurrentSlide] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
+    const [direction, setDirection] = useState(0);
 
     // Auto-play with pause on hover
     useEffect(() => {
         if (isPaused || slides.length <= 1) return;
 
         const timer = setInterval(() => {
+            setDirection(1);
             setCurrentSlide((prev) => (prev + 1) % slides.length);
         }, 5000);
 
         return () => clearInterval(timer);
     }, [slides.length, isPaused]);
 
-    const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
-    const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    const nextSlide = () => {
+        setDirection(1);
+        setCurrentSlide((prev) => (prev + 1) % slides.length);
+    };
+    const prevSlide = () => {
+        setDirection(-1);
+        setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+    };
 
     return (
         <section
-            className="relative w-full h-screen overflow-hidden bg-background"
+            className="relative w-full pt-[08px] md:pt-[10px] lg:pt-[15px] pb-[20px] md:pb-[25px] lg:pb-[35px] px-8 md:px-[80px] lg:px-[142px] xl:px-[202px] 2xl:px-[262px] bg-white overflow-hidden"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
         >
-            {/* Background */}
-            <AnimatePresence initial={false} mode="wait">
-                <motion.div
-                    key={currentSlide}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 1.0, ease: "easeInOut" }}
-                    className="absolute inset-0"
-                >
-                    {slides[currentSlide].mediaType === "VIDEO" && slides[currentSlide].videoUrl ? (
-                        <>
-                            <video
-                                className="absolute inset-0 w-full h-full object-cover"
-                                src={slides[currentSlide].videoUrl}
-                                autoPlay
-                                loop
-                                muted
-                                playsInline
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary/50 via-primary/30 to-primary/20" />
-                        </>
-                    ) : (
-                        <>
-                            <div className="absolute inset-0">
-                                <Image
-                                    src={slides[currentSlide].image}
-                                    alt={slides[currentSlide].title || "Hero Banner"}
-                                    fill
-                                    priority={currentSlide === 0}
-                                    className="object-cover"
-                                    sizes="100vw"
+            {/* SVG Vector Background with Medium Opacity */}
+            {heroBg && (
+                <div
+                    className="absolute inset-0 z-0 pointer-events-none"
+                    style={{
+                        backgroundImage: `url("${heroBg}")`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundRepeat: 'no-repeat',
+                        opacity: 0.15
+                    }}
+                ></div>
+            )}
+
+            <div className="relative w-full max-w-[2000px] mx-auto aspect-[16/9] md:aspect-[2.15/1] lg:aspect-[2.65/1] xl:aspect-[3.05/1] overflow-hidden rounded-md shadow-[0_8px_40px_rgba(0,0,0,0.12)] bg-black z-10">
+                {/* Background */}
+                <AnimatePresence initial={false}>
+                    <motion.div
+                        key={currentSlide}
+                        initial={{ x: "100%" }}
+                        animate={{ x: 0 }}
+                        exit={{ x: "-100%" }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        className="absolute inset-0 w-full h-full z-[1]"
+                    >
+                        {slides[currentSlide].mediaType === "VIDEO" && slides[currentSlide].videoUrl ? (
+                            <>
+                                <video
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                    src={slides[currentSlide].videoUrl}
+                                    autoPlay
+                                    loop
+                                    muted
+                                    playsInline
                                 />
-                            </div>
-                            {/* Lighter, warmer overlay for Light Luxury feel */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-primary/60 via-primary/20 to-transparent" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent opacity-80" />
-                        </>
-                    )}
-                </motion.div>
-            </AnimatePresence>
+                            </>
+                        ) : (
+                            <>
+                                <div className="absolute inset-0">
+                                    <Image
+                                        src={slides[currentSlide].image}
+                                        alt={slides[currentSlide].title || "Hero Banner"}
+                                        fill
+                                        priority={currentSlide === 0}
+                                        className="object-cover"
+                                        sizes="100vw"
+                                    />
+                                </div>
+                            </>
+                        )}
+                    </motion.div>
+                </AnimatePresence>
 
 
-            {/* Clickable Banner Background */}
-            <Link href={slides[currentSlide].buttonLink} className="absolute inset-0 z-10">
-                <span className="sr-only">View {slides[currentSlide].buttonLink}</span>
-            </Link>
+                {/* Clickable Banner Background */}
+                <Link href={slides[currentSlide].buttonLink} className="absolute inset-0 z-10">
+                    <span className="sr-only">View {slides[currentSlide].buttonLink}</span>
+                </Link>
 
-            {/* Navigation - Only show when multiple slides */}
+                {/* Navigation Arrows - Only show when multiple slides */}
+                {slides.length > 1 && (
+                    <>
+                        <button
+                            onClick={prevSlide}
+                            className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white rounded-full shadow-[0_2px_15px_rgba(0,0,0,0.15)] text-black hover:scale-105 transition-transform duration-300 z-20 group"
+                            aria-label="Previous slide"
+                        >
+                            <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 stroke-[2] ml-[-2px]" />
+                        </button>
+                        <button
+                            onClick={nextSlide}
+                            className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white rounded-full shadow-[0_2px_15px_rgba(0,0,0,0.15)] text-black hover:scale-105 transition-transform duration-300 z-20 group"
+                            aria-label="Next slide"
+                        >
+                            <ChevronRight className="w-5 h-5 md:w-6 md:h-6 stroke-[2] mr-[-2px]" />
+                        </button>
+                    </>
+                )}
+            </div>
+
+            {/* Navigation Dots - Below the banner container */}
             {slides.length > 1 && (
-                <>
-                    <button
-                        onClick={prevSlide}
-                        className="absolute left-6 lg:left-8 top-1/2 -translate-y-1/2 text-white/60 hover:text-white/95 transition-all duration-300 z-20 group"
-                        aria-label="Previous slide"
-                    >
-                        <ChevronLeft className="w-8 h-8 lg:w-10 lg:h-10 stroke-[1.5]" />
-                    </button>
-                    <button
-                        onClick={nextSlide}
-                        className="absolute right-6 lg:right-8 top-1/2 -translate-y-1/2 text-white/60 hover:text-white/95 transition-all duration-300 z-20 group"
-                        aria-label="Next slide"
-                    >
-                        <ChevronRight className="w-8 h-8 lg:w-10 lg:h-10 stroke-[1.5]" />
-                    </button>
-
-                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-                        {slides.map((_, index) => (
-                            <button
-                                key={index}
-                                onClick={() => setCurrentSlide(index)}
-                                className={`h-1.5 rounded-full transition-all duration-500 ${index === currentSlide
-                                    ? 'w-8 bg-white/90'
-                                    : 'w-1.5 bg-white/30 hover:bg-white/50'
-                                    }`}
-                                aria-label={`Go to slide ${index + 1}`}
-                            />
-                        ))}
-                    </div>
-                </>
+                <div className="flex items-center justify-center gap-2 mt-5">
+                    {slides.map((_, index) => (
+                        <button
+                            key={index}
+                            onClick={() => setCurrentSlide(index)}
+                            className={`rounded-full transition-all duration-300 ${index === currentSlide
+                                ? 'bg-[#333333] w-[9px] h-[9px]'
+                                : 'bg-transparent border border-[#7a7a7a] w-[8px] h-[8px] hover:bg-[#a0a0a0]'
+                                }`}
+                            aria-label={`Go to slide ${index + 1}`}
+                        />
+                    ))}
+                </div>
             )}
         </section>
     );

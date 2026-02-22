@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { cache, CACHE_KEYS, CACHE_TTL } from "@/lib/cache";
@@ -62,19 +63,24 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { name, description, image } = body;
+        const { name, slug, description, image, icon, isFeatured, isActive } = body;
 
         const category = await prisma.category.create({
             data: {
                 name,
                 description,
                 image,
-                slug: generateSlug(name)
+                icon: icon || null,
+                isActive: isActive ?? true,
+                isFeatured: isFeatured ?? false,
+                slug: slug || generateSlug(name)
             }
         });
 
         // Invalidate category cache after creation
         await invalidateCategories();
+        // Also bust Next.js unstable_cache (used on homepage/shop/layout)
+        revalidateTag('categories', {} as any);
 
         return NextResponse.json(category);
     } catch (error: any) {

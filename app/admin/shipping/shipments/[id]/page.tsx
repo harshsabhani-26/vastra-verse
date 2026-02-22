@@ -77,7 +77,7 @@ export default async function ShipmentDetailPage({ params }: { params: { id: str
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-serif text-[#1C1917]">Shipment Details</h2>
+                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Shipment Details</h2>
                     <p className="text-stone-600 mt-1">AWB: {shipment.awbNumber || "Not assigned"}</p>
                 </div>
                 <div className="flex gap-2">

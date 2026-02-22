@@ -20,7 +20,7 @@ export default async function CourierPartnersPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h2 className="text-3xl font-serif text-[#1C1917]">Courier Partners</h2>
+                <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Courier Partners</h2>
                 <p className="text-stone-600 mt-1">
                     Manage your shipping partners and their configurations
                 </p>

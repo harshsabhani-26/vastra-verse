@@ -125,7 +125,7 @@ export default function DatabasePage() {
     if (loading) {
         return (
             <div className="space-y-6">
-                <h2 className="text-3xl font-serif text-[#1C1917]">Database Management</h2>
+                <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Database Management</h2>
                 <div className="flex items-center justify-center py-20">
                     <Loader2 className="w-8 h-8 animate-spin text-stone-400" />
                 </div>
@@ -138,7 +138,7 @@ export default function DatabasePage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-serif text-[#1C1917]">Database Management</h2>
+                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Database Management</h2>
                     <p className="text-sm text-stone-500 mt-1">
                         Monitor migrations, seeds, and database health
                     </p>

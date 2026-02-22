@@ -35,10 +35,10 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Validate count (3-8 images)
-        if (files.length < 3 || files.length > 8) {
+        // Validate max count per request (min count enforced at product save time)
+        if (files.length > 8) {
             return NextResponse.json(
-                { error: "Please upload between 3 and 8 images" },
+                { error: "Maximum 8 images allowed per upload" },
                 { status: 400 }
             );
         }

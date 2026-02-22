@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
+import { CACHE_TAGS } from "@/lib/cache/cache-tags";
 
 /**
  * Pure data access layer for banner queries
@@ -35,7 +36,7 @@ export const getActiveHeroBanners = unstable_cache(
     ['hero-banners'],
     {
         revalidate: 3600,
-        tags: ['banners']
+        tags: [CACHE_TAGS.BANNERS]
     }
 );
 
@@ -63,7 +64,7 @@ export const getActiveMidPageBanners = unstable_cache(
     ['mid-page-banners'],
     {
         revalidate: 3600,
-        tags: ['banners']
+        tags: [CACHE_TAGS.BANNERS]
     }
 );
 
@@ -91,6 +92,6 @@ export const getActiveBottomPageBanners = unstable_cache(
     ['bottom-page-banners'],
     {
         revalidate: 3600,
-        tags: ['banners']
+        tags: [CACHE_TAGS.BANNERS]
     }
 );

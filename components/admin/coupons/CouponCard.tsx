@@ -133,11 +133,10 @@ export function CouponCard({ coupon }: CouponCardProps) {
                             </code>
                             <Button
                                 variant="ghost"
-                                size="sm"
+                                size="icon"
                                 onClick={handleCopyCode}
-                                className="h-8 w-8 p-0"
                             >
-                                <Copy className="h-3.5 w-3.5" />
+                                <Copy className="h-5 w-5 text-blue-600" />
                             </Button>
                         </div>
                         {coupon.description && (
@@ -147,8 +146,8 @@ export function CouponCard({ coupon }: CouponCardProps) {
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                <MoreVertical className="h-4 w-4" />
+                            <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-5 w-5" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -207,8 +206,8 @@ export function CouponCard({ coupon }: CouponCardProps) {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="space-y-1">
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                            <Users className="h-3.5 w-3.5" />
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Users className="h-4 w-4" />
                             <span>Uses</span>
                         </div>
                         <p className="font-semibold">
@@ -218,24 +217,24 @@ export function CouponCard({ coupon }: CouponCardProps) {
                     </div>
 
                     <div className="space-y-1">
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                            <TrendingUp className="h-3.5 w-3.5" />
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <TrendingUp className="h-4 w-4" />
                             <span>Revenue</span>
                         </div>
                         <p className="font-semibold">₹{parseFloat(coupon.totalRevenue).toFixed(0)}</p>
                     </div>
 
                     <div className="space-y-1">
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                            <DollarSign className="h-3.5 w-3.5" />
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <DollarSign className="h-4 w-4" />
                             <span>Discount</span>
                         </div>
                         <p className="font-semibold">₹{parseFloat(coupon.totalDiscount).toFixed(0)}</p>
                     </div>
 
                     <div className="space-y-1">
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                            <Calendar className="h-3.5 w-3.5" />
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
                             <span>Ends</span>
                         </div>
                         <p className="font-semibold">
@@ -251,7 +250,7 @@ export function CouponCard({ coupon }: CouponCardProps) {
                 {/* Usage Progress */}
                 {coupon.maxUses && (
                     <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center justify-between text-sm">
                             <span className="text-muted-foreground">Usage Limit</span>
                             <span className="font-medium">{usagePercentage.toFixed(0)}%</span>
                         </div>
@@ -261,7 +260,7 @@ export function CouponCard({ coupon }: CouponCardProps) {
 
                 {/* Additional Info */}
                 {coupon.minOrderValue && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                         Min. order: ₹{coupon.minOrderValue}
                     </p>
                 )}

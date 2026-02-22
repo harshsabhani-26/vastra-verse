@@ -25,9 +25,9 @@
 
 @layer base {
     body {
-        @apply bg-background text-text-main font-sans;
-        line-height: 1.6;
-        /* Increased line-height as requested */
+        @apply bg-[#F5F5F5] text-[#172026] font-sans;
+        line-height: 1.5;
+        /* Matches target body line-height */
     }
 
     h1,
@@ -59,19 +59,19 @@
         @apply px-8 py-4 rounded-sm;
         /* Sharper corners for modern feel */
         @apply transition-all duration-300 ease-out;
-        @apply hover:bg-primary-light hover:shadow-elevated hover:-translate-y-0.5;
+        @apply hover:opacity-90 hover:shadow-md hover:-translate-y-0.5;
         @apply focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2;
     }
 
     /* Luxury Button - Secondary / CTA (Muted Gold) */
     .btn-luxury-secondary {
         @apply inline-flex items-center justify-center;
-        @apply bg-secondary text-primary-dark;
+        @apply bg-[#FAF0DB] text-primary;
         @apply text-sm uppercase tracking-[0.2em] font-medium;
         @apply px-8 py-4 rounded-sm;
         @apply transition-all duration-300 ease-out;
-        @apply hover:bg-secondary-light hover:shadow-elevated hover:-translate-y-0.5;
-        @apply focus:outline-none focus:ring-2 focus:ring-secondary/50 focus:ring-offset-2;
+        @apply hover:bg-[#EAE0CB] hover:shadow-md hover:-translate-y-0.5;
+        @apply focus:outline-none focus:ring-2 focus:ring-[#FAF0DB]/50 focus:ring-offset-2;
     }
 
     /* Luxury Button - Outline */
@@ -142,6 +142,11 @@
         line-height: 1.8;
         letter-spacing: 0.01em;
     }
+
+    .max-w-site {
+        max-width: 1440px;
+    }
+
 
     /* Luxury Shadows - Enhanced */
     .shadow-luxury {

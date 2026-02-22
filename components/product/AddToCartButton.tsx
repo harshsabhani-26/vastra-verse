@@ -16,15 +16,19 @@ interface AddToCartButtonProps {
 export function AddToCartButton({ product }: AddToCartButtonProps) {
     const addItem = useCartStore(state => state.addItem);
 
-    const handleAddToCart = () => {
-        addItem({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            image: product.image,
-            quantity: 1
-        });
-        toast.success("Added to bag");
+    const handleAddToCart = async () => {
+        try {
+            await addItem({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                image: product.image,
+                quantity: 1
+            });
+            toast.success("Added to bag");
+        } catch (error: any) {
+            toast.error(error?.message || "Failed to add to cart");
+        }
     };
 
     return (

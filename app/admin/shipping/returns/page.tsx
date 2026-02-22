@@ -100,7 +100,7 @@ export default async function ReturnsPage() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h2 className="text-3xl font-serif text-[#1C1917]">Returns Management</h2>
+                <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Returns Management</h2>
                 <p className="text-stone-600 mt-1">
                     Manage reverse logistics, return pickups, and refund processing
                 </p>

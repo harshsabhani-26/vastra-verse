@@ -1,8 +1,9 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { revalidatePath, unstable_cache } from "next/cache";
 import { auth } from "@/auth";
+import { CACHE_TAGS, revalidateBanners } from "@/lib/cache/cache-tags";
 
 
 export interface HeroBanner {
@@ -62,7 +63,7 @@ export const getActiveBanners = unstable_cache(
     ['active-hero-banners'],
     {
         revalidate: 60, // Cache for 60 seconds
-        tags: ['hero-banners']
+        tags: [CACHE_TAGS.BANNERS]
     }
 );
 
@@ -145,7 +146,7 @@ export async function createBanner(data: Omit<HeroBanner, 'id' | 'createdAt' | '
         });
         revalidatePath('/admin/banners');
         revalidatePath('/');
-        revalidateTag('hero-banners', {} as any);
+        await revalidateBanners();
         return { success: true, banner };
     } catch (error) {
         console.error("Failed to create banner:", error);
@@ -168,7 +169,7 @@ export async function updateBanner(id: string, data: Partial<Omit<HeroBanner, 'i
         });
         revalidatePath('/admin/banners');
         revalidatePath('/');
-        revalidateTag('hero-banners', {} as any);
+        await revalidateBanners();
         return { success: true, banner };
     } catch (error) {
         console.error("Failed to update banner:", error);
@@ -190,7 +191,7 @@ export async function deleteBanner(id: string) {
         });
         revalidatePath('/admin/banners');
         revalidatePath('/');
-        revalidateTag('hero-banners', {} as any);
+        await revalidateBanners();
         return { success: true };
     } catch (error) {
         console.error("Failed to delete banner:", error);
@@ -213,7 +214,7 @@ export async function toggleBannerStatus(id: string, isActive: boolean) {
         });
         revalidatePath('/admin/banners');
         revalidatePath('/');
-        revalidateTag('hero-banners', {} as any);
+        await revalidateBanners();
         return { success: true };
     } catch (error) {
         console.error("Failed to toggle banner status:", error);
@@ -240,7 +241,7 @@ export async function reorderBanners(bannerIds: string[]) {
         );
         revalidatePath('/admin/banners');
         revalidatePath('/');
-        revalidateTag('hero-banners', {} as any);
+        await revalidateBanners();
         return { success: true };
     } catch (error) {
         console.error("Failed to reorder banners:", error);

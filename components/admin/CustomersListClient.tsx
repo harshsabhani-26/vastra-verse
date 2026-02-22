@@ -281,7 +281,7 @@ export default function CustomersListClient({
                                     <TableCell>
                                         {customer.phone}
                                         {customer.phoneVerified && (
-                                            <span className="ml-2 text-xs text-emerald-600">✓</span>
+                                            <span className="ml-2 text-sm text-emerald-600">✓</span>
                                         )}
                                     </TableCell>
                                     <TableCell>{customer.orderCount}</TableCell>
@@ -305,12 +305,12 @@ export default function CustomersListClient({
                                     </TableCell>
                                     <TableCell>
                                         {customer.isBlocked ? (
-                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs">
+                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-700 text-sm">
                                                 <Ban className="h-3 w-3" />
                                                 Blocked
                                             </span>
                                         ) : (
-                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs">
+                                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-sm">
                                                 Active
                                             </span>
                                         )}

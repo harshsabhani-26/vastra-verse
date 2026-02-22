@@ -46,7 +46,7 @@ export default async function CouponsPage({
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-serif text-[#1C1917]">
+                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">
                         Coupons & Discounts
                     </h2>
                     <p className="text-stone-600 mt-1">

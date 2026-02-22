@@ -74,8 +74,8 @@ export default function HelpPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-serif text-[#1C1917]">Help & Support</h2>
-                    <p className="text-stone-600 mt-2">
+                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Help & Support</h2>
+                    <p className="text-sm text-stone-500 mt-1">
                         Everything you need to manage your store effectively
                     </p>
                 </div>
@@ -83,20 +83,20 @@ export default function HelpPage() {
 
             {/* Quick Links Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                    <CardContent className="pt-6">
-                        <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                                <Mail className="w-6 h-6 text-blue-600" />
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 border-stone-100 hover:border-blue-100 rounded-xl">
+                    <CardContent className="p-5">
+                        <div className="flex items-start gap-3.5">
+                            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <Mail className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-[#1C1917] mb-1">Email Support</h3>
-                                <p className="text-sm text-stone-600 mb-2">
+                                <h3 className="text-base font-semibold text-[#1C1917] mb-0.5">Email Support</h3>
+                                <p className="text-xs text-stone-500 mb-2">
                                     Get help via email
                                 </p>
                                 <a
                                     href="mailto:care@vastraverse.com"
-                                    className="text-sm text-blue-600 hover:underline"
+                                    className="text-sm text-blue-600 hover:underline font-medium"
                                 >
                                     care@vastraverse.com
                                 </a>
@@ -105,20 +105,20 @@ export default function HelpPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                    <CardContent className="pt-6">
-                        <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-                                <Phone className="w-6 h-6 text-green-600" />
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 border-stone-100 hover:border-green-100 rounded-xl">
+                    <CardContent className="p-5">
+                        <div className="flex items-start gap-3.5">
+                            <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <Phone className="w-5 h-5 text-green-600" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-[#1C1917] mb-1">Phone Support</h3>
-                                <p className="text-sm text-stone-600 mb-2">
+                                <h3 className="text-base font-semibold text-[#1C1917] mb-0.5">Phone Support</h3>
+                                <p className="text-xs text-stone-500 mb-2">
                                     Call us during business hours
                                 </p>
                                 <a
                                     href="tel:+919999313366"
-                                    className="text-sm text-green-600 hover:underline"
+                                    className="text-sm text-green-600 hover:underline font-medium"
                                 >
                                     +91 99993 13366
                                 </a>
@@ -127,25 +127,25 @@ export default function HelpPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-                    <CardContent className="pt-6">
-                        <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center">
-                                <MessageCircle className="w-6 h-6 text-emerald-600" />
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 border-stone-100 hover:border-emerald-100 rounded-xl">
+                    <CardContent className="p-5">
+                        <div className="flex items-start gap-3.5">
+                            <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <MessageCircle className="w-5 h-5 text-emerald-600" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-[#1C1917] mb-1">WhatsApp</h3>
-                                <p className="text-sm text-stone-600 mb-2">
+                                <h3 className="text-base font-semibold text-[#1C1917] mb-0.5">WhatsApp</h3>
+                                <p className="text-xs text-stone-500 mb-2">
                                     Quick replies on WhatsApp
                                 </p>
                                 <a
                                     href="https://wa.me/919999313366"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-sm text-emerald-600 hover:underline flex items-center gap-1"
+                                    className="text-sm text-emerald-600 hover:underline flex items-center gap-1 font-medium"
                                 >
                                     Chat Now
-                                    <ExternalLink className="w-3 h-3" />
+                                    <ExternalLink className="w-4 h-4" />
                                 </a>
                             </div>
                         </div>
@@ -155,11 +155,11 @@ export default function HelpPage() {
 
             {/* Business Hours */}
             <Card>
-                <CardContent className="pt-6">
-                    <div className="flex items-center gap-3 text-sm text-stone-600">
-                        <span className="font-medium text-[#1C1917]">Business Hours:</span>
+                <CardContent className="p-4 text-xs">
+                    <div className="flex md:flex-row flex-col items-center gap-2 md:gap-3 text-stone-600">
+                        <span className="font-semibold text-[#1C1917]">Business Hours:</span>
                         <span>Monday - Saturday: 10:00 AM - 7:00 PM IST</span>
-                        <span className="text-stone-400">|</span>
+                        <span className="hidden md:inline text-stone-400">|</span>
                         <span>Sunday: Closed</span>
                     </div>
                 </CardContent>
@@ -169,27 +169,27 @@ export default function HelpPage() {
             <div className="flex gap-2 border-b border-stone-200">
                 <button
                     onClick={() => setActiveTab("getting-started")}
-                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === "getting-started"
+                    className={`px-5 py-3 text-base font-medium transition-colors border-b-2 ${activeTab === "getting-started"
                         ? "border-[#1C1917] text-[#1C1917]"
-                        : "border-transparent text-stone-600 hover:text-[#1C1917]"
+                        : "border-transparent text-stone-500 hover:text-[#1C1917]"
                         }`}
                 >
                     Getting Started
                 </button>
                 <button
                     onClick={() => setActiveTab("features")}
-                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === "features"
+                    className={`px-5 py-3 text-base font-medium transition-colors border-b-2 ${activeTab === "features"
                         ? "border-[#1C1917] text-[#1C1917]"
-                        : "border-transparent text-stone-600 hover:text-[#1C1917]"
+                        : "border-transparent text-stone-500 hover:text-[#1C1917]"
                         }`}
                 >
                     Features
                 </button>
                 <button
                     onClick={() => setActiveTab("faq")}
-                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${activeTab === "faq"
+                    className={`px-5 py-3 text-base font-medium transition-colors border-b-2 ${activeTab === "faq"
                         ? "border-[#1C1917] text-[#1C1917]"
-                        : "border-transparent text-stone-600 hover:text-[#1C1917]"
+                        : "border-transparent text-stone-500 hover:text-[#1C1917]"
                         }`}
                 >
                     FAQs
@@ -204,18 +204,18 @@ export default function HelpPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div>
-                            <h3 className="font-semibold text-[#1C1917] mb-2">1. Dashboard Overview</h3>
-                            <p className="text-sm text-stone-600">
+                            <h3 className="text-lg font-semibold text-[#1C1917] mb-2">1. Dashboard Overview</h3>
+                            <p className="text-base text-stone-600">
                                 The dashboard provides a quick overview of your store's performance with key metrics like total revenue, orders, customers, and recent activity.
                             </p>
                         </div>
 
                         <div>
-                            <h3 className="font-semibold text-[#1C1917] mb-2">2. Adding Your First Product</h3>
-                            <p className="text-sm text-stone-600 mb-2">
+                            <h3 className="text-lg font-semibold text-[#1C1917] mb-2">2. Adding Your First Product</h3>
+                            <p className="text-base text-stone-600 mb-2">
                                 Navigate to Products → Add Product. Fill in the essential details:
                             </p>
-                            <ul className="text-sm text-stone-600 list-disc list-inside space-y-1">
+                            <ul className="text-base text-stone-600 list-disc list-inside space-y-1">
                                 <li>Product name and description</li>
                                 <li>Price and discount (if applicable)</li>
                                 <li>Category selection</li>
@@ -226,15 +226,15 @@ export default function HelpPage() {
                         </div>
 
                         <div>
-                            <h3 className="font-semibold text-[#1C1917] mb-2">3. Managing Orders</h3>
-                            <p className="text-sm text-stone-600">
+                            <h3 className="text-lg font-semibold text-[#1C1917] mb-2">3. Managing Orders</h3>
+                            <p className="text-base text-stone-600">
                                 Orders appear automatically when customers complete checkout. Update order status as you fulfill them: Confirmed → Packed → Shipped → Delivered.
                             </p>
                         </div>
 
                         <div>
-                            <h3 className="font-semibold text-[#1C1917] mb-2">4. Configuring Settings</h3>
-                            <p className="text-sm text-stone-600">
+                            <h3 className="text-lg font-semibold text-[#1C1917] mb-2">4. Configuring Settings</h3>
+                            <p className="text-base text-stone-600">
                                 Visit Settings to customize store information, tax settings, email configuration, and system preferences.
                             </p>
                         </div>
@@ -338,19 +338,19 @@ export default function HelpPage() {
                                 <div key={index} className="border-b border-stone-200 last:border-0">
                                     <button
                                         onClick={() => setOpenFAQ(openFAQ === index ? null : index)}
-                                        className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-stone-50 transition-colors"
+                                        className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-stone-50 transition-colors"
                                     >
-                                        <span className="font-medium text-[#1C1917]">
+                                        <span className="text-base font-semibold text-[#1C1917]">
                                             {faq.question}
                                         </span>
                                         {openFAQ === index ? (
-                                            <ChevronUp className="w-5 h-5 text-stone-400" />
+                                            <ChevronUp className="w-5 h-5 text-stone-500 flex-shrink-0" />
                                         ) : (
-                                            <ChevronDown className="w-5 h-5 text-stone-400" />
+                                            <ChevronDown className="w-5 h-5 text-stone-500 flex-shrink-0" />
                                         )}
                                     </button>
                                     {openFAQ === index && (
-                                        <div className="px-6 pb-4 text-sm text-stone-600">
+                                        <div className="px-6 pb-5 text-base text-stone-600">
                                             {faq.answer}
                                         </div>
                                     )}

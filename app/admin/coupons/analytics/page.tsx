@@ -71,7 +71,7 @@ export default function CouponAnalyticsPage() {
                             <ArrowLeft className="h-4 w-4" />
                         </Link>
                     </Button>
-                    <h2 className="text-3xl font-serif text-[#1C1917]">
+                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">
                         Coupon Analytics
                     </h2>
                 </div>
@@ -91,7 +91,7 @@ export default function CouponAnalyticsPage() {
                         </Link>
                     </Button>
                     <div>
-                        <h2 className="text-3xl font-serif text-[#1C1917]">
+                        <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">
                             Coupon Analytics
                         </h2>
                         <p className="text-stone-600 mt-1">

@@ -225,7 +225,7 @@ M & H Team`;
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-3xl font-serif text-[#1C1917]">Order Details</h1>
+                        <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Order Details</h1>
                         <p className="text-sm text-stone-500 mt-1">Order ID: {order.id}</p>
                     </div>
                 </div>

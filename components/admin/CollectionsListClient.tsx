@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, GripVertical, Edit2, Trash2, Eye, EyeOff, Image as ImageIcon } from "lucide-react";
+import { Plus, GripVertical, Edit2, Trash2, Eye, EyeOff, Image as ImageIcon, FolderTree, Layers } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -23,6 +23,7 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { createMainCategory, toggleMainCategoryActive, deleteMainCategory } from "@/app/admin/categories/main-category-actions";
 
 interface Category {
     id: string;
@@ -39,8 +40,16 @@ interface Category {
     };
 }
 
+interface MainCategory {
+    id: string;
+    name: string;
+    href: string;
+    isActive: boolean;
+}
+
 interface CollectionsListClientProps {
     initialCategories: Category[];
+    initialMainCategories: MainCategory[];
 }
 
 function SortableCategory({ category, onDelete, onToggleActive, onToggleFeatured }: {
@@ -81,18 +90,18 @@ function SortableCategory({ category, onDelete, onToggleActive, onToggleFeatured
                 </button>
 
                 {/* Image */}
-                <div className="h-16 w-16 bg-stone-100 rounded-lg overflow-hidden relative flex-shrink-0">
+                <div className="h-14 w-14 bg-stone-100 rounded-lg overflow-hidden relative flex-shrink-0">
                     {category.image ? (
                         <Image
                             src={category.image}
                             alt={category.name}
                             fill
                             className="object-cover"
-                            sizes="64px"
+                            sizes="56px"
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                            <ImageIcon className="h-8 w-8 text-stone-300" />
+                            <ImageIcon className="h-6 w-6 text-stone-300" />
                         </div>
                     )}
                 </div>
@@ -102,12 +111,12 @@ function SortableCategory({ category, onDelete, onToggleActive, onToggleFeatured
                     <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-semibold text-stone-900">{category.name}</h3>
                         {category.isFeatured && (
-                            <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded">
+                            <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-sm font-medium rounded">
                                 Featured
                             </span>
                         )}
                         {!category.isActive && (
-                            <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded">
+                            <span className="px-2 py-0.5 bg-red-100 text-red-700 text-sm font-medium rounded">
                                 Inactive
                             </span>
                         )}
@@ -116,7 +125,7 @@ function SortableCategory({ category, onDelete, onToggleActive, onToggleFeatured
                     {category.description && (
                         <p className="text-sm text-stone-600 truncate mt-1">{category.description}</p>
                     )}
-                    <p className="text-xs text-stone-400 mt-1">
+                    <p className="text-sm text-stone-400 mt-1">
                         {category._count?.products || 0} products
                     </p>
                 </div>
@@ -134,28 +143,28 @@ function SortableCategory({ category, onDelete, onToggleActive, onToggleFeatured
                     </Button>
                     <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         onClick={() => onToggleActive(category.id, !category.isActive)}
                         title={category.isActive ? "Deactivate" : "Activate"}
                     >
                         {category.isActive ? (
-                            <Eye className="h-4 w-4 text-green-600" />
+                            <Eye className="h-6 w-6 text-green-600" />
                         ) : (
-                            <EyeOff className="h-4 w-4 text-red-600" />
+                            <EyeOff className="h-6 w-6 text-red-600" />
                         )}
                     </Button>
                     <Link href={`/admin/categories/edit/${category.id}`}>
-                        <Button variant="ghost" size="sm" className="text-blue-600">
-                            <Edit2 className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="text-blue-600">
+                            <Edit2 className="h-6 w-6" />
                         </Button>
                     </Link>
                     <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         className="text-red-600"
                         onClick={() => onDelete(category.id, category.name)}
                     >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-6 w-6" />
                     </Button>
                 </div>
             </div>
@@ -163,10 +172,67 @@ function SortableCategory({ category, onDelete, onToggleActive, onToggleFeatured
     );
 }
 
-export default function CollectionsListClient({ initialCategories }: CollectionsListClientProps) {
+export default function CollectionsListClient({ initialCategories, initialMainCategories }: CollectionsListClientProps) {
     const router = useRouter();
     const [categories, setCategories] = useState(initialCategories);
     const [isSaving, setIsSaving] = useState(false);
+    const [activeTab, setActiveTab] = useState<"category" | "sub-category">("category");
+    const [mainCategories, setMainCategories] = useState<MainCategory[]>(initialMainCategories || []);
+
+    useEffect(() => {
+        setMainCategories(initialMainCategories || []);
+    }, [initialMainCategories]);
+
+    const handleAddMainCategory = async () => {
+        const name = window.prompt("Enter new main category name:");
+        if (name && name.trim()) {
+            const tempId = Date.now().toString();
+            // Optimistic update
+            setMainCategories([
+                ...mainCategories,
+                { id: tempId, name: name.trim(), href: "", isActive: true }
+            ]);
+
+            const res = await createMainCategory(name.trim());
+            if (res.success && res.data) {
+                setMainCategories(prev => prev.map(c => c.id === tempId ? res.data : c));
+            } else {
+                alert("Failed to create main category: " + res.error);
+                // Revert
+                setMainCategories(prev => prev.filter(c => c.id !== tempId));
+            }
+        }
+    };
+
+    const handleToggleMainCategoryActive = async (id: string, currentStatus: boolean) => {
+        // Optimistic toggle
+        setMainCategories(mainCategories.map(cat =>
+            cat.id === id ? { ...cat, isActive: !cat.isActive } : cat
+        ));
+
+        const res = await toggleMainCategoryActive(id, !currentStatus);
+        if (!res.success) {
+            // Revert
+            setMainCategories(mainCategories.map(cat =>
+                cat.id === id ? { ...cat, isActive: currentStatus } : cat
+            ));
+            alert("Failed to toggle status: " + res.error);
+        }
+    };
+
+    const handleDeleteMainCategory = async (id: string, name: string) => {
+        if (window.confirm(`Delete main category "${name}"?`)) {
+            // Revert info
+            const backup = [...mainCategories];
+            setMainCategories(mainCategories.filter(cat => cat.id !== id));
+
+            const res = await deleteMainCategory(id);
+            if (!res.success) {
+                setMainCategories(backup);
+                alert("Failed to delete category: " + res.error);
+            }
+        }
+    };
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -272,60 +338,166 @@ export default function CollectionsListClient({ initialCategories }: Collections
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-serif text-[#1C1917]">Categories</h1>
-                    <p className="text-sm text-stone-500 mt-1">
-                        {categories.length} {categories.length === 1 ? 'category' : 'categories'}
-                        {isSaving && " • Saving order..."}
-                    </p>
+            <div>
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Categories & Sub-Categories</h1>
+                <p className="text-sm text-stone-500 mt-1">Manage your store's categories and sub-categories.</p>
+            </div>
+
+            <div className="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
+                <div className="flex border-b border-stone-200">
+                    <button
+                        onClick={() => setActiveTab("category")}
+                        className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-all border-b-2 ${activeTab === "category"
+                            ? "border-amber-500 text-amber-700 bg-amber-50/50"
+                            : "border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-50"
+                            }`}
+                    >
+                        <FolderTree size={16} />
+                        Category
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("sub-category")}
+                        className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-all border-b-2 ${activeTab === "sub-category"
+                            ? "border-amber-500 text-amber-700 bg-amber-50/50"
+                            : "border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-50"
+                            }`}
+                    >
+                        <Layers size={16} />
+                        Sub-Category
+                    </button>
                 </div>
-                <Link href="/admin/categories/add">
-                    <Button className="bg-primary hover:bg-primary/90">
-                        <Plus className="mr-2 h-4 w-4" /> Add Category
-                    </Button>
-                </Link>
-            </div>
 
-            {/* Instructions */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-800">
-                    💡 <strong>Tip:</strong> Drag and drop categories to reorder them. The order will be reflected on your website.
-                </p>
-            </div>
-
-            {/* Collections List */}
-            <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-            >
-                <SortableContext
-                    items={categories.map(cat => cat.id)}
-                    strategy={verticalListSortingStrategy}
-                >
-                    <div className="space-y-3">
-                        {categories.length === 0 ? (
-                            <div className="bg-white rounded-lg border border-stone-200 p-12 text-center">
-                                <ImageIcon className="h-12 w-12 text-stone-300 mx-auto mb-3" />
-                                <p className="text-stone-500">No categories yet</p>
-                                <p className="text-sm text-stone-400 mt-1">Create your first category to get started</p>
+                <div className="p-6">
+                    {activeTab === "category" && (
+                        <div className="space-y-6">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-lg font-bold tracking-tight text-[#1C1917]">Main Categories</h2>
+                                    <p className="text-sm text-stone-500 mt-1">
+                                        These are the main navigation categories linked from your store header.
+                                    </p>
+                                </div>
+                                <Button onClick={handleAddMainCategory} className="bg-primary hover:bg-primary/90">
+                                    <Plus className="mr-2 h-4 w-4" /> Add Category
+                                </Button>
                             </div>
-                        ) : (
-                            categories.map((category) => (
-                                <SortableCategory
-                                    key={category.id}
-                                    category={category}
-                                    onDelete={handleDelete}
-                                    onToggleActive={handleToggleActive}
-                                    onToggleFeatured={handleToggleFeatured}
-                                />
-                            ))
-                        )}
-                    </div>
-                </SortableContext>
-            </DndContext>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {mainCategories.map((category) => (
+                                    <div
+                                        key={category.id}
+                                        className="bg-white border border-stone-200 rounded-lg p-4 flex flex-col justify-between shadow-sm hover:border-amber-200 transition-colors gap-4"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 bg-amber-50 rounded-lg flex items-center justify-center text-amber-600 flex-shrink-0">
+                                                    <FolderTree className="h-5 w-5" />
+                                                </div>
+                                                <span className="font-semibold text-stone-900">{category.name}</span>
+                                            </div>
+                                            {category.isActive ? (
+                                                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[11px] font-semibold tracking-wider rounded uppercase">
+                                                    Active
+                                                </span>
+                                            ) : (
+                                                <span className="px-2 py-0.5 bg-red-100 text-red-700 text-[11px] font-semibold tracking-wider rounded uppercase">
+                                                    Inactive
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 px-2"
+                                                onClick={() => handleToggleMainCategoryActive(category.id, category.isActive)}
+                                                title={category.isActive ? "Deactivate" : "Activate"}
+                                            >
+                                                {category.isActive ? (
+                                                    <Eye className="h-4 w-4 text-green-600 mr-1" />
+                                                ) : (
+                                                    <EyeOff className="h-4 w-4 text-red-600 mr-1" />
+                                                )}
+                                                <span className="text-xs">{category.isActive ? "Deactivate" : "Activate"}</span>
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                onClick={() => handleDeleteMainCategory(category.id, category.name)}
+                                                title="Delete"
+                                            >
+                                                <Trash2 className="h-4 w-4 mr-1" />
+                                                <span className="text-xs">Delete</span>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === "sub-category" && (
+                        <div className="space-y-6">
+                            {/* Header */}
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-lg font-bold tracking-tight text-[#1C1917]">Sub-Categories</h2>
+                                    <p className="text-sm text-stone-500 mt-1">
+                                        {categories.length} {categories.length === 1 ? 'sub-category' : 'sub-categories'}
+                                        {isSaving && " • Saving order..."}
+                                    </p>
+                                </div>
+                                <Link href="/admin/categories/add">
+                                    <Button className="bg-primary hover:bg-primary/90">
+                                        <Plus className="mr-2 h-4 w-4" /> Add Sub-Category
+                                    </Button>
+                                </Link>
+                            </div>
+
+                            {/* Instructions */}
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <p className="text-base text-blue-800">
+                                    💡 <strong>Tip:</strong> Drag and drop sub-categories to reorder them. The order will be reflected on your website.
+                                </p>
+                            </div>
+
+                            {/* Collections List */}
+                            <DndContext
+                                id="categories-dnd"
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleDragEnd}
+                            >
+                                <SortableContext
+                                    items={categories.map(cat => cat.id)}
+                                    strategy={verticalListSortingStrategy}
+                                >
+                                    <div className="space-y-3">
+                                        {categories.length === 0 ? (
+                                            <div className="bg-white rounded-lg border border-stone-200 p-12 text-center">
+                                                <ImageIcon className="h-12 w-12 text-stone-300 mx-auto mb-3" />
+                                                <p className="text-sm text-stone-500">No sub-categories yet</p>
+                                                <p className="text-sm text-stone-400 mt-1">Create your first sub-category to get started</p>
+                                            </div>
+                                        ) : (
+                                            categories.map((category) => (
+                                                <SortableCategory
+                                                    key={category.id}
+                                                    category={category}
+                                                    onDelete={handleDelete}
+                                                    onToggleActive={handleToggleActive}
+                                                    onToggleFeatured={handleToggleFeatured}
+                                                />
+                                            ))
+                                        )}
+                                    </div>
+                                </SortableContext>
+                            </DndContext>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }

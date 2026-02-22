@@ -13,7 +13,8 @@
 
 import prisma from '@/lib/prisma';
 import { logError } from '@/lib/logger';
-import crypto from 'crypto';
+// NOTE: Using globalThis.crypto (Web Crypto API) instead of Node's `crypto` module
+// so this file is compatible with Edge Runtime static analysis.
 
 // ============================================================
 // Types
@@ -44,8 +45,9 @@ interface CaptureErrorOptions {
 /**
  * Generate a fingerprint hash for error grouping.
  * Groups errors by message + source + endpoint.
+ * Uses Web Crypto API (compatible with both Node.js ≥15 and Edge Runtime).
  */
-function generateFingerprint(message: string, source: string, endpoint?: string): string {
+async function generateFingerprint(message: string, source: string, endpoint?: string): Promise<string> {
     // Normalize the message: remove dynamic values like IDs, timestamps, numbers
     const normalized = message
         .replace(/[0-9a-f]{8,}/gi, '<ID>')   // UUIDs and hex strings
@@ -54,7 +56,11 @@ function generateFingerprint(message: string, source: string, endpoint?: string)
         .trim();
 
     const raw = `${source}:${endpoint || 'unknown'}:${normalized}`;
-    return crypto.createHash('sha256').update(raw).digest('hex').substring(0, 16);
+    const encoder = new TextEncoder();
+    const data = encoder.encode(raw);
+    const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 16);
 }
 
 /**
@@ -87,7 +93,7 @@ async function _captureErrorAsync(error: unknown, options: CaptureErrorOptions):
 
     const message = error instanceof Error ? error.message : String(error);
     const stack = error instanceof Error ? truncateStack(error.stack) : undefined;
-    const fingerprint = generateFingerprint(message, source, context.endpoint);
+    const fingerprint = await generateFingerprint(message, source, context.endpoint);
 
     // Try to upsert: if fingerprint exists, increment count & update lastSeen
     // If not, create a new error log entry

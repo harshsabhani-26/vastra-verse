@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
+import { CACHE_TAGS } from "@/lib/cache/cache-tags";
 
 /**
  * Pure data access layer for category queries
@@ -44,6 +45,6 @@ export const getCategories = unstable_cache(
     ['categories-list'],
     {
         revalidate: 3600, // Cache for 1 hour
-        tags: ['categories']
+        tags: [CACHE_TAGS.CATEGORIES]
     }
 );

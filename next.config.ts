@@ -41,8 +41,11 @@ const nextConfig: NextConfig = {
     } : false,
   },
 
-  // Fix Prisma compatibility with Turbopack
-  serverExternalPackages: ['@prisma/client', 'prisma', 'pdfkit'],
+  // Fix Prisma + BullMQ compatibility with Turbopack
+  // - @prisma/client, prisma: Prisma generates files at build time
+  // - pdfkit: Native Node.js PDF generation
+  // - bullmq, ioredis: Redis job queue (Node.js only, uses ioredis/built/utils internally)
+  serverExternalPackages: ['@prisma/client', 'prisma', 'pdfkit', 'bullmq', 'ioredis'],
 
   // Experimental optimizations
   experimental: {
@@ -71,8 +74,10 @@ const nextConfig: NextConfig = {
       "img-src 'self' data: blob: https://images.unsplash.com https://*.razorpay.com https://*.supabase.co https://res.cloudinary.com https://maps.googleapis.com https://maps.gstatic.com https://cdnjs.cloudflare.com",
       // Connect: API endpoints + Sentry for error reporting
       "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://verify.msg91.com https://control.msg91.com https://api.msg91.com https://*.supabase.co https://hcaptcha.com https://*.hcaptcha.com https://api.db-ip.com https://*.sentry.io https://*.ingest.sentry.io",
-      // Frames: Payment gateways, maps, hCaptcha, MSG91 widget
-      "frame-src 'self' https://api.razorpay.com https://verify.msg91.com https://control.msg91.com https://www.google.com https://maps.google.com https://hcaptcha.com https://*.hcaptcha.com https://newassets.hcaptcha.com",
+      // Media: Video/audio from CDNs
+      "media-src 'self' data: blob: https://res.cloudinary.com https://*.supabase.co",
+      // Frames: Payment gateways, maps, hCaptcha, MSG91 widget, video embeds
+      "frame-src 'self' https://api.razorpay.com https://verify.msg91.com https://control.msg91.com https://www.google.com https://maps.google.com https://hcaptcha.com https://*.hcaptcha.com https://newassets.hcaptcha.com https://www.youtube.com https://youtube.com https://player.vimeo.com",
       // Security directives
       "object-src 'none'",
       "base-uri 'self'",

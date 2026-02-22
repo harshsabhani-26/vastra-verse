@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import prisma from "@/lib/prisma";
 import { checkIpRateLimit } from "@/lib/rate-limit";
 import { requireAdmin, unauthorizedResponse } from "@/lib/auth-utils";
@@ -204,8 +205,11 @@ export async function POST(req: Request) {
             }
         });
 
-        // Invalidate product cache after creation
+        // Invalidate in-memory/Redis cache AND Next.js unstable_cache
         await invalidateProducts();
+        revalidateTag('products', {} as any);
+        revalidateTag('new-arrivals', {} as any);
+        revalidateTag('best-sellers', {} as any);
 
         return NextResponse.json(product);
     } catch (error) {

@@ -220,8 +220,8 @@ export default function ProductsListClient({
             {/* Header */}
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-serif text-[#1C1917]">Products</h1>
-                    <p className="text-sm text-stone-500 mt-1">
+                    <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Products</h1>
+                    <p className="text-base text-stone-500 mt-1">
                         {pagination.total} {pagination.total === 1 ? 'product' : 'products'}
                         {selectedProducts.size > 0 && ` • ${selectedProducts.size} selected`}
                     </p>
@@ -273,14 +273,14 @@ export default function ProductsListClient({
                 {showFilters && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t">
                         <div>
-                            <label className="text-xs text-stone-500 mb-1 block">Status</label>
+                            <label className="text-sm text-stone-500 mb-1 block">Status</label>
                             <select
                                 value={statusFilter}
                                 onChange={(e) => {
                                     setStatusFilter(e.target.value);
                                     updateFilters({ status: e.target.value });
                                 }}
-                                className="w-full h-10 rounded-md border border-stone-200 px-3 text-sm"
+                                className="w-full h-10 rounded-md border border-stone-200 px-3 text-base"
                             >
                                 <option value="all">All Status</option>
                                 <option value="PUBLISHED">Published</option>
@@ -289,14 +289,14 @@ export default function ProductsListClient({
                         </div>
 
                         <div>
-                            <label className="text-xs text-stone-500 mb-1 block">Category</label>
+                            <label className="text-sm text-stone-500 mb-1 block">Category</label>
                             <select
                                 value={categoryFilter}
                                 onChange={(e) => {
                                     setCategoryFilter(e.target.value);
                                     updateFilters({ category: e.target.value });
                                 }}
-                                className="w-full h-10 rounded-md border border-stone-200 px-3 text-sm"
+                                className="w-full h-10 rounded-md border border-stone-200 px-3 text-base"
                             >
                                 <option value="all">All Categories</option>
                                 {categories.map(cat => (
@@ -310,7 +310,7 @@ export default function ProductsListClient({
                 {/* Bulk Actions */}
                 {selectedProducts.size > 0 && (
                     <div className="flex items-center gap-3 pt-3 border-t">
-                        <span className="text-sm text-stone-600">
+                        <span className="text-base text-stone-600">
                             {selectedProducts.size} selected
                         </span>
                         <Button
@@ -332,23 +332,23 @@ export default function ProductsListClient({
                         <table className="w-full">
                             <thead className="bg-stone-50 border-b border-stone-200">
                                 <tr>
-                                    <th className="text-left p-4 w-12">
+                                    <th className="text-left p-3 w-12">
                                         <button onClick={toggleSelectAll}>
                                             {selectedProducts.size === products.length && products.length > 0 ? (
-                                                <CheckSquare className="h-5 w-5 text-primary" />
+                                                <CheckSquare className="h-4 w-4 text-primary" />
                                             ) : (
-                                                <Square className="h-5 w-5 text-stone-400" />
+                                                <Square className="h-4 w-4 text-stone-400" />
                                             )}
                                         </button>
                                     </th>
-                                    <th className="text-left p-4 text-xs font-medium text-stone-500 uppercase tracking-wider">Image</th>
-                                    <th className="text-left p-4 text-xs font-medium text-stone-500 uppercase tracking-wider">Name</th>
-                                    <th className="text-left p-4 text-xs font-medium text-stone-500 uppercase tracking-wider">SKU</th>
-                                    <th className="text-left p-4 text-xs font-medium text-stone-500 uppercase tracking-wider">Category</th>
-                                    <th className="text-left p-4 text-xs font-medium text-stone-500 uppercase tracking-wider">Price</th>
-                                    <th className="text-left p-4 text-xs font-medium text-stone-500 uppercase tracking-wider">Stock</th>
-                                    <th className="text-left p-4 text-xs font-medium text-stone-500 uppercase tracking-wider">Status</th>
-                                    <th className="text-right p-4 text-xs font-medium text-stone-500 uppercase tracking-wider">Actions</th>
+                                    <th className="text-left p-3 text-sm font-medium text-stone-500 uppercase tracking-wider">Image</th>
+                                    <th className="text-left p-3 text-sm font-medium text-stone-500 uppercase tracking-wider">Name</th>
+                                    <th className="text-left p-3 text-sm font-medium text-stone-500 uppercase tracking-wider">SKU</th>
+                                    <th className="text-left p-3 text-sm font-medium text-stone-500 uppercase tracking-wider">Category</th>
+                                    <th className="text-left p-3 text-sm font-medium text-stone-500 uppercase tracking-wider">Price</th>
+                                    <th className="text-left p-3 text-sm font-medium text-stone-500 uppercase tracking-wider">Stock</th>
+                                    <th className="text-left p-3 text-sm font-medium text-stone-500 uppercase tracking-wider">Status</th>
+                                    <th className="text-right p-3 text-sm font-medium text-stone-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-stone-200">
@@ -356,23 +356,23 @@ export default function ProductsListClient({
                                     <tr>
                                         <td colSpan={9} className="text-center py-12">
                                             <Package className="h-12 w-12 text-stone-300 mx-auto mb-3" />
-                                            <p className="text-stone-500">No products found</p>
-                                            <p className="text-sm text-stone-400 mt-1">Try adjusting your filters</p>
+                                            <p className="text-stone-500 text-base">No products found</p>
+                                            <p className="text-base text-stone-400 mt-1">Try adjusting your filters</p>
                                         </td>
                                     </tr>
                                 ) : (
                                     products.map((product) => (
                                         <tr key={product.id} className="hover:bg-stone-50 transition-colors">
-                                            <td className="p-4">
+                                            <td className="p-3">
                                                 <button onClick={() => toggleProduct(product.id)}>
                                                     {selectedProducts.has(product.id) ? (
-                                                        <CheckSquare className="h-5 w-5 text-primary" />
+                                                        <CheckSquare className="h-4 w-4 text-primary" />
                                                     ) : (
-                                                        <Square className="h-5 w-5 text-stone-400" />
+                                                        <Square className="h-4 w-4 text-stone-400" />
                                                     )}
                                                 </button>
                                             </td>
-                                            <td className="p-4">
+                                            <td className="p-3">
                                                 <div className="h-12 w-12 bg-stone-100 rounded-md overflow-hidden relative">
                                                     {product.images?.[0]?.url && (
                                                         <Image
@@ -385,23 +385,23 @@ export default function ProductsListClient({
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="p-4">
-                                                <p className="font-medium text-stone-900">{product.name}</p>
+                                            <td className="p-3 line-clamp-2 min-w-[200px]">
+                                                <p className="text-sm font-medium text-stone-900">{product.name}</p>
                                             </td>
-                                            <td className="p-4">
+                                            <td className="p-3">
                                                 <span className="text-sm text-stone-600 font-mono">
                                                     {product.sku || "-"}
                                                 </span>
                                             </td>
-                                            <td className="p-4">
+                                            <td className="p-3">
                                                 <span className="text-sm text-stone-700">{product.category.name}</span>
                                             </td>
-                                            <td className="p-4">
-                                                <span className="font-medium text-stone-900">
+                                            <td className="p-3">
+                                                <span className="text-sm font-medium text-stone-900">
                                                     ₹{product.price.toLocaleString()}
                                                 </span>
                                             </td>
-                                            <td className="p-4">
+                                            <td className="p-3">
                                                 <span className={`text-sm font-medium ${product.stock === 0
                                                     ? 'text-red-600'
                                                     : product.stock <= (product.lowStockThreshold || 10)
@@ -410,27 +410,27 @@ export default function ProductsListClient({
                                                     }`}>
                                                     {product.stock}
                                                     {product.stock <= (product.lowStockThreshold || 10) && product.stock > 0 && (
-                                                        <span className="ml-1 text-xs">⚠️</span>
+                                                        <span className="ml-1 text-sm">⚠️</span>
                                                     )}
                                                 </span>
                                             </td>
-                                            <td className="p-4">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.status === 'PUBLISHED'
+                                            <td className="p-3">
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${product.status === 'PUBLISHED'
                                                     ? 'bg-green-100 text-green-800'
                                                     : 'bg-stone-200 text-stone-700'
                                                     }`}>
                                                     {product.status === 'PUBLISHED' ? 'Published' : 'Draft'}
                                                 </span>
                                             </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center justify-end gap-2">
+                                            <td className="p-3">
+                                                <div className="flex items-center justify-end gap-1">
                                                     <Link href={`/shop/${product.id}`} target="_blank">
-                                                        <Button variant="ghost" size="sm" title="Preview">
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Preview">
                                                             <Eye className="h-4 w-4" />
                                                         </Button>
                                                     </Link>
                                                     <Link href={`/admin/products/edit/${product.id}`}>
-                                                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700" title="Edit">
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700" title="Edit">
                                                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                             </svg>
@@ -438,7 +438,8 @@ export default function ProductsListClient({
                                                     </Link>
                                                     <Button
                                                         variant="ghost"
-                                                        size="sm"
+                                                        size="icon"
+                                                        className="h-8 w-8"
                                                         onClick={() => handleDuplicate(product.id)}
                                                         title="Duplicate"
                                                     >
@@ -446,8 +447,8 @@ export default function ProductsListClient({
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
-                                                        size="sm"
-                                                        className="text-red-600 hover:text-red-700"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-red-600 hover:text-red-700"
                                                         onClick={() => handleDelete(product.id, product.name)}
                                                         title="Delete"
                                                     >
@@ -483,14 +484,14 @@ export default function ProductsListClient({
                                             <Square className="h-5 w-5 text-stone-400" />
                                         )}
                                     </button>
-                                    <div className="h-20 w-20 bg-stone-100 rounded-md overflow-hidden relative flex-shrink-0">
+                                    <div className="h-24 w-24 bg-stone-100 rounded-md overflow-hidden relative flex-shrink-0">
                                         {product.images?.[0]?.url && (
                                             <Image
                                                 src={product.images[0].url}
                                                 alt={product.name}
                                                 fill
                                                 className="object-cover"
-                                                sizes="80px"
+                                                sizes="96px"
                                             />
                                         )}
                                     </div>
@@ -535,7 +536,7 @@ export default function ProductsListClient({
             {/* Pagination */}
             {pagination.totalPages > 1 && (
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-lg border border-stone-200">
-                    <p className="text-sm text-stone-600">
+                    <p className="text-base text-stone-600">
                         Page {pagination.page} of {pagination.totalPages} • {pagination.total} total products
                     </p>
                     <div className="flex gap-2">

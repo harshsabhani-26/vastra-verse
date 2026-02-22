@@ -12,6 +12,7 @@ import {
     Users,
     FileText,
     AlertCircle,
+    Share2,
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -65,13 +66,31 @@ export default function SettingsPage() {
             href: '/admin/activity-logs',
             color: 'text-gray-600',
         },
+        {
+            title: 'Social Media Links',
+            description: 'Manage your Instagram, Facebook, YouTube, and WhatsApp profiles',
+            icon: Share2,
+            href: '/admin/settings/social-links',
+            color: 'text-amber-600',
+        },
     ];
 
+    const bgColors: Record<string, string> = {
+        'text-blue-600': 'bg-blue-50',
+        'text-green-600': 'bg-green-50',
+        'text-purple-600': 'bg-purple-50',
+        'text-orange-600': 'bg-orange-50',
+        'text-red-600': 'bg-red-50',
+        'text-indigo-600': 'bg-indigo-50',
+        'text-gray-600': 'bg-stone-100',
+        'text-amber-600': 'bg-amber-50',
+    };
+
     return (
-        <div className="p-6 space-y-6">
+        <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold">Settings</h1>
-                <p className="text-gray-600 mt-2">
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-stone-900">Settings</h1>
+                <p className="text-sm text-stone-500 mt-1">
                     Configure your store settings, security, and system preferences
                 </p>
             </div>
@@ -79,20 +98,21 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {settingsCategories.map((category) => {
                     const Icon = category.icon;
+                    const bg = bgColors[category.color] || 'bg-stone-100';
                     return (
                         <Link key={category.href} href={category.href}>
-                            <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
-                                <CardHeader>
+                            <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer h-full border-2 border-stone-100 hover:border-stone-200 rounded-xl">
+                                <CardHeader className="p-5 pb-2">
                                     <div className="flex items-start justify-between">
-                                        <div className={`p-2 rounded-lg ${category.color} bg-opacity-10`}>
-                                            <Icon className={`w-6 h-6 ${category.color}`} />
+                                        <div className={`p-2.5 rounded-lg ${bg}`}>
+                                            <Icon className={`w-5 h-5 ${category.color}`} />
                                         </div>
                                     </div>
-                                    <CardTitle className="mt-4">{category.title}</CardTitle>
-                                    <CardDescription>{category.description}</CardDescription>
+                                    <CardTitle className="mt-3 text-base">{category.title}</CardTitle>
+                                    <CardDescription className="text-xs mt-1">{category.description}</CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    <Button variant="ghost" className="w-full">
+                                <CardContent className="p-5 pt-3">
+                                    <Button variant="ghost" className={`w-full h-8 px-2 text-sm font-medium ${category.color} hover:underline justify-start`}>
                                         Configure →
                                     </Button>
                                 </CardContent>

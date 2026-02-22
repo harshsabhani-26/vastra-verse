@@ -12,8 +12,9 @@ interface HeroWrapperProps {
         bannerType: "HERO" | "MID_PAGE" | "BOTTOM_PAGE";
         displayOrder: number;
     }>;
+    heroBg?: string | null;
 }
 
-export function HeroWrapper({ banners }: HeroWrapperProps) {
-    return <Hero banners={banners} />;
+export function HeroWrapper({ banners, heroBg }: HeroWrapperProps) {
+    return <Hero banners={banners} heroBg={heroBg} />;
 }

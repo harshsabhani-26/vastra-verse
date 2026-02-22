@@ -221,7 +221,7 @@ export default function RefundsPage() {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-serif text-[#1C1917]">Refund Management</h2>
+                <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Refund Management</h2>
             </div>
 
             {/* Stats Cards */}

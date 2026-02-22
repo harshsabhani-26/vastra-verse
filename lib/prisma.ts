@@ -12,6 +12,10 @@ const prismaClientSingleton = () => {
         const result = await next(params);
         const duration = Date.now() - start;
 
+        // Skip PerformanceMetric itself to avoid infinite feedback loop:
+        // slow query → PerformanceMetric.create (slow) → PerformanceMetric.create → ∞
+        if (params.model === 'PerformanceMetric') return result;
+
         if (duration > SLOW_QUERY_THRESHOLD) {
             logInfo('SLOW_QUERY', `${params.model}.${params.action} took ${duration}ms`, {
                 model: params.model,
@@ -30,6 +34,37 @@ const prismaClientSingleton = () => {
                     { model: params.model, action: params.action }
                 );
             }).catch(() => { /* metrics unavailable, ignore */ });
+        }
+
+        return result;
+    });
+
+    // ── Auto-revalidation middleware ──────────────────────────────
+    // Automatically invalidates Next.js cache tags when Prisma
+    // performs write operations. Only calls revalidateTag (safe) —
+    // NOT revalidatePath (which throws when called during render).
+    client.$use(async (params, next) => {
+        const result = await next(params);
+
+        const WRITE_ACTIONS = new Set([
+            'create', 'createMany', 'update', 'updateMany',
+            'upsert', 'delete', 'deleteMany',
+        ]);
+
+        if (params.model && WRITE_ACTIONS.has(params.action)) {
+            import('@/lib/cache/cache-tags').then(({ MODEL_TO_TAGS, revalidateNextTags }: any) => {
+                const tags = MODEL_TO_TAGS[params.model!];
+                if (!tags || tags.length === 0) return;
+
+                logInfo('PRISMA_AUTO_REVALIDATE', `${params.model}.${params.action} → revalidating [${tags.join(', ')}]`);
+
+                // Only invalidate Next.js cache tags — revalidatePath is NOT called here
+                // because calling it during a render cycle causes a Next.js error.
+                // revalidatePath is called manually in the Server Actions instead.
+                if (typeof revalidateNextTags === 'function') {
+                    revalidateNextTags(tags);
+                }
+            }).catch(() => { /* cache-tags unavailable during init */ });
         }
 
         return result;

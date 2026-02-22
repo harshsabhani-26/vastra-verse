@@ -37,7 +37,7 @@ export default function NewCouponPage() {
                     </Link>
                 </Button>
                 <div>
-                    <h2 className="text-3xl font-serif text-[#1C1917]">Add New Coupon</h2>
+                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Add New Coupon</h2>
                     <p className="text-stone-600 mt-1">
                         Create a new promotional code or discount campaign
                     </p>

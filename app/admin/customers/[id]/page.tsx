@@ -67,7 +67,7 @@ export default async function CustomerDetailPage({
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-serif text-[#1C1917]">Customer Details</h1>
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Customer Details</h1>
                 <Link
                     href="/admin/customers"
                     className="text-emerald-700 hover:text-emerald-800"
@@ -96,19 +96,19 @@ export default async function CustomerDetailPage({
             <div className="grid grid-cols-4 gap-4">
                 <div className="bg-white border border-stone-200 rounded-lg p-6">
                     <p className="text-sm text-stone-600 mb-1">Total Orders</p>
-                    <p className="text-3xl font-semibold text-[#1C1917]">
+                    <p className="text-2xl font-bold text-[#1C1917]">
                         {customer.orders.length}
                     </p>
                 </div>
                 <div className="bg-white border border-stone-200 rounded-lg p-6">
                     <p className="text-sm text-stone-600 mb-1">Total Spent</p>
-                    <p className="text-3xl font-semibold text-emerald-700">
+                    <p className="text-2xl font-bold text-emerald-700">
                         ₹{totalSpent.toLocaleString()}
                     </p>
                 </div>
                 <div className="bg-white border border-stone-200 rounded-lg p-6">
                     <p className="text-sm text-stone-600 mb-1">Average Order Value</p>
-                    <p className="text-3xl font-semibold text-[#1C1917]">
+                    <p className="text-2xl font-bold text-[#1C1917]">
                         ₹{averageOrderValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </p>
                 </div>
@@ -158,10 +158,10 @@ export default async function CustomerDetailPage({
                                     <TableCell>
                                         <span
                                             className={`inline-block px-2 py-1 rounded-full text-xs ${order.status === 'DELIVERED'
-                                                    ? 'bg-emerald-100 text-emerald-700'
-                                                    : order.status === 'CANCELLED'
-                                                        ? 'bg-red-100 text-red-700'
-                                                        : 'bg-blue-100 text-blue-700'
+                                                ? 'bg-emerald-100 text-emerald-700'
+                                                : order.status === 'CANCELLED'
+                                                    ? 'bg-red-100 text-red-700'
+                                                    : 'bg-blue-100 text-blue-700'
                                                 }`}
                                         >
                                             {order.status}
@@ -170,10 +170,10 @@ export default async function CustomerDetailPage({
                                     <TableCell>
                                         <span
                                             className={`inline-block px-2 py-1 rounded-full text-xs ${order.paymentStatus === 'PAID'
-                                                    ? 'bg-emerald-100 text-emerald-700'
-                                                    : order.paymentStatus === 'FAILED'
-                                                        ? 'bg-red-100 text-red-700'
-                                                        : 'bg-yellow-100 text-yellow-700'
+                                                ? 'bg-emerald-100 text-emerald-700'
+                                                : order.paymentStatus === 'FAILED'
+                                                    ? 'bg-red-100 text-red-700'
+                                                    : 'bg-yellow-100 text-yellow-700'
                                                 }`}
                                         >
                                             {order.paymentStatus}

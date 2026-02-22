@@ -16,7 +16,7 @@ export default function ShippingHubPage() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h2 className="text-3xl font-serif text-[#1C1917]">Shipping Management</h2>
+                <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Shipping Management</h2>
                 <p className="text-stone-600 mt-1">
                     Centralized hub for managing shipments, couriers, and logistics operations
                 </p>

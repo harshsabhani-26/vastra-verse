@@ -111,8 +111,8 @@ export default function AdminOrdersPage() {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-serif text-[#1C1917]">Orders</h1>
-                    <p className="text-sm text-stone-500 mt-1">
+                    <h1 className="text-xl md:text-2xl font-bold text-stone-900 tracking-tight">Orders</h1>
+                    <p className="text-stone-500 text-sm mt-0.5">
                         Manage and track all customer orders
                     </p>
                 </div>
@@ -123,14 +123,14 @@ export default function AdminOrdersPage() {
                 <div className="flex flex-col md:flex-row gap-3">
                     {/* Date Range Filter */}
                     <div className="flex-1">
-                        <label className="text-xs text-stone-500 mb-1 block">
+                        <label className="text-sm text-stone-500 mb-1 block">
                             <Calendar className="inline h-3 w-3 mr-1" />
                             Date Range
                         </label>
                         <select
                             value={filters.dateRange}
                             onChange={(e) => handleDateRangeChange(e.target.value)}
-                            className="w-full h-10 rounded-md border border-stone-200 px-3 text-sm"
+                            className="w-full h-10 rounded-md border border-stone-200 px-3 text-base"
                         >
                             <option value="7">Last 7 days</option>
                             <option value="30">Last 30 days</option>
@@ -141,14 +141,14 @@ export default function AdminOrdersPage() {
 
                     {/* Status Filter */}
                     <div className="flex-1">
-                        <label className="text-xs text-stone-500 mb-1 block">
+                        <label className="text-sm text-stone-500 mb-1 block">
                             <Filter className="inline h-3 w-3 mr-1" />
                             Order Status
                         </label>
                         <select
                             value={filters.status}
                             onChange={(e) => handleStatusChange(e.target.value)}
-                            className="w-full h-10 rounded-md border border-stone-200 px-3 text-sm"
+                            className="w-full h-10 rounded-md border border-stone-200 px-3 text-base"
                         >
                             <option value="all">All Orders</option>
                             <option value="PENDING">Pending</option>
@@ -164,7 +164,7 @@ export default function AdminOrdersPage() {
 
                     {/* Results Count */}
                     <div className="flex-1 flex items-end">
-                        <div className="text-sm text-stone-600">
+                        <div className="text-base text-stone-600">
                             {loading ? (
                                 "Loading..."
                             ) : (
@@ -186,7 +186,7 @@ export default function AdminOrdersPage() {
             {/* Pagination */}
             {totalOrders > 20 && (
                 <div className="flex items-center justify-between bg-white p-4 rounded-lg border border-stone-200">
-                    <p className="text-sm text-stone-600">
+                    <p className="text-base text-stone-600">
                         Page {pageIndex + 1} of {Math.max(1, totalPages)}
                     </p>
                     <div className="flex gap-2">

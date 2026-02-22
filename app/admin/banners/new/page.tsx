@@ -5,7 +5,7 @@ export default function NewBannerPage() {
         <div className="space-y-6 max-w-4xl">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-serif text-[#1C1917]">Add New Banner</h1>
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Add New Banner</h1>
                 <p className="text-stone-600 mt-1">Create a new hero banner for your homepage slider</p>
             </div>
 

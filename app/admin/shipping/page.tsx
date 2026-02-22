@@ -125,7 +125,7 @@ export default async function ShippingOverviewPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-serif text-[#1C1917]">Shipping Overview</h2>
+                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Shipping Overview</h2>
                     <p className="text-stone-600 mt-1">
                         Real-time logistics metrics and operational insights
                     </p>

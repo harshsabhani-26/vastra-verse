@@ -164,8 +164,8 @@ export default function PaymentsPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-serif text-[#1C1917]">Payment Transactions</h2>
-                    <p className="text-stone-600 mt-1">Manage COD and Online payments</p>
+                    <h2 className="text-xl md:text-2xl font-bold text-stone-900 tracking-tight">Payment Transactions</h2>
+                    <p className="text-stone-500 text-sm mt-0.5">Manage COD and Online payments</p>
                 </div>
                 <Link href="/admin/payments/settlement">
                     <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">

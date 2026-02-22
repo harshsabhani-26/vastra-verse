@@ -97,7 +97,6 @@ export function ProductDetails({ product, initialIsWishlisted = false }: Product
         });
         setLoading(false);
         toast.success("Added to Bag!");
-        openCart();
     };
 
     const toggleWishlist = async () => {

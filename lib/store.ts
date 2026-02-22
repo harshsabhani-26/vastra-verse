@@ -64,11 +64,10 @@ export const useCartStore = create<CartStore>()(
                     set({
                         items: items.map((i) =>
                             i.id === item.id ? { ...i, quantity: i.quantity + (item.quantity || 1) } : i
-                        ),
-                        isOpen: true,
+                        )
                     });
                 } else {
-                    set({ items: [...items, { ...item, quantity: item.quantity || 1 }], isOpen: true });
+                    set({ items: [...items, { ...item, quantity: item.quantity || 1 }] });
                 }
 
                 if (!isGuest) {
@@ -76,22 +75,31 @@ export const useCartStore = create<CartStore>()(
                     try {
                         const result = await addToCart(item.id, item.quantity || 1);
                         if (!result || !result.success) {
-                            // Revert optimistic update
-                            console.error("Failed to sync add to cart", result?.error);
+                            const errorMsg = result?.error || "Failed to add to cart";
+                            console.error("Failed to sync add to cart:", errorMsg);
 
-                            // Calculate simple revert: subtract quantity or remove
+                            // Check if it's a session/auth issue — keep item locally, switch to guest mode
+                            const isSessionError = errorMsg.includes("Session expired") ||
+                                errorMsg.includes("Not authenticated") ||
+                                errorMsg.includes("Foreign key") ||
+                                errorMsg.includes("constraint");
+
+                            if (isSessionError) {
+                                // Don't revert — keep the item in local cart, just go guest mode
+                                set({ isGuest: true });
+                                toast.error("Session expired. Items saved locally. Please re-login.");
+                                return; // Don't throw — item stays in cart
+                            }
+
+                            // For stock/validation errors, revert the optimistic update
                             const currentItems = get().items;
                             const addedQty = item.quantity || 1;
-
-                            // Find the item we just modified
                             const updatedItem = currentItems.find(i => i.id === item.id);
 
                             if (updatedItem) {
                                 if (updatedItem.quantity <= addedQty) {
-                                    // Remove if it was new or quantity matches addition
                                     set({ items: currentItems.filter(i => i.id !== item.id) });
                                 } else {
-                                    // Decrease quantity
                                     set({
                                         items: currentItems.map(i =>
                                             i.id === item.id ? { ...i, quantity: i.quantity - addedQty } : i
@@ -100,33 +108,11 @@ export const useCartStore = create<CartStore>()(
                                 }
                             }
 
-                            // Show error
-                            if (typeof window !== 'undefined') {
-                                // Dynamic import toast to avoid circular dependency or SSR issues if needed
-                                // But toast is usually safe. 
-                                // Assuming toaster is available.
-                                // We can use direct alert or console if toast not available, but user has toast in other files.
-                                // Let's try to use the imported toast if we can, but `lib/store` shouldn't depend on UI components if possible.
-                                // However, `toast` (react-hot-toast) is often used in stores.
-                                // I'll skip toast import here to stay pure-ish and rely on the returning promise?
-                                // Actually, `addItem` is void. User expects it to just work.
-                                // I'll add a simple alert or console error if toast import is missing.
-                                // User used `toast` in `ProductDetails.tsx`.
-                                // Let's add `import { toast } from "react-hot-toast";` at top.
-                            }
-                            // Throwing error might be better so UI can handle? 
-                            // But `addItem` is often fire-and-forget.
-                            // I will throw error so caller can toast?
-                            throw new Error(result?.error || "Failed to add to cart");
+                            throw new Error(errorMsg);
                         }
                     } catch (error: any) {
-                        console.error("Failed to sync add to cart", error);
-                        // Revert is already done above for logic failures.
-                        // Network failures? We might want to keep optimistic state.
-                        // But for "Stock limit", it's a logic failure.
-                        // If I throw here, does the UI helper catch it?
-                        // `ProductDetails` calls `addItem` but doesn't await/catch usually.
-                        // Let's check `ProductDetails`.
+                        console.error("Failed to sync add to cart:", error?.message || error);
+                        throw error;
                     }
                 }
             },

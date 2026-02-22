@@ -79,8 +79,8 @@ export default function ActivityLogsPage() {
     return (
         <div className="p-6 space-y-6">
             <div>
-                <h1 className="text-3xl font-bold">Activity Logs</h1>
-                <p className="text-gray-600 mt-2">
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Activity Logs</h1>
+                <p className="text-sm text-stone-500 mt-1">
                     Monitor system activity and administrative actions
                 </p>
             </div>
@@ -187,40 +187,40 @@ export default function ActivityLogsPage() {
                         <div className="space-y-4">
                             <div className="overflow-x-auto">
                                 <table className="w-full">
-                                    <thead className="bg-gray-50 border-b">
+                                    <thead className="bg-stone-50 border-b border-stone-200">
                                         <tr>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date/Time</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP Address</th>
+                                            <th className="p-3 text-left text-sm font-medium text-stone-600">Date/Time</th>
+                                            <th className="p-3 text-left text-sm font-medium text-stone-600">User</th>
+                                            <th className="p-3 text-left text-sm font-medium text-stone-600">Action</th>
+                                            <th className="p-3 text-left text-sm font-medium text-stone-600">Description</th>
+                                            <th className="p-3 text-left text-sm font-medium text-stone-600">Status</th>
+                                            <th className="p-3 text-left text-sm font-medium text-stone-600">IP Address</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y">
+                                    <tbody className="divide-y divide-stone-100">
                                         {logs.map((log) => (
-                                            <tr key={log.id} className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                                            <tr key={log.id} className="hover:bg-stone-50">
+                                                <td className="p-3 text-sm text-stone-600 whitespace-nowrap">
                                                     {format(new Date(log.createdAt), 'MMM dd, yyyy HH:mm')}
                                                 </td>
-                                                <td className="px-4 py-3 text-sm">
+                                                <td className="p-3 text-sm">
                                                     <div>
-                                                        <div className="font-medium">{log.user?.name || 'System'}</div>
-                                                        <div className="text-gray-500 text-xs">{log.userEmail}</div>
+                                                        <div className="font-medium text-stone-800">{log.user?.name || 'System'}</div>
+                                                        <div className="text-stone-500 text-xs">{log.userEmail}</div>
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-3 text-sm">
+                                                <td className="p-3 text-sm">
                                                     <span className={`font-medium ${getActionColor(log.action)}`}>
                                                         {log.action.replace(/_/g, ' ')}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 text-sm text-gray-700">
+                                                <td className="p-3 text-sm text-stone-700">
                                                     {log.description}
                                                 </td>
-                                                <td className="px-4 py-3 text-sm">
+                                                <td className="p-3 text-sm">
                                                     {getStatusBadge(log.status)}
                                                 </td>
-                                                <td className="px-4 py-3 text-sm text-gray-500">
+                                                <td className="p-3 text-sm text-stone-500">
                                                     {log.ipAddress || 'N/A'}
                                                 </td>
                                             </tr>
@@ -231,13 +231,12 @@ export default function ActivityLogsPage() {
 
                             {/* Pagination */}
                             <div className="flex items-center justify-between pt-4 border-t">
-                                <div className="text-sm text-gray-600">
+                                <div className="text-sm text-stone-600">
                                     Page {pagination.page} of {pagination.totalPages}
                                 </div>
                                 <div className="flex gap-2">
                                     <Button
                                         variant="outline"
-                                        size="sm"
                                         disabled={pagination.page === 1}
                                         onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
                                     >
@@ -245,7 +244,6 @@ export default function ActivityLogsPage() {
                                     </Button>
                                     <Button
                                         variant="outline"
-                                        size="sm"
                                         disabled={pagination.page === pagination.totalPages}
                                         onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
                                     >

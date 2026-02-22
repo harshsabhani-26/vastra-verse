@@ -16,11 +16,16 @@ export default async function EditCategoryPage({ params }: { params: Promise<{ i
     // Add placeholder fields for the form
     const categoryWithFields = {
         ...category,
-        slug: category.name.toLowerCase().replace(/\s+/g, '-'),
-        icon: null,
-        isFeatured: false,
-        isActive: true,
+        slug: category.slug || category.name.toLowerCase().replace(/\s+/g, '-'),
+        icon: category.icon || null,
+        isFeatured: category.isFeatured || false,
+        isActive: category.isActive ?? true,
     };
 
-    return <CategoryForm category={categoryWithFields} mode="edit" />;
+    const mainCategories = await prisma.mainCategory.findMany({
+        where: { isActive: true },
+        orderBy: { displayOrder: 'asc' }
+    });
+
+    return <CategoryForm category={categoryWithFields} mode="edit" mainCategories={mainCategories} />;
 }

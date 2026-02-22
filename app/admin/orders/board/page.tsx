@@ -152,7 +152,7 @@ export default function OrderBoardPage() {
         return (
             <div className="space-y-4">
                 <div className="h-12 bg-stone-100 rounded-xl animate-pulse" />
-                <div className="grid grid-cols-6 gap-3">
+                <div className="grid grid-cols-3 gap-4">
                     {Array.from({ length: 6 }).map((_, i) => (
                         <div key={i} className="bg-stone-100 rounded-xl h-96 animate-pulse" />
                     ))}
@@ -162,7 +162,7 @@ export default function OrderBoardPage() {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="flex flex-col h-[calc(100vh-7rem)] space-y-4">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
@@ -211,7 +211,7 @@ export default function OrderBoardPage() {
             </div>
 
             {/* Kanban Board */}
-            <div className="grid grid-cols-6 gap-3 min-h-[600px]">
+            <div className="grid grid-cols-3 gap-4 flex-1 min-h-0">
                 {board.map((col) => {
                     const config = columnConfig[col.status];
                     if (!config) return null;
@@ -234,7 +234,7 @@ export default function OrderBoardPage() {
                             </div>
 
                             {/* Cards */}
-                            <div className="flex-1 overflow-y-auto p-2 space-y-2 max-h-[calc(100vh-280px)]">
+                            <div className="flex-1 overflow-y-auto p-2 space-y-2">
                                 {col.orders.length === 0 ? (
                                     <div className="text-center py-8">
                                         <config.icon size={20} className="mx-auto text-stone-300 mb-1" />
@@ -266,8 +266,8 @@ export default function OrderBoardPage() {
                                             <div className="flex items-center justify-between mt-1.5">
                                                 <div className="flex items-center gap-1.5">
                                                     <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${order.paymentMethod === 'COD'
-                                                            ? 'bg-amber-100 text-amber-700'
-                                                            : 'bg-emerald-100 text-emerald-700'
+                                                        ? 'bg-amber-100 text-amber-700'
+                                                        : 'bg-emerald-100 text-emerald-700'
                                                         }`}>
                                                         {order.paymentMethod === 'COD' ? 'COD' : 'Prepaid'}
                                                     </span>

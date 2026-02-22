@@ -131,7 +131,7 @@ export default async function AdminCustomersPage({
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h1 className="text-3xl font-serif text-[#1C1917]">Customers</h1>
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Customers</h1>
             <CustomersListClient customers={customers} pagination={pagination} />
         </div>
     );

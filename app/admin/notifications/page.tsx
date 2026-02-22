@@ -89,8 +89,8 @@ export default function NotificationsPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">Notifications</h1>
-                    <p className="text-gray-600 mt-2">
+                    <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Notifications</h1>
+                    <p className="text-sm text-stone-500 mt-1">
                         {unreadCount > 0
                             ? `You have ${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`
                             : 'All caught up!'
@@ -100,7 +100,7 @@ export default function NotificationsPage() {
 
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={exportToCSV}>
-                        <Download className="w-4 h-4 mr-2" />
+                        <Download className="w-5 h-5 mr-2" />
                         Export CSV
                     </Button>
 
@@ -110,7 +110,7 @@ export default function NotificationsPage() {
 
                     {unreadCount > 0 && (
                         <Button onClick={markAllAsRead}>
-                            <Check className="w-4 h-4 mr-2" />
+                            <Check className="w-5 h-5 mr-2" />
                             Mark All as Read
                         </Button>
                     )}
@@ -121,28 +121,28 @@ export default function NotificationsPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-gray-600">Total</CardTitle>
+                        <CardTitle className="text-sm font-medium text-stone-600">Total</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{notifications.length}</div>
+                        <div className="text-2xl font-bold tracking-tight text-stone-800">{notifications.length}</div>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-gray-600">Unread</CardTitle>
+                        <CardTitle className="text-sm font-medium text-stone-600">Unread</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-blue-600">{unreadCount}</div>
+                        <div className="text-2xl font-bold tracking-tight text-blue-600">{unreadCount}</div>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-gray-600">Orders</CardTitle>
+                        <CardTitle className="text-sm font-medium text-stone-600">Orders</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">
+                        <div className="text-2xl font-bold tracking-tight text-stone-800">
                             {notifications.filter(n => n.type.includes('ORDER')).length}
                         </div>
                     </CardContent>
@@ -150,10 +150,10 @@ export default function NotificationsPage() {
 
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-gray-600">Alerts</CardTitle>
+                        <CardTitle className="text-sm font-medium text-stone-600">Alerts</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-red-600">
+                        <div className="text-2xl font-bold tracking-tight text-red-600">
                             {notifications.filter(n => n.priority === 'URGENT' || n.priority === 'HIGH').length}
                         </div>
                     </CardContent>
@@ -166,7 +166,7 @@ export default function NotificationsPage() {
                     variant={filterUnread ? 'default' : 'outline'}
                     onClick={() => setFilterUnread(!filterUnread)}
                 >
-                    <Filter className="w-4 h-4 mr-2" />
+                    <Filter className="w-5 h-5 mr-2" />
                     {filterUnread ? 'Show All' : 'Show Unread Only'}
                 </Button>
             </div>

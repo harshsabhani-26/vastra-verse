@@ -206,6 +206,7 @@ model Product {
   images            ProductImage[]
   wishlistItems     Wishlist[]
   cartItems         CartItem[]
+  stories           Story[]
 
   @@index([categoryId])
   @@index([status])
@@ -231,6 +232,16 @@ model Category {
   slug         String    @unique
   updatedAt    DateTime  @updatedAt
   products     Product[]
+}
+
+model MainCategory {
+  id           String    @id @default(cuid())
+  name         String
+  href         String
+  isActive     Boolean   @default(true)
+  displayOrder Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model Order {
@@ -685,7 +696,10 @@ model StoreSettings {
   storeName          String   @default("My Store")
   tagline            String?
   logo               String?
+  footerLogo         String?
   favicon            String?
+  heroBg             String?
+  footerBg           String?
   email              String?
   phone              String?
   address            String?
@@ -701,6 +715,7 @@ model StoreSettings {
   instagram          String?
   twitter            String?
   youtube            String?
+  whatsapp           String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }
@@ -944,6 +959,58 @@ model Appointment {
   @@index([appointmentDate])
   @@index([createdAt])
   @@index([customerEmail])
+}
+
+model Story {
+  id             String   @id @default(cuid())
+  title          String
+  videoUrl       String?
+  videoFile      String?
+  thumbnailImage String
+  productId      String?
+  price          Decimal?
+  isActive       Boolean  @default(true)
+  displayOrder   Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  product        Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([isActive])
+  @@index([displayOrder])
+  @@index([isActive, displayOrder])
+  @@index([createdAt])
+}
+
+model SocialImage {
+  id           String   @id @default(cuid())
+  imageFile    String
+  title        String?
+  redirectUrl  String?
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([displayOrder])
+  @@index([isActive, displayOrder])
+}
+
+model SocialVideo {
+  id           String   @id @default(cuid())
+  videoUrl     String?
+  videoFile    String?
+  thumbnail    String
+  overlayText  String?
+  redirectUrl  String?
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([displayOrder])
+  @@index([isActive, displayOrder])
 }
 
 model ContactSubmission {

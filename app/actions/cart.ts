@@ -3,6 +3,7 @@
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { getRealTimeStock } from "@/actions/stock";
 
 export async function getCart() {
     const session = await auth();
@@ -23,10 +24,10 @@ export async function getCart() {
         }
     });
 
-    return cart;
+    return cart ? JSON.parse(JSON.stringify(cart)) : null;
 }
 
-import { getRealTimeStock } from "@/actions/stock";
+
 
 export async function addToCart(productId: string, quantity: number = 1) {
     const session = await auth();
@@ -42,6 +43,15 @@ export async function addToCart(productId: string, quantity: number = 1) {
         });
 
         if (!cart) {
+            // Verify user exists in DB before creating cart (prevents FK error from stale sessions)
+            const userExists = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { id: true }
+            });
+            if (!userExists) {
+                return { success: false, error: "Session expired. Please logout and login again." };
+            }
+
             cart = await prisma.cart.create({
                 data: { userId: session.user.id }
             });
@@ -81,9 +91,13 @@ export async function addToCart(productId: string, quantity: number = 1) {
 
         revalidatePath('/cart');
         return { success: true };
-    } catch (error) {
-        console.error("Add to cart error:", error);
-        return { success: false, error: "Failed to add item" };
+    } catch (error: any) {
+        console.error("=== ADD TO CART FAILED ===");
+        console.error("ProductId:", productId, "| Quantity:", quantity);
+        console.error("Error:", error?.message || error);
+        console.error("Error code:", error?.code);
+        console.error("Full error:", JSON.stringify(error, null, 2));
+        return { success: false, error: error?.message || "Failed to add item" };
     }
 }
 

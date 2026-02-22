@@ -1,6 +1,8 @@
 import prisma from "@/lib/prisma";
 import CollectionsListClient from "@/components/admin/CollectionsListClient";
 
+export const dynamic = 'force-dynamic';
+
 export default async function CategoriesPage() {
     const categories = await prisma.category.findMany({
         select: {
@@ -23,5 +25,12 @@ export default async function CategoriesPage() {
         _count: { products: 0 }
     }));
 
-    return <CollectionsListClient initialCategories={categoriesWithPlaceholders} />;
+    const mainCategories = await prisma.mainCategory.findMany({
+        orderBy: { createdAt: 'asc' }
+    });
+
+    return <CollectionsListClient
+        initialCategories={categoriesWithPlaceholders}
+        initialMainCategories={mainCategories}
+    />;
 }

@@ -23,11 +23,15 @@ export async function deleteProduct(productId: string) {
     }
 
     try {
+        await prisma.story.deleteMany({ where: { productId } });
+
         await prisma.product.delete({
             where: { id: productId }
         });
 
         revalidatePath("/admin/products");
+        revalidatePath("/");
+        revalidatePath("/shop");
         return { success: true };
     } catch (error) {
         console.error("Failed to delete product:", error);
@@ -70,6 +74,8 @@ export async function updateProduct(productId: string, formData: FormData) {
         });
 
         revalidatePath("/admin/products");
+        revalidatePath("/");
+        revalidatePath("/shop");
         redirect("/admin/products");
     } catch (error) {
         console.error("Failed to update product:", error);

@@ -75,7 +75,7 @@ export default function EditCouponPage({ params }: { params: Promise<{ id: strin
                     </Link>
                 </Button>
                 <div className="flex-1">
-                    <h2 className="text-3xl font-serif text-[#1C1917]">Edit Coupon</h2>
+                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Edit Coupon</h2>
                     <p className="text-stone-600 mt-1">
                         Update coupon settings and configuration
                     </p>

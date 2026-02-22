@@ -160,7 +160,7 @@ export default function ReturnPipelinePage() {
         return (
             <div className="space-y-4">
                 <div className="h-12 bg-stone-100 rounded-xl animate-pulse" />
-                <div className="grid grid-cols-6 gap-3">
+                <div className="grid grid-cols-3 gap-4">
                     {Array.from({ length: 6 }).map((_, i) => (
                         <div key={i} className="bg-stone-100 rounded-xl h-96 animate-pulse" />
                     ))}
@@ -170,7 +170,7 @@ export default function ReturnPipelinePage() {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="flex flex-col h-[calc(100vh-7rem)] space-y-4">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
@@ -194,7 +194,7 @@ export default function ReturnPipelinePage() {
             </div>
 
             {/* Stats Banner */}
-            <div className="grid grid-cols-6 gap-2">
+            <div className="grid grid-cols-3 gap-4">
                 {pipeline.map((stage) => {
                     const config = stageConfig[stage.key];
                     if (!config) return null;
@@ -213,7 +213,7 @@ export default function ReturnPipelinePage() {
             </div>
 
             {/* Pipeline Columns */}
-            <div className="grid grid-cols-6 gap-3 min-h-[500px]">
+            <div className="grid grid-cols-3 gap-4 flex-1 min-h-0">
                 {pipeline.map((stage) => {
                     const config = stageConfig[stage.key];
                     if (!config) return null;
@@ -236,7 +236,7 @@ export default function ReturnPipelinePage() {
                             </div>
 
                             {/* Cards */}
-                            <div className="flex-1 overflow-y-auto p-2 space-y-2 max-h-[calc(100vh-320px)]">
+                            <div className="flex-1 overflow-y-auto p-2 space-y-2">
                                 {stage.returns.length === 0 ? (
                                     <div className="text-center py-8">
                                         <config.icon size={18} className="mx-auto text-stone-300 mb-1" />
@@ -293,10 +293,10 @@ export default function ReturnPipelinePage() {
                                             {/* Inspection Status Badge */}
                                             {ret.inspectionStatus && ret.inspectionStatus !== 'NOT_APPLICABLE' && (
                                                 <div className={`mt-1.5 text-[9px] px-1.5 py-0.5 rounded text-center font-medium ${ret.inspectionStatus === 'PASSED'
-                                                        ? 'bg-emerald-50 text-emerald-600'
-                                                        : ret.inspectionStatus === 'FAILED'
-                                                            ? 'bg-red-50 text-red-600'
-                                                            : 'bg-indigo-50 text-indigo-600'
+                                                    ? 'bg-emerald-50 text-emerald-600'
+                                                    : ret.inspectionStatus === 'FAILED'
+                                                        ? 'bg-red-50 text-red-600'
+                                                        : 'bg-indigo-50 text-indigo-600'
                                                     }`}>
                                                     Inspection: {ret.inspectionStatus}
                                                 </div>

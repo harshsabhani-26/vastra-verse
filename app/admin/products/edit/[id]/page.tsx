@@ -255,7 +255,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     return (
         <div className="max-w-4xl mx-auto space-y-6 pb-20">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-serif text-[#1C1917]">Edit Saree</h1>
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Edit Saree</h1>
                 <div className="flex gap-2">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${status === "PUBLISHED" ? "bg-green-100 text-green-700" : "bg-stone-200 text-stone-700"}`}>
                         {status === "PUBLISHED" ? "Published" : "Draft"}
@@ -371,8 +371,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                                 id="lowStockThreshold"
                                 name="lowStockThreshold"
                                 type="number"
-                                placeholder="10"
-                                defaultValue={product.lowStockThreshold || 10}
+                                placeholder="3"
+                                defaultValue={product.lowStockThreshold || 3}
                             />
                         </div>
 

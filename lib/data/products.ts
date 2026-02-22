@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { unstable_cache } from "next/cache";
+import { CACHE_TAGS } from "@/lib/cache/cache-tags";
 
 /**
  * Pure data access layer for product queries
@@ -54,7 +55,7 @@ export const getNewArrivals = unstable_cache(
     ['new-arrivals'],
     {
         revalidate: 3600, // Cache for 1 hour
-        tags: ['products', 'new-arrivals']
+        tags: [CACHE_TAGS.PRODUCTS, CACHE_TAGS.NEW_ARRIVALS]
     }
 );
 
@@ -101,6 +102,6 @@ export const getBestSellers = unstable_cache(
     ['best-sellers'],
     {
         revalidate: 3600, // Cache for 1 hour
-        tags: ['products', 'best-sellers']
+        tags: [CACHE_TAGS.PRODUCTS, CACHE_TAGS.BEST_SELLERS]
     }
 );

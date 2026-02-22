@@ -27,24 +27,28 @@ export function AddToCartSection({ product }: AddToCartProps) {
     const [loading, setLoading] = useState(false);
     const { addItem, openCart } = useCartStore();
 
-    const handleAddToCart = () => {
+    const handleAddToCart = async () => {
         if (!selectedColor) {
             toast.error("Please select a color");
             return;
         }
 
         setLoading(true);
-        addItem({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            image: product.image,
-            quantity: 1,
-            color: selectedColor
-        });
-        setLoading(false);
-        toast.success("Added to Bag!");
-        openCart();
+        try {
+            await addItem({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                image: product.image,
+                quantity: 1,
+                color: selectedColor
+            });
+            toast.success("Added to Bag!");
+        } catch (error: any) {
+            toast.error(error?.message || "Failed to add to cart");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

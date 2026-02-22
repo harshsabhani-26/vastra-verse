@@ -112,7 +112,7 @@ export default function PaymentSettingsPage() {
     if (loading) {
         return (
             <div className="space-y-6">
-                <h2 className="text-3xl font-serif text-[#1C1917]">Payment Gateway Settings</h2>
+                <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Payment Gateway Settings</h2>
                 <div className="text-center py-12 text-stone-500">Loading settings...</div>
             </div>
         );
@@ -121,7 +121,7 @@ export default function PaymentSettingsPage() {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-serif text-[#1C1917]">Payment Gateway Settings</h2>
+                <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Payment Gateway Settings</h2>
             </div>
 
             {/* Razorpay Settings */}

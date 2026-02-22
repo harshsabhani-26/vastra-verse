@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { cache, CACHE_KEYS, CACHE_TTL } from "@/lib/cache";
@@ -193,8 +194,13 @@ export async function PUT(
             }
         });
 
-        // Invalidate cache after update
+        // Invalidate in-memory/Redis cache AND Next.js unstable_cache
         await invalidateProduct(id);
+        revalidateTag('products', {} as any);
+        revalidateTag('new-arrivals', {} as any);
+        revalidateTag('best-sellers', {} as any);
+        revalidatePath('/');
+        revalidatePath('/shop');
 
         return NextResponse.json(product);
     } catch (error) {
@@ -218,12 +224,19 @@ export async function DELETE(
         }
 
         // Delete product (images will be cascade deleted due to onDelete: Cascade)
+        await prisma.story.deleteMany({ where: { productId: id } });
+
         await prisma.product.delete({
             where: { id }
         });
 
-        // Invalidate cache after deletion
+        // Invalidate in-memory/Redis cache AND Next.js unstable_cache
         await invalidateProduct(id);
+        revalidateTag('products', {} as any);
+        revalidateTag('new-arrivals', {} as any);
+        revalidateTag('best-sellers', {} as any);
+        revalidatePath('/');
+        revalidatePath('/shop');
 
         return new NextResponse(null, { status: 204 });
     } catch (error) {

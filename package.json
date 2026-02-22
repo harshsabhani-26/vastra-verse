@@ -7,6 +7,8 @@
   },
   "scripts": {
     "dev": "next dev",
+    "dev:safe": "node scripts/dev-safe.js safe",
+    "dev:clean": "node scripts/dev-safe.js clean",
     "build": "next build",
     "start": "next start -H 0.0.0.0",
     "lint": "next lint",
@@ -72,6 +74,7 @@
     "nanoid": "^5.1.6",
     "next": "16.1.2",
     "next-auth": "^5.0.0-beta.30",
+    "next-cloudinary": "^6.17.5",
     "nodemailer": "^7.0.13",
     "opossum": "^9.0.0",
     "papaparse": "^5.5.3",

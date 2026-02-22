@@ -46,7 +46,7 @@ export default function GlobalSettingsPage() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h2 className="text-3xl font-serif text-[#1C1917]">Global Shipping Settings</h2>
+                <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Global Shipping Settings</h2>
                 <p className="text-stone-600 mt-1">
                     Configure automation rules and default shipping parameters
                 </p>

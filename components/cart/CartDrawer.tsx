@@ -38,11 +38,11 @@ export function CartDrawer() {
 
     return (
         <Sheet open={isOpen} onOpenChange={(open) => !open && closeCart()}>
-            <SheetContent className="w-full sm:max-w-md bg-background p-0 border-l border-primary/10 shadow-2xl">
+            <SheetContent className="w-full sm:max-w-md bg-white p-0 border-l border-primary/10 shadow-2xl">
                 <SheetTitle className="sr-only">Shopping Cart</SheetTitle>
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full bg-white">
                     {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-primary/10 bg-surface/50 backdrop-blur-sm">
+                    <div className="flex items-center justify-between p-6 border-b border-primary/10 bg-[#FAF8F5]">
                         <h2 className="text-xl font-serif text-primary tracking-tight">Shopping Bag ({items.length})</h2>
                         <button
                             onClick={closeCart}
@@ -54,7 +54,7 @@ export function CartDrawer() {
                     </div>
 
                     {/* Items */}
-                    <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-primary/10 hover:scrollbar-thumb-primary/20">
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-primary/10 hover:scrollbar-thumb-primary/20 bg-white">
                         {items.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center space-y-4 text-center">
                                 <ShoppingBag className="h-12 w-12 text-primary/20" strokeWidth={1} />
@@ -70,7 +70,7 @@ export function CartDrawer() {
                         ) : (
                             items.map((item) => (
                                 <div key={item.id} className="flex gap-4 animate-fade-in">
-                                    <div className="relative w-24 h-32 bg-secondary/5 flex-shrink-0 border border-primary/5 cursor-pointer overflow-hidden group">
+                                    <div className="relative w-24 h-32 bg-[#F5F5F5] flex-shrink-0 border border-primary/5 cursor-pointer overflow-hidden group">
                                         <Image
                                             src={item.image}
                                             alt={item.name}
@@ -93,8 +93,7 @@ export function CartDrawer() {
                                             </div>
                                             <p className="text-sm font-medium text-primary mt-1">₹{item.price.toLocaleString('en-IN')}</p>
                                             <div className="mt-2 space-y-1">
-                                                <p className="text-[10px] text-text-muted uppercase tracking-wide">Size: XS</p>
-                                                <p className="text-[10px] text-text-muted uppercase tracking-wide">Color: Ivory</p>
+                                                {item.color && <p className="text-[10px] text-text-muted uppercase tracking-wide">Color: {item.color}</p>}
                                             </div>
                                         </div>
 
@@ -124,7 +123,7 @@ export function CartDrawer() {
 
                     {/* Footer */}
                     {items.length > 0 && (
-                        <div className="p-6 border-t border-primary/10 bg-surface/50 backdrop-blur-sm space-y-4">
+                        <div className="p-6 border-t border-primary/10 bg-[#FAF8F5] space-y-4">
                             <div className="space-y-2">
                                 <div className="flex justify-between text-base font-medium text-primary">
                                     <span>Subtotal</span>

@@ -130,7 +130,7 @@ export default function AdminContactsPage() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-serif text-stone-900">Contact Submissions</h1>
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-stone-900">Contact Submissions</h1>
                 <p className="text-stone-600 mt-2">View and manage customer inquiries</p>
             </div>
 

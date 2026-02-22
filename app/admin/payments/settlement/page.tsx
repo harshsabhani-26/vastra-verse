@@ -56,7 +56,7 @@ export default function SettlementPage() {
                     <ArrowLeft className="w-4 h-4" />
                 </Button>
                 <div>
-                    <h2 className="text-3xl font-serif text-[#1C1917]">Bulk Settlement</h2>
+                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Bulk Settlement</h2>
                     <p className="text-stone-600 mt-1">Upload courier csv/excel to mark COD orders as Paid</p>
                 </div>
             </div>

@@ -60,7 +60,7 @@ export default function NewZonePage() {
                     <ArrowLeft size={20} />
                 </Link>
                 <div>
-                    <h2 className="text-3xl font-serif text-[#1C1917]">Add Shipping Zone</h2>
+                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Add Shipping Zone</h2>
                     <p className="text-stone-600 mt-1">Configure a new shipping zone with delivery rules and pricing</p>
                 </div>
             </div>

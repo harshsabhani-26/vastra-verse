@@ -213,7 +213,7 @@ export default function UserAuthTracking() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-serif text-[#1C1917]">
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">
                     User Authentication Tracking
                 </h1>
                 <p className="text-stone-600 mt-1">

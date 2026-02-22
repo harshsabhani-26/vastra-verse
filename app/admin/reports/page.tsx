@@ -24,32 +24,32 @@ import InsightsAnalytics from "@/components/admin/reports/InsightsAnalytics";
 export default function ReportsPage() {
     return (
         <div className="space-y-6">
-            <h2 className="text-3xl font-serif text-[#1C1917]">Reports & Analytics</h2>
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#1C1917]">Reports & Analytics</h2>
 
             <Tabs defaultValue="sales" className="space-y-6">
-                <TabsList className="bg-stone-100 p-1 rounded-lg inline-flex flex-wrap h-auto gap-1 w-full justify-start overflow-x-auto">
-                    <TabsTrigger value="sales" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-2">
-                        <BarChart3 className="w-4 h-4 mr-2" />
+                <TabsList className="bg-stone-100 p-1.5 rounded-xl inline-flex flex-wrap h-auto gap-1.5 w-full justify-start overflow-x-auto">
+                    <TabsTrigger value="sales" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-stone-900 px-6 py-3 text-lg font-medium rounded-lg">
+                        <BarChart3 className="w-6 h-6 mr-2" />
                         Sales
                     </TabsTrigger>
-                    <TabsTrigger value="finance" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-2">
-                        <Wallet className="w-4 h-4 mr-2" />
+                    <TabsTrigger value="finance" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-stone-900 px-6 py-3 text-lg font-medium rounded-lg">
+                        <Wallet className="w-6 h-6 mr-2" />
                         Finance
                     </TabsTrigger>
-                    <TabsTrigger value="products" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-2">
-                        <Tags className="w-4 h-4 mr-2" />
+                    <TabsTrigger value="products" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-stone-900 px-6 py-3 text-lg font-medium rounded-lg">
+                        <Tags className="w-6 h-6 mr-2" />
                         Products
                     </TabsTrigger>
-                    <TabsTrigger value="inventory" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-2">
-                        <Package className="w-4 h-4 mr-2" />
+                    <TabsTrigger value="inventory" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-stone-900 px-6 py-3 text-lg font-medium rounded-lg">
+                        <Package className="w-6 h-6 mr-2" />
                         Inventory
                     </TabsTrigger>
-                    <TabsTrigger value="customers" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-2">
-                        <Users className="w-4 h-4 mr-2" />
+                    <TabsTrigger value="customers" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-stone-900 px-6 py-3 text-lg font-medium rounded-lg">
+                        <Users className="w-6 h-6 mr-2" />
                         Customers
                     </TabsTrigger>
-                    <TabsTrigger value="insights" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-2">
-                        <BrainCircuit className="w-4 h-4 mr-2" />
+                    <TabsTrigger value="insights" className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-stone-900 px-6 py-3 text-lg font-medium rounded-lg">
+                        <BrainCircuit className="w-6 h-6 mr-2" />
                         AI Insights
                     </TabsTrigger>
                 </TabsList>

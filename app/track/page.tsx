@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,8 @@ const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string }>
     RETURN_INITIATED: { label: "Return Initiated", icon: AlertCircle, color: "bg-orange-100 text-orange-800" }
 };
 
-export default function TrackOrderPage() {
+
+function TrackOrderContent() {
     const searchParams = useSearchParams();
     const [awbInput, setAwbInput] = useState(searchParams.get("awb") || "");
     const [tracking, setTracking] = useState<TrackingData | null>(null);
@@ -59,7 +60,7 @@ export default function TrackOrderPage() {
         if (awbFromUrl) {
             fetchTracking(awbFromUrl);
         }
-    }, []);
+    }, [searchParams]);
 
     const fetchTracking = async (awb: string) => {
         if (!awb || awb.length < 10) {
@@ -201,5 +202,17 @@ export default function TrackOrderPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function TrackOrderPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-stone-50 py-12 px-4 flex justify-center items-center">
+                <p className="text-stone-500">Loading tracking page...</p>
+            </div>
+        }>
+            <TrackOrderContent />
+        </Suspense>
     );
 }
