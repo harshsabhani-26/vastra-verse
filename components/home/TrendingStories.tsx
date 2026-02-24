@@ -58,16 +58,16 @@ export function TrendingStories({ stories }: TrendingStoriesProps) {
 
     return (
         <section className="w-full py-[40px] md:py-[60px] bg-white">
-            <div className="container mx-auto px-4 md:px-[24px]">
-                {/* Section Header */}
-                <div className="flex flex-col items-center text-center mb-[32px] md:mb-[48px]">
-                    <h2 className="w-full font-serif text-[26px] md:text-[36px] text-[#172026] uppercase leading-[1.3] text-center tracking-[0.05em] font-normal">
-                        TRENDING STORIES
-                    </h2>
-                </div>
+            {/* Section Header */}
+            <div className="flex flex-col items-center text-center mb-[24px] md:mb-[48px] px-4">
+                <h2 className="w-full font-serif text-[24px] md:text-[36px] text-[#172026] uppercase leading-[1.3] text-center tracking-[0.05em] font-normal">
+                    TRENDING STORIES
+                </h2>
+            </div>
+            <div className="md:container md:mx-auto md:px-[24px] pl-[16px] md:pl-0">
 
                 {/* Grid / Horizontal Scroll Layout */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-[16px] md:gap-[20px] lg:gap-[24px]">
+                <div className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-x-[10px] md:grid md:grid-cols-3 lg:grid-cols-6 md:gap-[20px] lg:gap-[24px] pb-4 md:pb-0 md:px-0">
                     {displayStories.map((story) => {
                         // Product URL fallback (if no linked product, no link or default to shop)
                         const href = story.product ? `/shop/${story.product.id}` : "#";
@@ -75,7 +75,7 @@ export function TrendingStories({ stories }: TrendingStoriesProps) {
                         const hasVideo = Boolean(story.videoFile || story.videoUrl);
 
                         return (
-                            <div key={story.id} className="group flex flex-col">
+                            <div key={story.id} className="group flex flex-col w-[36vw] min-w-[120px] max-w-[160px] snap-start shrink-0 md:w-auto md:min-w-0 md:max-w-none">
                                 {/* Media Card (Portrait Rectangle ~ 9:16) */}
                                 <div
                                     className="relative w-full overflow-hidden bg-[#f4f2ef] block rounded-t-sm shadow-sm transition-shadow hover:shadow-md cursor-pointer"
@@ -134,13 +134,13 @@ export function TrendingStories({ stories }: TrendingStoriesProps) {
                                 {/* Text Info Below */}
                                 <Link
                                     href={href}
-                                    className="flex flex-col items-center justify-center text-center no-underline cursor-pointer group/link bg-[#F4F5F5] w-full px-[12px] py-4 h-[80px] md:h-[95px] rounded-b-sm shadow-sm"
+                                    className="flex flex-col items-start justify-center text-left no-underline cursor-pointer group/link w-full px-[6px] md:px-[12px] pt-[8px] pb-[4px] md:py-4 md:h-[95px] md:bg-[#F4F5F5] md:rounded-b-sm md:shadow-sm"
                                 >
-                                    <h3 className="font-sans text-[13px] md:text-[14px] text-[#172026] text-opacity-90 leading-[1.4] mb-[4px] line-clamp-2 transition-colors group-hover/link:text-primary">
+                                    <h3 className="font-sans text-[12px] md:text-[14px] text-[#172026] text-opacity-90 leading-[1.4] mb-[3px] line-clamp-2 transition-colors group-hover/link:text-primary">
                                         {story.title}
                                     </h3>
                                     {story.price && (
-                                        <span className="font-sans text-[14px] md:text-[15px] font-semibold text-[#172026]">
+                                        <span className="font-sans text-[12px] md:text-[15px] font-semibold text-[#172026]">
                                             ₹{story.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                         </span>
                                     )}

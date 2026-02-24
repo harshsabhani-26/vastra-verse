@@ -132,38 +132,38 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
             <div className="container mx-auto px-6 md:px-[60px]">
                 <div className="relative flex py-[8px] md:py-[12px] items-center">
 
-                    {/* Mobile Hamburger - absolutely positioned so it doesn't shift logo */}
-                    <div className="xl:hidden absolute left-0 flex items-center z-10">
+                    {/* Mobile Hamburger - inline on mobile so it doesn't overlap logo, absolute on tablet */}
+                    <div className="xl:hidden relative md:absolute md:left-0 flex items-center z-10 shrink-0">
                         <button
-                            className="navTrigger-root cursor-pointer inline-flex items-center justify-center leading-none pointer-events-auto text-center h-[4rem] w-[4rem] flex-col"
+                            className="navTrigger-root cursor-pointer inline-flex items-center justify-center leading-none pointer-events-auto text-center h-[40px] md:h-[4rem] w-[40px] md:w-[4rem] flex-col"
                             onClick={() => setIsMobileMenuOpen(true)}
                             aria-label="Toggle navigation panel"
                         >
-                            <span className="w-[30px] h-[3px] my-[5px] bg-primary"></span>
-                            <span className="w-[30px] h-[3px] my-[5px] bg-primary"></span>
-                            <span className="w-[30px] h-[3px] my-[5px] bg-primary"></span>
+                            <span className="w-[24px] md:w-[30px] h-[2px] md:h-[3px] my-[3px] md:my-[5px] bg-primary"></span>
+                            <span className="w-[24px] md:w-[30px] h-[2px] md:h-[3px] my-[3px] md:my-[5px] bg-primary"></span>
+                            <span className="w-[24px] md:w-[30px] h-[2px] md:h-[3px] my-[3px] md:my-[5px] bg-primary"></span>
                         </button>
                     </div>
 
-                    {/* Logo — always left-aligned */}
-                    <div className="flex items-center shrink-0 pl-[48px] xl:pl-0 h-[50px] xl:-ml-[30px] md:-ml-[20px] -ml-[10px]">
+                    {/* Logo — Left aligned, scaled appropriately for mobile to prevent overlap */}
+                    <div className="flex items-center shrink-0 pl-0 md:pl-[48px] xl:pl-0 h-[40px] md:h-[50px] xl:-ml-[30px] md:-ml-[20px] ml-[5px]">
                         <Link href="/" className="w-[100px] md:w-[150px] h-full flex items-center" aria-label="Vastra Verse">
                             <Image
                                 src={logo || "/logo.png"}
                                 alt="Vastra Verse Logo"
                                 width={150}
                                 height={50}
-                                className="object-contain max-h-full w-auto scale-[2.5] md:scale-[3] origin-left"
+                                className="object-contain max-h-full w-auto scale-[2] md:scale-[3] origin-left"
                                 priority
                                 unoptimized
                             />
                         </Link>
                     </div>
 
-                    {/* Search Bar (Middle - Light Grey BG) */}
+                    {/* Search Bar (Middle - Light Grey BG) - Hidden on mobile */}
                     <form
                         onSubmit={handleSearchSubmit}
-                        className="searchTrigger-root h-[48px] flex items-center ml-0 md:ml-[8px] lg:ml-[16px] w-full md:w-[320px] lg:w-[420px] xl:w-[550px] bg-[#F3F3F3] border border-gray-200 mt-[12px] md:mt-0 px-[16px] md:px-[24px] rounded-[6px] overflow-hidden hover:bg-[#e8e8e8] duration-[300ms] transition-colors cursor-text shrink-0"
+                        className="searchTrigger-root hidden md:flex h-[48px] items-center ml-0 md:ml-[8px] lg:ml-[16px] w-full md:w-[320px] lg:w-[420px] xl:w-[550px] bg-[#F3F3F3] border border-gray-200 mt-[12px] md:mt-0 px-[16px] md:px-[24px] rounded-[6px] overflow-hidden hover:bg-[#e8e8e8] duration-[300ms] transition-colors cursor-text shrink-0"
                         onClick={() => {
                             const input = document.getElementById('header-search-input');
                             if (input) input.focus();
@@ -181,7 +181,14 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                     </form>
 
                     {/* Right Actions Container */}
-                    <div className="flex items-center ml-auto shrink-0">
+                    <div className="flex items-center ml-auto shrink-0 gap-[2px] md:gap-0">
+
+                        {/* Search Icon (Mobile Only) */}
+                        <div className="w-auto md:hidden block ml-[5px]">
+                            <button className="p-[6px] flex items-center relative" onClick={(e) => { e.preventDefault(); setIsSearchOpen(true); }}>
+                                <Icons.Search width="20" height="20" />
+                            </button>
+                        </div>
 
                         {/* Currency Switcher (Hidden Mobile) */}
                         <div className="header-switchersContainer hidden w-full sm:block">
@@ -202,7 +209,7 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                         {status !== "authenticated" && (
                             <div className="w-auto ml-0 md:ml-[0.8rem]">
                                 <button className="p-[6px] md:p-[8px] flex items-center relative" onClick={() => setIsTrackOrderOpen(true)}>
-                                    <Icons.Truck />
+                                    <Icons.Truck width="20" height="20" className="md:w-[24px] md:h-[24px]" />
                                 </button>
                             </div>
                         )}
@@ -211,9 +218,9 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                         <Link href="/wishlist">
                             <div className="w-auto ml-0 md:ml-[0.6rem]">
                                 <button className="p-[6px] md:p-[8px] flex items-center relative">
-                                    <Icons.Heart />
+                                    <Icons.Heart width="20" height="19" className="md:w-[24px] md:h-[23px]" />
                                     {mounted && wishlistCount() > 0 && (
-                                        <span className="absolute top-0 right-0 flex items-center justify-center rounded-full font-bold bg-[#1a1a1a] text-white text-[12px] min-w-[22px] h-[22px] px-[5px] leading-none shadow-sm">
+                                        <span className="absolute top-0 right-0 flex items-center justify-center rounded-full font-bold bg-[#1a1a1a] text-white text-[10px] md:text-[12px] min-w-[18px] h-[18px] md:min-w-[22px] md:h-[22px] px-[4px] md:px-[5px] leading-none shadow-sm">
                                             {wishlistCount()}
                                         </span>
                                     )}
@@ -222,15 +229,15 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                         </Link>
 
                         {/* Cart Icon */}
-                        <div className="cartTrigger-triggerContainer items-center lg:grid ml-[0.6rem]">
+                        <div className="cartTrigger-triggerContainer items-center lg:grid ml-0 md:ml-[0.6rem]">
                             <button
                                 onClick={openCart}
                                 className="p-[6px] md:p-[8px] flex items-center relative"
                                 aria-label="Toggle mini cart"
                             >
-                                <Icons.Cart />
+                                <Icons.Cart width="18" height="20" className="md:w-[22px] md:h-[24px]" />
                                 {mounted && totalItems() > 0 && (
-                                    <span className="absolute top-0 right-0 flex items-center justify-center rounded-full font-bold bg-[#1a1a1a] text-white text-[12px] min-w-[22px] h-[22px] px-[5px] leading-none shadow-sm">
+                                    <span className="absolute top-0 right-0 flex items-center justify-center rounded-full font-bold bg-[#1a1a1a] text-white text-[10px] md:text-[12px] min-w-[18px] h-[18px] md:min-w-[22px] md:h-[22px] px-[4px] md:px-[5px] leading-none shadow-sm">
                                         {totalItems()}
                                     </span>
                                 )}
@@ -239,13 +246,13 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
 
                         {/* Profile Area (Avatar when logged in, or Login Text when logged out) */}
                         {status === "authenticated" && session?.user ? (
-                            <div className="w-auto ml-[0.6rem] relative" ref={profileRef}>
+                            <div className="w-auto ml-0 md:ml-[0.6rem] relative" ref={profileRef}>
                                 <button
                                     className="p-[6px] md:p-[8px] flex items-center"
                                     onClick={() => setIsProfileOpen(!isProfileOpen)}
                                     aria-label="Your account"
                                 >
-                                    <Icons.User />
+                                    <Icons.User width="20" height="20" className="md:w-[24px] md:h-[24px]" />
                                 </button>
 
                                 {/* Profile Dropdown */}
@@ -347,36 +354,67 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
             {isMobileMenuOpen && (
                 <div className="fixed inset-0 z-[60] lg:hidden bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}>
                     <div className="fixed inset-y-0 left-0 w-[85%] max-w-[360px] bg-white shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between p-[24px] bg-[#172026] text-white">
-                            <span className="text-[20px] font-semibold">Menu</span>
-                            <button onClick={() => setIsMobileMenuOpen(false)} className="text-white">
-                                <X className="w-8 h-8" />
+
+                        {/* Mobile Menu Header — User Profile Strip */}
+                        <div className="flex items-center justify-between px-[20px] py-[16px] border-b border-[#EAEAEA] bg-white">
+                            {status === "authenticated" && session?.user ? (
+                                <div className="flex items-center gap-[14px]">
+                                    {/* Initial Avatar */}
+                                    <div className="w-[42px] h-[42px] rounded-full bg-[#f4eade] border border-[#eddccc] flex items-center justify-center shrink-0">
+                                        <span className="text-[18px] font-semibold text-[#172026] uppercase">
+                                            {session.user.name?.charAt(0) ?? session.user.email?.charAt(0)}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <p className="text-[12px] text-[#888] font-normal leading-tight">Hi,</p>
+                                        <p className="text-[15px] font-semibold text-[#172026] leading-tight">{session.user.name}</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button
+                                    onClick={() => { setIsMobileMenuOpen(false); setIsLoginModalOpen(true); }}
+                                    className="flex items-center gap-[14px] text-left"
+                                >
+                                    {/* Generic user avatar circle */}
+                                    <div className="w-[42px] h-[42px] rounded-full bg-[#F3F3F3] border border-[#E0E0E0] flex items-center justify-center shrink-0">
+                                        <Icons.User width="22" height="22" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[12px] text-[#888] font-normal leading-tight">Welcome</p>
+                                        <p className="text-[15px] font-semibold text-[#172026] leading-tight">Signup/login</p>
+                                    </div>
+                                </button>
+                            )}
+                            <button onClick={() => setIsMobileMenuOpen(false)} className="text-[#172026] p-[4px]">
+                                <X className="w-6 h-6" />
                             </button>
                         </div>
-                        <div className="p-5 border-b border-bg-ultralight">
-                            <form onSubmit={handleSearchSubmit} className="relative">
-                                <Icons.Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" width="20" height="20" />
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="Search..."
-                                    className="w-full h-[50px] pl-[44px] pr-5 bg-bg-grey border-none rounded-[6px] text-[16px] focus:outline-none"
-                                />
-                            </form>
-                        </div>
+
+                        {/* Search Bar */}
+                        {/* Nav Links with Chevrons */}
                         <nav className="flex-1 overflow-y-auto">
                             {mainCategories && mainCategories.length > 0 ? mainCategories.map(c => ({ label: c.name, href: c.href })).map(cat => (
                                 <Link
                                     key={cat.href}
                                     href={cat.href}
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className="block px-[24px] py-[18px] text-[16px] text-text-main font-medium border-b border-bg-ultralight hover:bg-bg-grey"
+                                    className="flex items-center justify-between px-[20px] py-[16px] text-[15px] text-primary font-semibold border-b border-[#F0F0F0] hover:bg-[#F9F9F9] transition-colors"
                                 >
-                                    {cat.label}
+                                    <span>{cat.label}</span>
+                                    <Icons.Chevron className="w-[16px] h-[16px] text-[#AAAAAA] shrink-0" />
                                 </Link>
                             )) : (
                                 <div className="p-6 text-center text-gray-500">No categories available</div>
+                            )}
+
+                            {/* Sign Out — shown only when logged in */}
+                            {status === "authenticated" && (
+                                <button
+                                    onClick={() => { setIsMobileMenuOpen(false); clearUserCart(); clearWishlist(); signOut(); }}
+                                    className="w-full text-left px-[20px] py-[16px] text-[15px] text-[#0a0a0a] font-bold border-b border-[#F0F0F0] hover:bg-[#F9F9F9] transition-colors"
+                                >
+                                    Sign Out
+                                </button>
                             )}
                         </nav>
                     </div>

@@ -22,10 +22,10 @@ export async function NewArrivals() {
                     </h3>
                 </div>
 
-                {/* Product Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-[24px] gap-y-[48px] md:gap-x-[40px] md:gap-y-[64px]">
+                {/* Product Slider (Mobile) / Grid (Desktop) */}
+                <div className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-x-[16px] pl-[16px] pr-[16px] -mr-[16px] md:grid md:grid-cols-3 lg:grid-cols-4 md:gap-x-[40px] md:gap-y-[64px] pb-4 md:pb-0 md:px-0 md:mx-0">
                     {displayProducts.map((product: any) => (
-                        <div key={product.id} className="group flex flex-col">
+                        <div key={product.id} className="group flex flex-col min-w-[160px] max-w-[160px] w-[45vw] snap-start shrink-0 md:w-auto md:min-w-0 md:max-w-none">
                             {/* Image Card */}
                             <Link
                                 href={`/shop/${product.id}`}

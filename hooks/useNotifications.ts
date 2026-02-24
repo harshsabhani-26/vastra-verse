@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import { NotificationType, NotificationPriority } from '@prisma/client';
 
 export interface Notification {
@@ -36,6 +37,7 @@ interface UseNotificationsOptions {
 
 export function useNotifications(options: UseNotificationsOptions = {}) {
     const { pollInterval = 30000, unreadOnly = false } = options;
+    const { status } = useSession();
 
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -66,18 +68,21 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
         }
     }, [unreadOnly]);
 
-    // Initial fetch
+    // Initial fetch — only when authenticated
     useEffect(() => {
-        fetchNotifications();
-    }, [fetchNotifications]);
+        if (status === 'authenticated') {
+            fetchNotifications();
+        } else if (status === 'unauthenticated') {
+            setLoading(false);
+        }
+    }, [fetchNotifications, status]);
 
-    // Poll for updates
+    // Poll for updates — only when authenticated
     useEffect(() => {
-        if (!pollInterval) return;
-
+        if (!pollInterval || status !== 'authenticated') return;
         const interval = setInterval(fetchNotifications, pollInterval);
         return () => clearInterval(interval);
-    }, [pollInterval, fetchNotifications]);
+    }, [pollInterval, fetchNotifications, status]);
 
     const markAsRead = useCallback(async (notificationId: string) => {
         try {

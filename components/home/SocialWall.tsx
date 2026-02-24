@@ -304,15 +304,47 @@ export function SocialWall({ images, videos }: SocialWallProps) {
                 </div>
 
                 {/* ── ROW 1 — 4 Image Cards ──── */}
-                {displayImages.length > 0 && (
-                    <div className="w-full max-w-[1200px] mx-auto grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-8 lg:gap-10 mb-16 md:mb-24 px-4 md:px-8">
+                {displayImages.length > 0 && (<>
+                    {/* MOBILE: horizontal snap slider */}
+                    <div className="sm:hidden flex overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-[10px] px-[16px] pb-[20px]">
                         {displayImages.map((img) => {
                             const itemUrl = img.redirectUrl || "";
                             const Wrapper = itemUrl ? Link : "div";
                             const wrapperProps = itemUrl
                                 ? { href: itemUrl, target: "_blank" as const, rel: "noreferrer" }
                                 : {};
+                            return (
+                                <Wrapper
+                                    key={img.id}
+                                    {...(wrapperProps as any)}
+                                    className="group relative block overflow-hidden bg-stone-200 cursor-pointer shadow-sm hover:shadow-lg transition-shadow duration-300 shrink-0 snap-start w-[55vw] max-w-[250px] rounded-[8px]"
+                                    style={{ aspectRatio: "1 / 1" }}
+                                >
+                                    <Image
+                                        src={img.imageFile}
+                                        alt={img.title || "Social image"}
+                                        fill
+                                        sizes="75vw"
+                                        className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                                        loading="lazy"
+                                    />
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300 pointer-events-none" />
+                                    <div className="absolute top-3 right-3 w-10 h-10 rounded-full bg-black flex items-center justify-center shadow-lg">
+                                        <Instagram className="w-[18px] h-[18px] text-white" />
+                                    </div>
+                                </Wrapper>
+                            );
+                        })}
+                    </div>
 
+                    {/* DESKTOP (sm+): original grid */}
+                    <div className="hidden sm:grid w-full max-w-[1200px] mx-auto grid-cols-4 gap-8 lg:gap-10 mb-24 px-8">
+                        {displayImages.map((img) => {
+                            const itemUrl = img.redirectUrl || "";
+                            const Wrapper = itemUrl ? Link : "div";
+                            const wrapperProps = itemUrl
+                                ? { href: itemUrl, target: "_blank" as const, rel: "noreferrer" }
+                                : {};
                             return (
                                 <Wrapper
                                     key={img.id}
@@ -324,33 +356,34 @@ export function SocialWall({ images, videos }: SocialWallProps) {
                                         src={img.imageFile}
                                         alt={img.title || "Social image"}
                                         fill
-                                        sizes="(max-width: 640px) 50vw, 25vw"
+                                        sizes="25vw"
                                         className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                                         loading="lazy"
                                     />
                                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300 pointer-events-none" />
-                                    {/* Instagram badge — always visible */}
-                                    <div className="absolute top-4 right-4 w-11 h-11 md:w-12 md:h-12 rounded-full bg-black flex items-center justify-center shadow-lg">
-                                        <Instagram className="w-[20px] h-[20px] md:w-[22px] md:h-[22px] text-white" />
+                                    <div className="absolute top-4 right-4 w-12 h-12 rounded-full bg-black flex items-center justify-center shadow-lg">
+                                        <Instagram className="w-[22px] h-[22px] text-white" />
                                     </div>
                                 </Wrapper>
                             );
                         })}
                     </div>
-                )}
+                </>)}
             </div>
 
             {/* ── ROW 2 — 7 Video Cards ──── */}
             {displayVideos.length > 0 && (
-                <div className="w-full max-w-[1850px] mx-auto px-4 md:px-12 lg:px-20">
+                <div className="w-full max-w-[1850px] mx-auto pl-[16px] md:pl-[48px] md:pr-12 lg:pl-20 lg:pr-20">
                     <div
-                        className="grid gap-4 md:gap-5 lg:gap-6"
+                        className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-[12px] pl-[16px] pr-[16px] -mr-[0px] md:grid md:gap-[20px] lg:gap-[24px] pb-4 md:pb-0 md:px-0"
                         style={{
-                            gridTemplateColumns: `repeat(${Math.min(displayVideos.length, 7)}, 1fr)`,
+                            gridTemplateColumns: `repeat(${Math.min(displayVideos.length, 7)}, minmax(0, 1fr))`,
                         }}
                     >
                         {displayVideos.map((vid, index) => (
-                            <VideoCard key={vid.id} vid={vid} onExpand={() => setExpandedIndex(index)} />
+                            <div key={vid.id} className="w-[46vw] min-w-[150px] max-w-[200px] snap-start shrink-0 md:w-auto md:min-w-0 md:max-w-none">
+                                <VideoCard vid={vid} onExpand={() => setExpandedIndex(index)} />
+                            </div>
                         ))}
                     </div>
                 </div>
