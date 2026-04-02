@@ -160,21 +160,6 @@ export async function withRazorpayBreaker<T>(
 }
 
 /**
- * Execute a Shiprocket API call through circuit breaker
- */
-export async function withShiprocketBreaker<T>(
-    action: () => Promise<T>,
-    fallbackValue?: T
-): Promise<T> {
-    const breaker = getCircuitBreaker<[], T>(
-        'shiprocket',
-        action,
-        fallbackValue !== undefined ? (() => fallbackValue) : undefined
-    );
-    return breaker.fire();
-}
-
-/**
  * Execute an MSG91 API call through circuit breaker
  */
 export async function withMSG91Breaker<T>(

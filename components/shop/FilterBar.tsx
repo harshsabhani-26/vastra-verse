@@ -23,6 +23,13 @@ export function FilterBar({ categories = [], totalCount = 0 }: { categories?: Ca
     const searchParams = useSearchParams()
     const currentCategory = searchParams.get('category')
 
+    // Format category slug for display 
+    let displayCategory = "Category";
+    if (currentCategory) {
+        const lastPart = currentCategory.split('/').pop() || currentCategory;
+        displayCategory = lastPart.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    }
+
     const handleCategoryChange = (exclude: boolean, categoryName?: string) => {
         const params = new URLSearchParams(searchParams.toString())
         if (exclude || !categoryName) {
@@ -39,7 +46,7 @@ export function FilterBar({ categories = [], totalCount = 0 }: { categories?: Ca
 
                 {/* Mobile: Filters in clean grid */}
                 <div className="grid grid-cols-2 gap-3 md:hidden">
-                    <FilterDropdown label={currentCategory || "Category"}>
+                    <FilterDropdown label={displayCategory}>
                         <div className="p-2 space-y-2 min-w-[200px] animate-fade-in-down">
                             <p
                                 className={`text-sm cursor-pointer transition-colors ${!currentCategory ? 'text-primary font-medium' : 'text-text-muted hover:text-primary'}`}
@@ -107,7 +114,7 @@ export function FilterBar({ categories = [], totalCount = 0 }: { categories?: Ca
                 <div className="hidden md:flex md:flex-row items-center justify-between">
                     {/* Filters */}
                     <div className="flex flex-wrap items-center gap-6 lg:gap-8">
-                        <FilterDropdown label={currentCategory || "Category"}>
+                        <FilterDropdown label={displayCategory}>
                             <div className="p-2 space-y-2 min-w-[200px] animate-fade-in-down">
                                 <p
                                     className={`text-sm cursor-pointer transition-colors ${!currentCategory ? 'text-primary font-medium' : 'text-text-muted hover:text-primary'}`}

@@ -36,11 +36,11 @@ export function ProductCard({
                             New
                         </span>
                     )}
-                    {discountPercentage && discountPercentage > 0 && (
+                    {discountPercentage && discountPercentage > 0 ? (
                         <span className="bg-white text-primary text-[10px] uppercase tracking-[0.2em] px-2.5 py-1 font-medium shadow-sm border border-primary/10 animate-fade-in">
                             -{discountPercentage}%
                         </span>
-                    )}
+                    ) : null}
                 </div>
 
                 {/* Wishlist Toggle */}

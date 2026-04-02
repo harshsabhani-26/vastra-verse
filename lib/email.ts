@@ -196,3 +196,75 @@ export const sendInvoiceEmail = async (
         return false;
     }
 };
+
+export const sendOTPEmail = async (
+    to: string,
+    otp: string,
+    type: "register" | "login" | "forgot-password"
+) => {
+    try {
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+
+        const brandColor = "#1a4d3a";
+        let subject = "Your Vastra Verse OTP";
+        let message = `Here is your OTP: ${otp}`;
+
+        if (type === "register") {
+            subject = "Verify your email - Vastra Verse";
+            message = `Welcome to Vastra Verse! Your verification code is: <strong style="font-size: 24px; letter-spacing: 5px;">${otp}</strong>. It expires in 5 minutes.`;
+        } else if (type === "login") {
+            subject = "Login OTP - Vastra Verse";
+            message = `Your login code is: <strong style="font-size: 24px; letter-spacing: 5px;">${otp}</strong>. It expires in 5 minutes.`;
+        } else if (type === "forgot-password") {
+            subject = "Reset your password - Vastra Verse";
+            message = `Your password reset code is: <strong style="font-size: 24px; letter-spacing: 5px;">${otp}</strong>. It expires in 5 minutes.`;
+        }
+
+        const mailOptions = {
+            from: `"Vastra Verse" <${process.env.EMAIL_USER}>`,
+            to: to,
+            subject: subject,
+            html: `
+                <!DOCTYPE html>
+                <html>
+                <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f1f2f4;">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f1f2f4">
+                        <tr>
+                            <td align="center">
+                                <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; margin-top: 40px; margin-bottom: 40px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                                    <tr>
+                                        <td align="center" bgcolor="${brandColor}" style="padding: 30px 20px;">
+                                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; letter-spacing: 2px; text-transform: uppercase;">Vastra Verse</h1>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 40px 40px;">
+                                            <p style="color: #333; font-size: 16px; margin-bottom: 24px;">Hi there,</p>
+                                            <p style="color: #555; line-height: 1.6; font-size: 16px; margin-bottom: 30px;">${message}</p>
+                                            
+                                            <p style="color: #777; font-size: 14px; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">If you didn't request this code, you can safely ignore this email.</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+            `,
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log("OTP Email sent: %s", info.messageId);
+        return true;
+    } catch (error) {
+        console.error("Error sending OTP email:", error);
+        return false;
+    }
+};

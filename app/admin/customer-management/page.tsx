@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, Mail, Users, UserCheck } from "lucide-react";
+import { Calendar, Mail, Users, UserCheck, Video } from "lucide-react";
 
 export default function CustomerManagementPage() {
     const sections = [
@@ -10,6 +10,15 @@ export default function CustomerManagementPage() {
             href: "/admin/appointments",
             color: "text-blue-600",
             bgColor: "bg-blue-50"
+        },
+        {
+            title: "Live Video Shopping",
+            description: "Manage video call appointments booked via the Live Shopping button",
+            icon: Video,
+            href: "/admin/live-shopping",
+            color: "text-red-700",
+            bgColor: "bg-red-50",
+            badge: "LIVE"
         },
         {
             title: "Contacts",
@@ -60,9 +69,17 @@ export default function CustomerManagementPage() {
                                     <Icon className={`${section.color} w-6 h-6`} />
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="text-lg font-bold tracking-tight text-stone-900 group-hover:text-stone-700 transition-colors">
-                                        {section.title}
-                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-lg font-bold tracking-tight text-stone-900 group-hover:text-stone-700 transition-colors">
+                                            {section.title}
+                                        </h3>
+                                        {"badge" in section && section.badge && (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-600 text-white tracking-wider">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block" />
+                                                {section.badge}
+                                            </span>
+                                        )}
+                                    </div>
                                     <p className="text-sm text-stone-500 mt-1.5">
                                         {section.description}
                                     </p>

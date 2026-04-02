@@ -6,15 +6,17 @@ import { toggleWishlist } from "@/app/actions/account";
 import { cn } from "@/lib/utils";
 import { toast } from "react-hot-toast";
 import { useWishlistStore } from "@/lib/wishlist-store";
+import { useSession } from "next-auth/react";
 
 interface WishlistToggleProps {
     productId: string;
     initialIsWishlisted?: boolean;
-    className?: string; // Allow custom positioning if needed
+    className?: string;
 }
 
 export function WishlistToggle({ productId, initialIsWishlisted = false, className }: WishlistToggleProps) {
     const { isInWishlist, addItem, removeItem } = useWishlistStore();
+    const { status } = useSession();
     const [mounted, setMounted] = useState(false);
     const [isPending, startTransition] = useTransition();
 
@@ -25,12 +27,18 @@ export function WishlistToggle({ productId, initialIsWishlisted = false, classNa
     const isWishlisted = mounted ? isInWishlist(productId) : initialIsWishlisted;
 
     const handleToggle = (e: React.MouseEvent) => {
-        e.preventDefault(); // Prevent Link navigation
-        e.stopPropagation(); // Stop bubbling
+        e.preventDefault();
+        e.stopPropagation();
 
-        // Optimistic update
+        // If not logged in, show a login prompt instead of toggling
+        if (status !== "authenticated") {
+            toast.error("Please log in to save items to your wishlist");
+            return;
+        }
+
         const newState = !isWishlisted;
 
+        // Optimistic update
         if (newState) {
             addItem(productId);
             toast.success("Added to wishlist");
@@ -48,7 +56,7 @@ export function WishlistToggle({ productId, initialIsWishlisted = false, classNa
                 } else {
                     addItem(productId);
                 }
-                toast.error(result.error);
+                toast.error("Something went wrong. Please try again.");
             }
         });
     };
@@ -58,10 +66,12 @@ export function WishlistToggle({ productId, initialIsWishlisted = false, classNa
             onClick={handleToggle}
             disabled={isPending}
             className={cn(
-                "p-2 rounded-full transition-all duration-300 z-20", // high z-index
+                "p-2 rounded-full transition-all duration-300 z-20",
                 isWishlisted
                     ? "bg-white text-red-500 shadow-sm opacity-100"
-                    : "bg-white/0 text-stone-600 hover:bg-white/80 opacity-0 group-hover:opacity-100",
+                    // Always visible on mobile (touch devices need permanent visibility)
+                    // On desktop: invisible until group-hover
+                    : "bg-white/80 text-stone-500 opacity-100 md:opacity-0 md:bg-white/0 md:group-hover:opacity-100 md:group-hover:bg-white/80",
                 className
             )}
             aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}

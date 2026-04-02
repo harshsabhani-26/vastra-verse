@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findShipmentByAwb } from "@/lib/shipment-service";
-import { trackShipment } from "@/lib/shipping-provider";
+import { getTrackingData } from "@/lib/shiprocket/tracking";
 
 /**
  * GET /api/tracking/[awb]
@@ -35,8 +35,14 @@ export async function GET(
         // Fetch live tracking data from Shiprocket
         let liveTracking = null;
         try {
-            const trackingData = await trackShipment(awb);
-            liveTracking = trackingData.tracking_data;
+            const trackingData = await getTrackingData(awb);
+            liveTracking = {
+                currentStatus: trackingData.currentStatus,
+                currentLocation: trackingData.currentLocation,
+                expectedDeliveryDate: trackingData.expectedDeliveryDate,
+                deliveryDate: trackingData.deliveryDate,
+                events: trackingData.events,
+            };
         } catch (error) {
             console.error("[Tracking] Failed to fetch live data:", error);
             // Continue with database data
@@ -54,7 +60,7 @@ export async function GET(
             estimatedDeliveryAt: shipment.estimatedDeliveryAt,
             trackingUrl: shipment.trackingUrl,
             trackingData: shipment.trackingData,
-            liveTracking: liveTracking?.shipment_track?.[0] || null
+            liveTracking,
         });
 
     } catch (error: any) {

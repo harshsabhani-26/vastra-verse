@@ -38,9 +38,11 @@ export function CartDrawer() {
 
     return (
         <Sheet open={isOpen} onOpenChange={(open) => !open && closeCart()}>
-            <SheetContent className="w-full sm:max-w-md bg-white p-0 border-l border-primary/10 shadow-2xl">
+            <SheetContent
+                className="w-[90%] max-w-[400px] h-[95vh] m-auto fixed inset-0 top-[2.5vh] bottom-[2.5vh] left-1/2 -translate-x-1/2 translate-y-0 rounded-md sm:w-full sm:h-full sm:max-h-full sm:m-0 sm:top-0 sm:bottom-0 sm:left-auto sm:right-0 sm:translate-x-0 sm:rounded-none sm:max-w-md bg-white p-0 border border-primary/10 shadow-2xl flex flex-col z-[100]"
+            >
                 <SheetTitle className="sr-only">Shopping Cart</SheetTitle>
-                <div className="flex flex-col h-full bg-white">
+                <div className="flex flex-col flex-1 bg-white overflow-hidden rounded-md sm:rounded-none">
                     {/* Header */}
                     <div className="flex items-center justify-between p-6 border-b border-primary/10 bg-[#FAF8F5]">
                         <h2 className="text-xl font-serif text-primary tracking-tight">Shopping Bag ({items.length})</h2>

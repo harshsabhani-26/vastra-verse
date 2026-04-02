@@ -60,15 +60,23 @@ interface Shipment {
 const STATUS_CONFIG: Record<ShipmentStatus, { label: string; color: string }> = {
     PENDING: { label: "Pending", color: "bg-gray-200 text-gray-800" },
     READY_TO_SHIP: { label: "Ready to Ship", color: "bg-blue-200 text-blue-800" },
+    LABEL_GENERATED: { label: "Label Generated", color: "bg-blue-200 text-blue-800" },
     PICKUP_SCHEDULED: { label: "Pickup Scheduled", color: "bg-purple-200 text-purple-800" },
+    PICKED_UP: { label: "Picked Up", color: "bg-indigo-200 text-indigo-800" },
     IN_TRANSIT: { label: "In Transit", color: "bg-yellow-200 text-yellow-800" },
     OUT_FOR_DELIVERY: { label: "Out for Delivery", color: "bg-orange-200 text-orange-800" },
+    DELIVERY_ATTEMPTED: { label: "Delivery Attempted", color: "bg-red-200 text-red-800" },
+    NDR_RAISED: { label: "NDR Raised", color: "bg-red-300 text-red-900" },
     DELIVERED: { label: "Delivered", color: "bg-green-200 text-green-800" },
+    RTO_INITIATED: { label: "RTO Initiated", color: "bg-red-200 text-red-800" },
+    RTO_IN_TRANSIT: { label: "RTO In Transit", color: "bg-red-200 text-red-800" },
+    RTO_DELIVERED: { label: "RTO Delivered", color: "bg-red-300 text-red-900" },
     CANCELLED: { label: "Cancelled", color: "bg-red-200 text-red-800" },
     FAILED: { label: "Failed", color: "bg-red-200 text-red-800" },
     RETURN_INITIATED: { label: "Return Initiated", color: "bg-orange-200 text-orange-800" },
     RETURN_PICKED: { label: "Return Picked", color: "bg-purple-200 text-purple-800" },
     RETURN_DELIVERED: { label: "Return Delivered", color: "bg-blue-200 text-blue-800" },
+    EXCEPTION: { label: "Exception", color: "bg-red-200 text-red-800" }
 };
 
 export default function ShipmentsTable({ initialShipments }: { initialShipments: Shipment[] }) {

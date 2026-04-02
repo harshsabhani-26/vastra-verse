@@ -63,7 +63,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                         id="modal-email"
                         type="email"
                         name="email"
-                        placeholder="Your Mobile Number / Email *"
+                        placeholder="Your Email *"
                         required
                         className="w-full h-[48px] border border-gray-300 px-4 text-[14px] text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#172026] rounded-sm"
                     />

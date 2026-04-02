@@ -38,20 +38,15 @@ export async function GET(request: NextRequest) {
         const endDate = searchParams.get('endDate');
 
         const where: any = {
-            // CRITICAL: Strict Visibility Rules
-            // 1. Show all PAID orders (Prepaid success)
-            // 2. Show PENDING orders ONLY if they are COD
-            // 3. Hide PENDING orders if they are Prepaid (failed/abandoned)
-            OR: [
-                { paymentStatus: "PAID" },
-                { paymentStatus: "REFUNDED" },
-                {
-                    AND: [
-                        { paymentStatus: "PENDING" },
-                        { paymentMethod: "COD" }
-                    ]
-                }
-            ]
+            // Exclude orders with failed/unpaid prepaid payments.
+            // Keep: PAID, REFUNDED, COD(PENDING)
+            // Exclude: PENDING non-COD (abandoned prepaid), FAILED
+            NOT: {
+                AND: [
+                    { paymentStatus: { in: ["PENDING", "FAILED"] } },
+                    { paymentMethod: { not: "COD" } },
+                ]
+            }
         };
 
         // Allow filtering by order status (PENDING, CONFIRMED, SHIPPED, etc.)

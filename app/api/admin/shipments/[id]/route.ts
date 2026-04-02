@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkUserRateLimit } from '@/lib/rate-limit';
 import { auth } from "@/auth";
-import { schedulePickup, cancelShipment } from "@/lib/shipping-provider";
-import { updateShipmentStatus, findShipmentByAwb } from "@/lib/shipment-service";
+import { schedulePickup, cancelByAwb } from "@/lib/shiprocket/shipment";
+import { updateShipmentStatus } from "@/lib/shipment-service";
 import prisma from "@/lib/prisma";
 
 /**
@@ -46,30 +46,42 @@ export async function PATCH(
 
         switch (action) {
             case "SCHEDULE_PICKUP": {
-                if (!shipment.providerShipmentId) {
+                if (!shipment.shiprocketOrderId) {
                     return NextResponse.json(
-                        { error: "Provider shipment ID not found" },
+                        { error: "Shiprocket order ID not found" },
                         { status: 400 }
                     );
                 }
 
-                const pickupResponse = await schedulePickup(
-                    parseInt(shipment.providerShipmentId)
-                );
+                // Shiprocket schedulePickup expects shipment IDs (numeric)
+                const shipmentId = parseInt(shipment.shiprocketOrderId, 10);
+                if (isNaN(shipmentId)) {
+                    return NextResponse.json(
+                        { error: "Invalid Shiprocket shipment ID" },
+                        { status: 400 }
+                    );
+                }
+
+                const pickupResponse = await schedulePickup({
+                    shipment_id: [shipmentId],
+                });
 
                 await updateShipmentStatus(
                     id,
                     "PICKUP_SCHEDULED",
                     {
-                        pickupScheduledAt: new Date(pickupResponse.pickup_scheduled_date)
+                        pickupScheduledAt: pickupResponse.response?.pickup_scheduled_date
+                            ? new Date(pickupResponse.response.pickup_scheduled_date)
+                            : new Date()
                     },
-                    `Pickup scheduled for ${pickupResponse.pickup_scheduled_date}`
+                    `Pickup scheduled (Token: ${pickupResponse.response?.pickup_token_number || "N/A"})`
                 );
 
                 return NextResponse.json({
                     success: true,
                     message: "Pickup scheduled successfully",
-                    pickupDate: pickupResponse.pickup_scheduled_date
+                    pickupToken: pickupResponse.response?.pickup_token_number,
+                    pickupDate: pickupResponse.response?.pickup_scheduled_date,
                 });
             }
 
@@ -90,7 +102,7 @@ export async function PATCH(
 
                 const { reason } = body;
 
-                await cancelShipment([shipment.awbNumber]);
+                await cancelByAwb([shipment.awbNumber]);
 
                 await updateShipmentStatus(
                     id,

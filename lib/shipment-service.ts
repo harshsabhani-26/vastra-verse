@@ -14,10 +14,14 @@ import { ShipmentStatus, OrderStatus } from "@prisma/client";
 // Strict mapping of ShipmentStatus to OrderStatus
 const ORDER_STATUS_MAPPING: Partial<Record<ShipmentStatus, OrderStatus>> = {
     READY_TO_SHIP: "PACKED",
+    LABEL_GENERATED: "PACKED",
     PICKUP_SCHEDULED: "PACKED",
+    PICKED_UP: "SHIPPED",
     IN_TRANSIT: "SHIPPED",
     OUT_FOR_DELIVERY: "SHIPPED",
     DELIVERED: "DELIVERED",
+    RTO_INITIATED: "RETURNED",
+    RTO_DELIVERED: "RETURNED",
     RETURN_INITIATED: "RETURNED",
     RETURN_DELIVERED: "RETURNED",
     RETURN_PICKED: "RETURNED"
@@ -35,13 +39,21 @@ export function calculateVolumetricWeight(length: number, breadth: number, heigh
 const SHIPMENT_STATUS_RANK: Record<ShipmentStatus, number> = {
     PENDING: 0,
     READY_TO_SHIP: 1,
-    PICKUP_SCHEDULED: 2,
-    IN_TRANSIT: 3,
-    OUT_FOR_DELIVERY: 4,
-    DELIVERED: 5,
-    RETURN_INITIATED: 6,
-    RETURN_PICKED: 7,
-    RETURN_DELIVERED: 8,
+    LABEL_GENERATED: 2,
+    PICKUP_SCHEDULED: 3,
+    PICKED_UP: 4,
+    IN_TRANSIT: 5,
+    OUT_FOR_DELIVERY: 6,
+    DELIVERED: 7,
+    DELIVERY_ATTEMPTED: 8,
+    NDR_RAISED: 8,
+    RTO_INITIATED: 9,
+    RTO_IN_TRANSIT: 10,
+    RTO_DELIVERED: 11,
+    RETURN_INITIATED: 12,
+    RETURN_PICKED: 13,
+    RETURN_DELIVERED: 14,
+    EXCEPTION: 98,
     CANCELLED: 99,
     FAILED: 99
 };
@@ -175,7 +187,7 @@ export async function updateShipmentStatus(
     const isForwardMove = newRank > currentRank;
     const isIdempotent = newRank === currentRank;
     // status exceptions that are allowed to break strict forward rank (e.g. failure/cancellation from any state)
-    const isException = status === "CANCELLED" || status === "FAILED" || status === "RETURN_INITIATED";
+    const isException = status === "CANCELLED" || status === "FAILED" || status === "RETURN_INITIATED" || status === "RTO_INITIATED" || status === "EXCEPTION";
 
     // Prevent any backward move unless it's a special exception case
     if (!isForwardMove && !isIdempotent && !isException) {
@@ -196,12 +208,20 @@ export async function updateShipmentStatus(
     const eventMap: Record<ShipmentStatus, string> = {
         PENDING: "SHIPMENT_PENDING",
         READY_TO_SHIP: "SHIPMENT_READY",
+        LABEL_GENERATED: "LABEL_GENERATED",
         PICKUP_SCHEDULED: "PICKUP_SCHEDULED",
+        PICKED_UP: "SHIPMENT_PICKED_UP",
         IN_TRANSIT: "SHIPMENT_IN_TRANSIT",
         OUT_FOR_DELIVERY: "OUT_FOR_DELIVERY",
         DELIVERED: "SHIPMENT_DELIVERED",
+        DELIVERY_ATTEMPTED: "DELIVERY_ATTEMPTED",
+        NDR_RAISED: "NDR_RAISED",
         FAILED: "SHIPMENT_FAILED",
         CANCELLED: "SHIPMENT_CANCELLED",
+        RTO_INITIATED: "RTO_INITIATED",
+        RTO_IN_TRANSIT: "RTO_IN_TRANSIT",
+        RTO_DELIVERED: "RTO_DELIVERED",
+        EXCEPTION: "SHIPMENT_EXCEPTION",
         RETURN_INITIATED: "RETURN_INITIATED",
         RETURN_PICKED: "RETURN_PICKED",
         RETURN_DELIVERED: "RETURN_DELIVERED"

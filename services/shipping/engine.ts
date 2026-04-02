@@ -9,7 +9,7 @@
  */
 
 import prisma from "@/lib/prisma";
-import { checkServiceability } from "@/lib/shipping-provider";
+import { checkServiceability } from "@/lib/shiprocket/serviceability";
 
 // Indian State-Pincode mapping (first 2 digits)
 const PINCODE_STATE_MAP: Record<string, string> = {
@@ -174,50 +174,33 @@ export async function selectBestCourier(params: {
     isCOD: boolean;
 }): Promise<CourierOption | null> {
     try {
-        // 1. Get available couriers from Shiprocket
-        const available = await checkServiceability({
-            pickupPostcode: params.pickupPincode,
-            deliveryPostcode: params.deliveryPincode,
-            weight: params.weight.toString(),
-            cod: params.isCOD
-        });
+        // Check Shiprocket serviceability for this route
+        const result = await checkServiceability(
+            params.pickupPincode,
+            params.deliveryPincode,
+            params.weight, // Shiprocket expects kg
+            params.isCOD
+        );
 
-        if (!available || available.length === 0) {
-            console.error("[ShippingEngine] No couriers available for this route");
+        if (!result.serviceable) {
+            console.error("[ShippingEngine] Route not serviceable via Shiprocket");
             return null;
         }
 
-        // 2. Fetch performance scores from our database
-        const courierPerformance = await prisma.courierPerformance.findMany({
-            select: {
-                courierName: true,
-                score: true
-            }
-        });
+        if (params.isCOD && !result.codAvailable) {
+            console.error("[ShippingEngine] COD not available for this route");
+            return null;
+        }
 
-        const performanceMap = new Map(
-            courierPerformance.map(c => [c.courierName.toLowerCase(), Number(c.score)])
-        );
-
-        // 3. Rank couriers by: 40% performance score + 60% cost
-        const rankedCouriers = available.map(courier => {
-            const performanceScore = performanceMap.get(courier.courier_name.toLowerCase()) || 50; // Default 50
-            const costScore = Math.max(0, 100 - Number(courier.rate)); // Lower cost = higher score
-
-            // Composite score
-            const totalScore = (performanceScore * 0.4) + (costScore * 0.6);
-
-            return {
-                courierId: courier.courier_id,
-                courierName: courier.courier_name,
-                rate: courier.rate,
-                estimatedDays: courier.estimated_delivery_days || courier.etd,
-                score: parseFloat(totalScore.toFixed(2))
-            };
-        }).sort((a, b) => (b.score || 0) - (a.score || 0));
-
-        // Return the best courier
-        return rankedCouriers[0] || null;
+        // Return best available courier from Shiprocket
+        const bestCourier = result.couriers[0];
+        return {
+            courierId: bestCourier?.id || 0,
+            courierName: bestCourier?.name || "Shiprocket",
+            rate: bestCourier?.freightCharge || 0,
+            estimatedDays: bestCourier?.estimatedDays || "3-5 business days",
+            score: 100,
+        };
 
     } catch (error) {
         console.error("[ShippingEngine] Error selecting courier:", error);

@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
-import { getActiveShipments, updateShipmentStatus, updateShipmentCosts } from "@/lib/shipment-service";
-import { trackShipment } from "@/lib/shipping-provider";
+import { getActiveShipments, updateShipmentStatus } from "@/lib/shipment-service";
+import { getTrackingData } from "@/lib/shiprocket/tracking";
 import { ShipmentStatus } from "@prisma/client";
 
 /**
@@ -19,6 +19,23 @@ async function syncTracking() {
         let errorCount = 0;
         let slaViolations = 0;
 
+        // Shiprocket status mapping
+        const statusMap: Record<string, ShipmentStatus> = {
+            "AWB Assigned": "READY_TO_SHIP",
+            "Pickup Scheduled": "PICKUP_SCHEDULED",
+            "Picked Up": "PICKED_UP",
+            "In Transit": "IN_TRANSIT",
+            "Shipped": "IN_TRANSIT",
+            "Out for Delivery": "OUT_FOR_DELIVERY",
+            "Delivered": "DELIVERED",
+            "Undelivered": "NDR_RAISED",
+            "RTO Initiated": "RTO_INITIATED",
+            "RTO In Transit": "RTO_IN_TRANSIT",
+            "RTO Delivered": "RTO_DELIVERED",
+            "Canceled": "CANCELLED",
+            "Cancelled": "CANCELLED",
+        };
+
         // 2. Process each shipment
         for (const shipment of activeShipments) {
             try {
@@ -32,38 +49,19 @@ async function syncTracking() {
                     if (now > shipment.estimatedDeliveryAt) {
                         console.warn(`[Sync] ⚠️ SLA VIOLATION: Shipment ${shipment.awbNumber} is delayed`);
                         slaViolations++;
-                        // TODO: Send notification to admin
                     }
                 }
 
                 // 4. Fetch latest tracking info from Shiprocket
-                const trackingData = await trackShipment(shipment.awbNumber);
-                const trackStatus = trackingData.tracking_data.shipment_track[0];
+                const trackingData = await getTrackingData(shipment.awbNumber);
 
-                if (!trackStatus) {
+                if (!trackingData) {
                     continue;
                 }
 
                 // 5. Map status
-                const currentStatus = trackStatus.current_status;
-
-                const statusMap: Record<string, ShipmentStatus> = {
-                    "PICKUP SCHEDULED": "PICKUP_SCHEDULED",
-                    "PICKUP BOOKED": "PICKUP_SCHEDULED",
-                    "OUT FOR PICKUP": "PICKUP_SCHEDULED",
-                    "SHIPPED": "IN_TRANSIT",
-                    "IN TRANSIT": "IN_TRANSIT",
-                    "REACHED AT DESTINATION HUB": "IN_TRANSIT",
-                    "OUT FOR DELIVERY": "OUT_FOR_DELIVERY",
-                    "DELIVERED": "DELIVERED",
-                    "RTO INITIATED": "RETURN_INITIATED",
-                    "RTO IN TRANSIT": "RETURN_INITIATED",
-                    "RTO DELIVERED": "RETURN_DELIVERED",
-                    "CANCELLED": "CANCELLED",
-                    "LOST": "FAILED"
-                };
-
-                const mappedStatus = statusMap[currentStatus.toUpperCase()];
+                const currentStatus = trackingData.currentStatus;
+                const mappedStatus = statusMap[currentStatus];
 
                 if (mappedStatus && mappedStatus !== shipment.status) {
                     // Update status
@@ -71,7 +69,8 @@ async function syncTracking() {
                         shipment.id,
                         mappedStatus,
                         {
-                            trackingData: trackStatus as any
+                            trackingData: trackingData.raw as any,
+                            deliveredAt: mappedStatus === "DELIVERED" ? new Date() : undefined,
                         },
                         `Batch Sync: Status updated to ${mappedStatus}`
                     );
@@ -79,6 +78,9 @@ async function syncTracking() {
                     console.log(`[Sync] Updated ${shipment.awbNumber}: ${shipment.status} -> ${mappedStatus}`);
                     updatedCount++;
                 }
+
+                // Small delay to avoid rate limits
+                await new Promise(resolve => setTimeout(resolve, 200));
 
             } catch (err) {
                 console.error(`[Sync] Error processing shipment ${shipment.id}:`, err);

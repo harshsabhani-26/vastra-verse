@@ -47,6 +47,7 @@ export default function AddProductPage() {
     const [finalPrice, setFinalPrice] = useState(0);
     const [selectedColors, setSelectedColors] = useState<string[]>([]);
     const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
+    const [selectedWeaveTypes, setSelectedWeaveTypes] = useState<string[]>([]);
     const [hasBlousePiece, setHasBlousePiece] = useState(true);
     const [isNewArrival, setIsNewArrival] = useState(false);
     const [isBestSeller, setIsBestSeller] = useState(false);
@@ -86,6 +87,14 @@ export default function AddProductPage() {
             prev.includes(occasion)
                 ? prev.filter(o => o !== occasion)
                 : [...prev, occasion]
+        );
+    };
+
+    const toggleWeaveType = (weave: string) => {
+        setSelectedWeaveTypes(prev =>
+            prev.includes(weave)
+                ? prev.filter(w => w !== weave)
+                : [...prev, weave]
         );
     };
 
@@ -140,6 +149,7 @@ export default function AddProductPage() {
 
         formData.append("colors", JSON.stringify(selectedColors));
         formData.append("occasions", JSON.stringify(selectedOccasions));
+        formData.append("weaveType", selectedWeaveTypes.join(", "));
         formData.append("finalPrice", finalPrice.toString());
         formData.append("isNewArrival", isNewArrival.toString());
         formData.append("isBestSeller", isBestSeller.toString());
@@ -158,7 +168,7 @@ export default function AddProductPage() {
                     formElement.reset();
                     setSelectedColors([]);
                     setSelectedOccasions([]);
-                    setSelectedOccasions([]);
+                    setSelectedWeaveTypes([]);
                     setIsNewArrival(false);
                     setIsBestSeller(false);
                     setPrice("");
@@ -377,18 +387,23 @@ export default function AddProductPage() {
                             </select>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="weaveType">Weave Type</Label>
-                            <select
-                                id="weaveType"
-                                name="weaveType"
-                                className="w-full h-10 rounded-md border border-stone-200 bg-white px-3 text-sm"
-                            >
-                                <option value="">Select Weave</option>
+                        <div className="md:col-span-2 space-y-2">
+                            <Label>Weave Type (Select all that apply)</Label>
+                            <div className="flex flex-wrap gap-2">
                                 {WEAVE_TYPES.map((weave) => (
-                                    <option key={weave} value={weave}>{weave}</option>
+                                    <button
+                                        key={weave}
+                                        type="button"
+                                        onClick={() => toggleWeaveType(weave)}
+                                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${selectedWeaveTypes.includes(weave)
+                                                ? "bg-primary text-white"
+                                                : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+                                            }`}
+                                    >
+                                        {weave}
+                                    </button>
                                 ))}
-                            </select>
+                            </div>
                         </div>
 
                         <div className="md:col-span-2 space-y-2">

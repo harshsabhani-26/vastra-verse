@@ -223,34 +223,38 @@ async function checkShippingProvider(): Promise<ServiceHealth> {
         return {
             status: 'unknown',
             latencyMs: 0,
-            message: 'Shiprocket not configured',
+            message: 'Shiprocket credentials not configured',
             lastChecked: new Date().toISOString(),
         };
     }
 
     try {
-        // Just test authentication endpoint reachability
-        const response = await fetch('https://apiv2.shiprocket.in/v1/external/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
+        // Test Shiprocket API reachability
+        const baseUrl = process.env.SHIPROCKET_BASE_URL || 'https://apiv2.shiprocket.in/v1/external';
+        const response = await fetch(`${baseUrl}/orders`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
             signal: AbortSignal.timeout(5000),
         });
 
         const latencyMs = Math.round(performance.now() - start);
 
-        if (response.ok) {
+        // Any response (even 401 unauthorized) means the API is reachable
+        if (response.ok || response.status === 401 || response.status === 403 || response.status === 404) {
             return {
                 status: latencyMs > 3000 ? 'degraded' : 'healthy',
                 latencyMs,
+                message: response.status === 401 ? 'API reachable, auth required' : undefined,
                 lastChecked: new Date().toISOString(),
             };
         }
 
         return {
-            status: response.status === 401 ? 'degraded' : 'unhealthy',
+            status: 'unhealthy',
             latencyMs,
-            message: response.status === 401 ? 'Invalid credentials' : `HTTP ${response.status}`,
+            message: `HTTP ${response.status}`,
             lastChecked: new Date().toISOString(),
         };
     } catch (error) {

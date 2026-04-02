@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { trackShipment } from "@/lib/shipping-provider";
+import { getTrackingData } from "@/lib/shiprocket/tracking";
 import { updateShipmentStatus } from "@/lib/shipment-service";
 import { ShipmentStatus } from "@prisma/client";
 
@@ -50,21 +50,22 @@ export async function GET(req: NextRequest) {
         let updated = 0;
         let failed = 0;
 
-        // Status mapping
+        // Shiprocket status mapping
         const statusMap: Record<string, ShipmentStatus> = {
-            "PICKUP SCHEDULED": "PICKUP_SCHEDULED",
-            "PICKUP BOOKED": "PICKUP_SCHEDULED",
-            "OUT FOR PICKUP": "PICKUP_SCHEDULED",
-            "SHIPPED": "IN_TRANSIT",
-            "IN TRANSIT": "IN_TRANSIT",
-            "REACHED AT DESTINATION HUB": "IN_TRANSIT",
-            "OUT FOR DELIVERY": "OUT_FOR_DELIVERY",
-            "DELIVERED": "DELIVERED",
-            "RTO INITIATED": "RETURN_INITIATED",
-            "RTO IN TRANSIT": "RETURN_INITIATED",
-            "RTO DELIVERED": "RETURN_DELIVERED",
-            "CANCELLED": "CANCELLED",
-            "LOST": "FAILED"
+            "AWB Assigned": "READY_TO_SHIP",
+            "Pickup Scheduled": "PICKUP_SCHEDULED",
+            "Picked Up": "PICKED_UP",
+            "In Transit": "IN_TRANSIT",
+            "Shipped": "IN_TRANSIT",
+            "Reached at Destination Hub": "IN_TRANSIT",
+            "Out for Delivery": "OUT_FOR_DELIVERY",
+            "Delivered": "DELIVERED",
+            "Undelivered": "NDR_RAISED",
+            "RTO Initiated": "RTO_INITIATED",
+            "RTO In Transit": "RTO_IN_TRANSIT",
+            "RTO Delivered": "RTO_DELIVERED",
+            "Canceled": "CANCELLED",
+            "Cancelled": "CANCELLED",
         };
 
         // Sync each shipment (with rate limiting)
@@ -73,14 +74,14 @@ export async function GET(req: NextRequest) {
                 if (!shipment.awbNumber) continue;
 
                 // Track via Shiprocket API
-                const trackingData = await trackShipment(shipment.awbNumber);
+                const trackingData = await getTrackingData(shipment.awbNumber);
 
-                if (!trackingData || !trackingData.tracking_data) {
+                if (!trackingData) {
                     continue;
                 }
 
-                const shiprocketStatus = trackingData.tracking_data.shipment_status;
-                const mappedStatus = statusMap[shiprocketStatus?.toUpperCase()];
+                const shiprocketStatus = trackingData.currentStatus;
+                const mappedStatus = statusMap[shiprocketStatus];
 
                 if (mappedStatus && mappedStatus !== shipment.status) {
                     // Update status
@@ -88,8 +89,11 @@ export async function GET(req: NextRequest) {
                         shipment.id,
                         mappedStatus,
                         {
-                            trackingData: trackingData,
-                            deliveredAt: mappedStatus === "DELIVERED" ? new Date() : undefined
+                            trackingData: trackingData.raw as any,
+                            deliveredAt: mappedStatus === "DELIVERED" ? new Date() : undefined,
+                            estimatedDeliveryAt: trackingData.expectedDeliveryDate
+                                ? new Date(trackingData.expectedDeliveryDate)
+                                : undefined,
                         },
                         `Cron sync: Status updated to ${mappedStatus}`
                     );
@@ -97,7 +101,7 @@ export async function GET(req: NextRequest) {
                 }
 
                 // Add small delay to avoid rate limits
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, 200));
 
             } catch (error: any) {
                 console.error(`[Cron] Failed to sync ${shipment.awbNumber}:`, error.message);

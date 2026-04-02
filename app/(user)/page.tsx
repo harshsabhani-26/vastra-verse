@@ -1,7 +1,6 @@
 import { AppointmentBanner } from "@/components/home/AppointmentBanner";
 import { HeroWrapper } from "@/components/home/HeroWrapper";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
-import { MobileCategoryRow } from "@/components/home/MobileCategoryRow";
 import { NewArrivals } from "@/components/home/NewArrivals";
 import { BestSellers } from "@/components/home/BestSellers";
 import { MidPageBanner } from "@/components/home/MidPageBanner";
@@ -31,7 +30,6 @@ export default async function Home() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            <MobileCategoryRow categories={categories} />
             <HeroWrapper banners={heroBanners} heroBg={storeSettings?.heroBg} />
             <CategoryGrid categories={categories} />
             <NewArrivals />

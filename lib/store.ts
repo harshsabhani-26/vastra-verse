@@ -258,3 +258,13 @@ export const useCartStore = create<CartStore>()(
         }
     )
 );
+
+export interface HeaderStore {
+    productName: string;
+    setProductName: (name: string) => void;
+}
+
+export const useHeaderStore = create<HeaderStore>((set) => ({
+    productName: '',
+    setProductName: (name) => set({ productName: name }),
+}));

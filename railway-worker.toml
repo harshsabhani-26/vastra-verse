@@ -1,0 +1,35 @@
+# ============================================================
+# Vastra-Verse — Background Worker Service
+# ============================================================
+# Deploy this as a SEPARATE Railway service (not the web service).
+#
+# Steps:
+# 1. In Railway dashboard → "New Service" → "GitHub Repo"
+# 2. Select same repo
+# 3. Set "Config File Path" to: railway-worker.toml
+# 4. Copy all environment variables from the web service
+# 5. Deploy — the worker runs independently of the web server
+#
+# This prevents BullMQ jobs from competing with web traffic
+# for RAM and CPU on the same process.
+# ============================================================
+
+[deploy]
+startCommand = "npm run worker"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 20  # Workers should always restart
+numReplicas = 1               # 1 worker replica is sufficient initially
+
+[build]
+buildCommand = "npx prisma generate && npm run build"
+
+[environment]
+NODE_ENV = "production"
+# IMPORTANT: Worker needs all the same env vars as the web service.
+# Copy them from the web service in Railway dashboard.
+# Critical vars needed by workers:
+#   DATABASE_URL, DIRECT_URL
+#   UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
+#   EMAIL_USER, EMAIL_PASS
+#   RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET
+#   CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET

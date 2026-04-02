@@ -134,11 +134,9 @@ const optional = [
   "SENTRY_DSN",
   "UPSTASH_REDIS_REST_URL",
   "UPSTASH_REDIS_REST_TOKEN",
-  // Add new optional services here
-  "SHIPROCKET_EMAIL",
-  "SHIPROCKET_PASSWORD",
   "SMTP_HOST",
-  "SMTP_PORT"
+  "SMTP_USER",
+  "SMTP_PASS",
 ];
 ```
 

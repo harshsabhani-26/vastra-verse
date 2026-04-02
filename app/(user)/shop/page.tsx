@@ -48,11 +48,15 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     }
 
     if (category) {
+        // category param is the main category slug (e.g. "saree")
+        // Sub-categories are stored with slugs like "saree/embrodery-saree"
+        // So we match: slug starts with "saree/" OR slug exactly equals "saree" OR name equals "saree"
         where.category = {
-            name: {
-                equals: category,
-                mode: 'insensitive'
-            }
+            OR: [
+                { slug: { startsWith: `${category}/`, mode: 'insensitive' } },
+                { slug: { equals: category, mode: 'insensitive' } },
+                { name: { equals: category, mode: 'insensitive' } },
+            ]
         };
     }
 
@@ -67,7 +71,6 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             hasSome: colors
         };
     }
-    console.log('ShopPage where clause:', JSON.stringify(where, null, 2));
 
     let orderBy: Prisma.ProductOrderByWithRelationInput | Prisma.ProductOrderByWithRelationInput[] = {};
     if (sort === 'newest') {

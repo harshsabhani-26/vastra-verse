@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { checkUserExists, authenticate, register, googleSignIn } from "@/lib/actions";
+import { checkUserExists, authenticate, register } from "@/lib/actions";
 import { GoogleLogo } from "@/components/auth/GoogleLogo";
 import toast from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -35,7 +35,7 @@ export function UnifiedAuthForm() {
     const [otp, setOtp] = useState("");
     const [otpTimer, setOtpTimer] = useState(0);
     const [otpVerified, setOtpVerified] = useState(false);
-    const [otpMethod, setOtpMethod] = useState<"email" | "phone">("email"); // Which method to use
+    const [otpMethod] = useState<"email">("email"); // Always email now
 
     // OTP Timer countdown
     useEffect(() => {
@@ -78,14 +78,10 @@ export function UnifiedAuthForm() {
         }
     };
 
-    const sendOTP = async (type: 'register' | 'login', method?: 'email' | 'phone') => {
-        const useMethod = method || otpMethod;
-
+    const sendOTP = async (type: 'register' | 'login') => {
         try {
-            const endpoint = useMethod === 'phone' ? '/api/auth/send-sms-otp' : '/api/auth/send-otp';
-            const body = useMethod === 'phone'
-                ? { phone, type }
-                : { email, type };
+            const endpoint = '/api/auth/send-otp';
+            const body = { email, type };
 
             const response = await fetch(endpoint, {
                 method: 'POST',
@@ -98,13 +94,7 @@ export function UnifiedAuthForm() {
             if (data.success) {
                 setOtpSent(true);
                 setOtpTimer(300); // 5 minutes = 300 seconds
-                const destination = useMethod === 'phone' ? 'phone' : 'email';
-                toast.success(`OTP sent to your ${destination}!`);
-
-                // Show OTP in development
-                if (data.otp) {
-                    toast.success(`Development OTP: ${data.otp}`, { duration: 10000 });
-                }
+                toast.success('OTP sent to your email!');
             } else {
                 toast.error(data.error || 'Failed to send OTP');
             }
@@ -120,9 +110,7 @@ export function UnifiedAuthForm() {
         }
 
         try {
-            const body = otpMethod === 'phone'
-                ? { phone, otp }
-                : { email, otp };
+            const body = { email, otp };
 
             const response = await fetch('/api/auth/verify-otp', {
                 method: 'POST',
@@ -134,8 +122,7 @@ export function UnifiedAuthForm() {
 
             if (data.valid) {
                 setOtpVerified(true);
-                const verified = otpMethod === 'phone' ? 'Phone' : 'Email';
-                toast.success(`${verified} verified successfully!`);
+                toast.success('Email verified successfully!');
             } else {
                 toast.error(data.message || 'Invalid OTP');
             }
@@ -157,8 +144,7 @@ export function UnifiedAuthForm() {
         e.preventDefault();
 
         if (!otpVerified) {
-            const method = otpMethod === 'phone' ? 'phone number' : 'email';
-            toast.error(`Please verify your ${method} first`);
+            toast.error('Please verify your email first');
             return;
         }
 
@@ -191,6 +177,34 @@ export function UnifiedAuthForm() {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const handleGoogleSignIn = () => {
+        const width = 500;
+        const height = 620;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+
+        const popup = window.open(
+            `/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`,
+            "GoogleSignIn",
+            `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+        );
+
+        if (!popup) {
+            // Fallback: full redirect if popups are blocked
+            window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+            return;
+        }
+
+        // Poll until popup closes, then refresh session
+        const timer = setInterval(() => {
+            if (popup.closed) {
+                clearInterval(timer);
+                router.refresh();
+                window.location.reload();
+            }
+        }, 500);
     };
 
     return (
@@ -262,7 +276,7 @@ export function UnifiedAuthForm() {
                     <Button
                         variant="outline"
                         type="button"
-                        onClick={() => googleSignIn(callbackUrl)}
+                        onClick={handleGoogleSignIn}
                         className="w-full h-12 border-primary/10 text-primary hover:bg-surface flex items-center justify-center gap-3 rounded-sm font-medium transition-all"
                     >
                         <GoogleLogo />
@@ -414,50 +428,26 @@ export function UnifiedAuthForm() {
                         <p className="text-[10px] text-text-muted">For order updates and OTP verification</p>
                     </div>
 
-                    {/* OTP Verification Method Toggle */}
+                    {/* Email Verification Action */}
                     {!otpSent && (
                         <div className="space-y-2 bg-surface/30 p-4 rounded-sm border border-primary/5">
                             <label className="text-[10px] uppercase tracking-[0.2em] text-text-muted font-medium mb-3 block">
-                                Verification Method
+                                Verification
                             </label>
-                            <div className="flex gap-2">
-                                <Button
-                                    type="button"
-                                    onClick={() => {
-                                        setOtpMethod('email');
-                                        sendOTP('register', 'email');
-                                    }}
-                                    variant={otpMethod === 'email' ? 'default' : 'outline'}
-                                    className={`flex-1 h-10 text-[10px] uppercase tracking-wider ${otpMethod === 'email' ? 'bg-primary text-white shadow-md' : 'border-primary/20 text-text-muted hover:text-primary hover:bg-white'}`}
-                                >
-                                    Email OTP
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={() => {
-                                        if (!phone || phone.length !== 10) {
-                                            toast.error('Please enter a valid 10-digit phone number first');
-                                            return;
-                                        }
-                                        setOtpMethod('phone');
-                                        sendOTP('register', 'phone');
-                                    }}
-                                    variant={otpMethod === 'phone' ? 'default' : 'outline'}
-                                    className={`flex-1 h-10 text-[10px] uppercase tracking-wider ${otpMethod === 'phone' ? 'bg-primary text-white shadow-md' : 'border-primary/20 text-text-muted hover:text-primary hover:bg-white'}`}
-                                >
-                                    SMS OTP
-                                </Button>
-                            </div>
+                            <Button
+                                type="button"
+                                onClick={() => sendOTP('register')}
+                                className="w-full h-10 text-[10px] uppercase tracking-wider bg-primary text-white shadow-md hover:bg-primary-dark transition-all"
+                            >
+                                Send Email OTP
+                            </Button>
                         </div>
                     )}
 
                     {otpSent && (
                         <div className="space-y-2 bg-surface/30 p-4 rounded-sm border border-primary/5">
                             <label className="text-xs text-text-muted font-medium mb-2 block">
-                                {otpMethod === 'phone'
-                                    ? 'Enter 6-digit OTP sent to your phone'
-                                    : 'Enter 6-digit OTP sent to your email'
-                                }
+                                Enter 6-digit OTP sent to your email
                             </label>
                             <div className="flex gap-2">
                                 <Input

@@ -113,6 +113,9 @@ model Session {
   lastActivityAt DateTime @default(now())
   userAgent      String?
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])   // Audit fix: session lookup by user
+  @@index([expires])  // Audit fix: expired session cleanup cron
 }
 
 model VerificationToken {
@@ -138,6 +141,8 @@ model EmailVerification {
   @@index([phone, otp])
   @@index([email, type])
   @@index([phone, type])
+  @@index([expiresAt])  // Audit fix: cleanup expired OTPs via cron
+  @@index([createdAt])  // Audit fix: analytics + cleanup ordering
 }
 
 model Address {
@@ -158,6 +163,10 @@ model Address {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])                  // Audit fix: covers user address queries
+  @@index([userId, type])            // Audit fix: filter shipping vs billing
+  @@index([userId, isDefault])       // Audit fix: fast default address lookup
 }
 
 model Wishlist {
@@ -238,6 +247,7 @@ model MainCategory {
   id           String    @id @default(cuid())
   name         String
   href         String
+  mobileImage  String?
   isActive     Boolean   @default(true)
   displayOrder Int       @default(0)
   createdAt    DateTime  @default(now())
@@ -269,6 +279,7 @@ model Order {
   sgst               Decimal?          @default(0)
   shippingAddress    String?
   shippingCharges    Decimal?          @default(0)
+  shippingCity       String?
   shippingState      String?
   subtotal           Decimal?
   trackingNumber     String?
@@ -290,6 +301,8 @@ model Order {
   @@index([status, paymentStatus])
   @@index([userId, status])
   @@index([createdAt, id])
+  // Covers the admin orders OR-filter query: paymentStatus + paymentMethod + createdAt sort
+  @@index([paymentStatus, paymentMethod, createdAt])
 }
 
 model OrderItem {
@@ -301,6 +314,9 @@ model OrderItem {
   order       Order        @relation(fields: [orderId], references: [id])
   product     Product      @relation(fields: [productId], references: [id])
   returnItems ReturnItem[]
+
+  @@index([orderId])    // Audit fix: order detail page lookup
+  @@index([productId])  // Audit fix: product sales history
 }
 
 model Shipment {
@@ -323,6 +339,12 @@ model Shipment {
   length              Decimal?       @default(0) // in cm
   breadth             Decimal?       @default(0) // in cm
   height              Decimal?       @default(0) // in cm
+
+  // Shiprocket Integration
+  shiprocketOrderId String?                         // Shiprocket-specific order ID
+  pickupPincode     String?                         // Origin pincode for pickup
+  carrier           String   @default("SHIPROCKET") // Carrier identifier
+  manifestUrl       String?                         // Manifest PDF URL
 
   // Cost & Weight Tracking
   actualWeight     Decimal? @default(0) // Actual weight from courier
@@ -361,6 +383,7 @@ model Shipment {
   updatedAt          DateTime            @updatedAt
   order              Order               @relation(fields: [orderId], references: [id])
   codReconciliations CodReconciliation[]
+  ndrEvents          NdrEvent[]
 
   @@index([orderId])
   @@index([awbNumber])
@@ -368,6 +391,7 @@ model Shipment {
   @@index([isReturn])
   @@index([createdAt])
   @@index([codSettlementStatus])
+  @@index([shiprocketOrderId])
 }
 
 model CourierPerformance {
@@ -407,6 +431,27 @@ model CodReconciliation {
   @@index([settlementStatus])
   @@index([collectedDate])
   @@index([settlementDate])
+}
+
+model NdrEvent {
+  id          String    @id @default(cuid())
+  shipmentId  String
+  awbNumber   String
+  ndrCode     String
+  ndrReason   String
+  attemptDate DateTime
+  actionTaken String?
+  actionDate  DateTime?
+  adminNotes  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id])
+
+  @@index([shipmentId])
+  @@index([awbNumber])
+  @@index([actionTaken])
 }
 
 model ReturnRequest {
@@ -950,6 +995,7 @@ model Appointment {
   message           String?
   status            AppointmentStatus @default(PENDING)
   adminNotes        String?
+  appointmentType   String            @default("STORE")
   allowPhoneContact Boolean           @default(true)
   newsletterSignup  Boolean           @default(false)
   createdAt         DateTime          @default(now())
@@ -1260,12 +1306,20 @@ enum RefundMethodEnum {
 enum ShipmentStatus {
   PENDING
   READY_TO_SHIP
+  LABEL_GENERATED
   PICKUP_SCHEDULED
+  PICKED_UP
   IN_TRANSIT
   OUT_FOR_DELIVERY
   DELIVERED
+  DELIVERY_ATTEMPTED
+  NDR_RAISED
   FAILED
   CANCELLED
+  RTO_INITIATED
+  RTO_IN_TRANSIT
+  RTO_DELIVERED
+  EXCEPTION
   RETURN_INITIATED
   RETURN_PICKED
   RETURN_DELIVERED
@@ -1298,7 +1352,7 @@ model MigrationLog {
 
 model WebhookAuditLog {
   id                String   @id @default(cuid())
-  provider          String   // RAZORPAY, SHIPROCKET, etc.
+  provider          String   // RAZORPAY, etc.
   eventType         String   // refund.created, payment.captured, etc.
   eventId           String?  // Unique event ID from provider
   status            String   // ACCEPTED, REJECTED

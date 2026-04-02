@@ -173,24 +173,7 @@ export function CartSummary() {
                     <span className="font-medium text-primary">₹{subtotal.toLocaleString('en-IN')}</span>
                 </div>
 
-                {/* Tax Breakdown */}
-                {loading ? (
-                    <div className="space-y-2 mb-4">
-                        <div className="h-4 bg-gray-100 rounded animate-pulse"></div>
-                        <div className="h-4 bg-gray-100 rounded animate-pulse"></div>
-                    </div>
-                ) : (
-                    <>
-                        <div className="flex justify-between text-xs text-text-muted mb-2">
-                            <span>CGST ({settings.cgstRate}%)</span>
-                            <span>₹{(subtotal * (settings.cgstRate / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        </div>
-                        <div className="flex justify-between text-xs text-text-muted mb-4">
-                            <span>SGST ({settings.sgstRate}%)</span>
-                            <span>₹{(subtotal * (settings.sgstRate / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        </div>
-                    </>
-                )}
+                {/* Tax Breakdown removed as per request to sell without GST */}
 
                 {/* Discount */}
                 {appliedCoupon && (
@@ -210,7 +193,7 @@ export function CartSummary() {
                         {loading ? (
                             <span className="h-6 w-20 bg-gray-100 rounded animate-pulse inline-block"></span>
                         ) : (
-                            `₹${(subtotal + (subtotal * ((settings.cgstRate + settings.sgstRate) / 100)) - discount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
+                            `₹${(subtotal - discount).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
                         )}
                     </span>
                 </div>

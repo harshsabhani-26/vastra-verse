@@ -25,8 +25,8 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
     adapter: PrismaAdapter(prisma) as any,
     session: {
         strategy: "jwt",
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-        updateAge: 24 * 60 * 60, // 24 hours
+        maxAge: 7 * 24 * 60 * 60,  // 7 days (audit: reduced from 30 days to limit token theft window)
+        updateAge: 12 * 60 * 60,    // 12 hours (audit: was 24h — refresh more frequently)
     },
     // Explicitly configure secure cookies for production
     // Simplified configuration - let NextAuth handle secure cookies automatically

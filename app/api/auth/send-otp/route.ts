@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import crypto from 'crypto';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { logError, logSecurityEvent } from '@/lib/logger';
+import { sendOTPEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
     try {
@@ -76,22 +77,21 @@ export async function POST(request: NextRequest) {
             ipAddress: identifier,
         });
 
-        // TODO: Send OTP via email
-        // For now, log it to console (in development only)
-        if (process.env.NODE_ENV === 'development') {
-            console.log(`\n📧 OTP for ${email}: ${otp}\n`);
-        }
+        // Send OTP via email using our Nodemailer service
+        const emailSent = await sendOTPEmail(email, otp, type as 'register' | 'login' | 'forgot-password');
 
-        // In production, you would send this via email service
-        // Example: await sendEmail({ to: email, subject: 'Your OTP', body: `Your OTP is: ${otp}` });
+        if (!emailSent) {
+            return NextResponse.json(
+                { error: 'Failed to send OTP email. Please try again later.' },
+                { status: 500 }
+            );
+        }
 
         return NextResponse.json(
             {
                 success: true,
                 message: 'OTP sent successfully',
                 expiresAt,
-                // Only include OTP in development for testing
-                ...(process.env.NODE_ENV === 'development' && { otp }),
             },
             { status: 200 }
         );

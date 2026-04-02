@@ -47,13 +47,15 @@ const nextConfig: NextConfig = {
   // - bullmq, ioredis: Redis job queue (Node.js only, uses ioredis/built/utils internally)
   serverExternalPackages: ['@prisma/client', 'prisma', 'pdfkit', 'bullmq', 'ioredis'],
 
-  // Experimental optimizations
+  // Increase body size limit for API route handlers (e.g. image uploads)
+  // This applies to middleware and API routes (not Server Actions — those use experimental.serverActions.bodySizeLimit)
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
-    // Increase server action body size limit for video uploads
     serverActions: {
-      bodySizeLimit: '50mb', // Allow up to 50MB for video uploads
+      bodySizeLimit: '10mb',  // audit: reduced from 50mb — limits DoS via large upload payloads
     },
+    // Raise the max body size for API Route Handlers
+    middlewareClientMaxBodySize: '10mb',  // audit: reduced from 50mb
   },
 
   // Enterprise Security Headers for Production

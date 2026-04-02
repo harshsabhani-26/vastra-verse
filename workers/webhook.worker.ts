@@ -132,11 +132,6 @@ async function processWebhookJob(job: Job<WebhookJobData>) {
         case 'razorpay':
             return processRazorpayWebhook(payload);
 
-        case 'shiprocket':
-            // Future: process Shiprocket webhook events
-            logInfo('WEBHOOK_WORKER', 'Shiprocket webhook — not implemented yet', { event });
-            return { status: 'skipped', reason: 'Not implemented' };
-
         default:
             logError('WEBHOOK_WORKER', new Error(`Unknown webhook provider: ${provider}`));
             return { status: 'error', reason: `Unknown provider: ${provider}` };

@@ -8,8 +8,8 @@ async function seedCourierPartners(prisma) {
 
     const partners = [
         {
-            name: 'Delhivery',
-            trackingUrlTemplate: 'https://www.delhivery.com/track/package/{awb}',
+            name: 'Shiprocket',
+            trackingUrlTemplate: 'https://shiprocket.co/tracking/{awb}',
             supportsCOD: true,
             supportsInternational: false,
             isActive: true,

@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
+import { ArrowLeft, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useCartStore } from "@/lib/store";
+import { useCartStore, useHeaderStore } from "@/lib/store";
 import { useSession, signOut } from "next-auth/react";
 import { SearchOverlay } from "@/components/search/SearchOverlay";
 import { useWishlistStore } from "@/lib/wishlist-store";
@@ -69,7 +71,7 @@ const NAV_CATEGORIES = [
 
 interface HeaderProps {
     logo?: string | null;
-    mainCategories?: { id: string; name: string; href: string }[];
+    mainCategories?: { id: string; name: string; href: string; mobileImage?: string | null }[];
 }
 
 export function Header({ logo, mainCategories = [] }: HeaderProps) {
@@ -84,6 +86,11 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
     const { data: session, status } = useSession();
     const [mounted, setMounted] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
+    const pathname = usePathname();
+    const router = useRouter();
+
+    const isProductPage = pathname?.startsWith('/shop/') && pathname !== '/shop';
+    const productName = useHeaderStore(state => state.productName);
 
     useEffect(() => {
         setMounted(true);
@@ -106,18 +113,6 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
         }
     }, [status, syncWithUser, clearUserCart, syncWishlist, clearWishlist]);
 
-    const [isBannerVisible, setIsBannerVisible] = useState<boolean | null>(null);
-
-    // Only check after mount — prevents hydration mismatch AND flash on reload
-    useEffect(() => {
-        const dismissed = sessionStorage.getItem("promo-banner-dismissed") === "true";
-        setIsBannerVisible(!dismissed);
-    }, []);
-
-    const dismissBanner = () => {
-        sessionStorage.setItem("promo-banner-dismissed", "true");
-        setIsBannerVisible(false);
-    };
 
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -132,21 +127,45 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
             <div className="container mx-auto px-6 md:px-[60px]">
                 <div className="relative flex py-[8px] md:py-[12px] items-center">
 
-                    {/* Mobile Hamburger - inline on mobile so it doesn't overlap logo, absolute on tablet */}
-                    <div className="xl:hidden relative md:absolute md:left-0 flex items-center z-10 shrink-0">
-                        <button
-                            className="navTrigger-root cursor-pointer inline-flex items-center justify-center leading-none pointer-events-auto text-center h-[40px] md:h-[4rem] w-[40px] md:w-[4rem] flex-col"
-                            onClick={() => setIsMobileMenuOpen(true)}
-                            aria-label="Toggle navigation panel"
-                        >
-                            <span className="w-[24px] md:w-[30px] h-[2px] md:h-[3px] my-[3px] md:my-[5px] bg-primary"></span>
-                            <span className="w-[24px] md:w-[30px] h-[2px] md:h-[3px] my-[3px] md:my-[5px] bg-primary"></span>
-                            <span className="w-[24px] md:w-[30px] h-[2px] md:h-[3px] my-[3px] md:my-[5px] bg-primary"></span>
-                        </button>
-                    </div>
+                    {/* Mobile Header Left Section */}
+                    {isProductPage ? (
+                        <div className="flex md:hidden items-center gap-3 shrink-0 h-[40px] pl-[5px]">
+                            <button
+                                onClick={() => router.back()}
+                                className="p-1 -ml-2 text-[#42120F]"
+                                aria-label="Go back"
+                            >
+                                <ArrowLeft className="w-6 h-6" />
+                            </button>
+                            <Link
+                                href="/"
+                                className="w-[32px] h-[32px] rounded-full bg-[#42120F] text-white flex items-center justify-center shadow-sm shrink-0"
+                                aria-label="Home"
+                            >
+                                <Home className="w-[16px] h-[16px]" strokeWidth={2} />
+                            </Link>
+                            <h1 className="text-[18px] font-medium text-[#42120F] truncate w-full flex-1 ml-2 text-center mr-auto mr-1" style={{ fontFamily: '"Playfair Display", serif', letterSpacing: '0.05em' }}>
+                                {productName}
+                            </h1>
+                        </div>
+                    ) : (
+                        <div className="xl:hidden relative md:absolute md:left-0 flex items-center z-10 shrink-0">
+                            <button
+                                className="navTrigger-root cursor-pointer inline-flex items-center justify-center leading-none pointer-events-auto text-center h-[40px] md:h-[4rem] w-[40px] md:w-[4rem] flex-col"
+                                onClick={() => setIsMobileMenuOpen(true)}
+                                aria-label="Toggle navigation panel"
+                            >
+                                <span className="w-[24px] md:w-[30px] h-[2px] md:h-[3px] my-[3px] md:my-[5px] bg-primary"></span>
+                                <span className="w-[24px] md:w-[30px] h-[2px] md:h-[3px] my-[3px] md:my-[5px] bg-primary"></span>
+                                <span className="w-[24px] md:w-[30px] h-[2px] md:h-[3px] my-[3px] md:my-[5px] bg-primary"></span>
+                            </button>
+                        </div>
+                    )}
 
                     {/* Logo — Left aligned, scaled appropriately for mobile to prevent overlap */}
-                    <div className="flex items-center shrink-0 pl-0 md:pl-[48px] xl:pl-0 h-[40px] md:h-[50px] xl:-ml-[30px] md:-ml-[20px] ml-[5px]">
+                    <div className={cn("flex items-center shrink-0 pl-0 md:pl-[48px] xl:pl-0 h-[40px] md:h-[50px] xl:-ml-[30px] md:-ml-[20px]",
+                        isProductPage ? "hidden md:flex ml-auto md:ml-0" : "ml-[5px]"
+                    )}>
                         <Link href="/" className="w-[100px] md:w-[150px] h-full flex items-center" aria-label="Vastra Verse">
                             <Image
                                 src={logo || "/logo.png"}
@@ -190,21 +209,7 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                             </button>
                         </div>
 
-                        {/* Currency Switcher (Hidden Mobile) */}
-                        <div className="header-switchersContainer hidden w-full sm:block">
-                            <div className="header-switchers auto-cols-max grid grid-flow-col justify-end max-w-site mx-auto relative w-full z-menu border-r border-[#E2E8F0] pr-4">
-                                <div className="currencySwitcher-root grid items-center justify-items-start max-w-site mx-auto my-0 p-0 relative sm:justify-items-end">
-                                    <button className="w-auto flex items-center text-[16px] font-semibold mr-[4px] pr-[1rem] relative" aria-label="INR">
-                                        <span className="block w-[32px] h-[22px] bg-quaternary-600 mr-[0.6rem]">
-                                            <Icons.IndFlag />
-                                        </span>
-                                        INR
-                                        <span className="relative leading-[90%] mr-[10px] ml-[4px]">(₹)</span>
-                                        <span className="block border-b-[2.5px] border-r-[2.5px] border-primary rotate-45 h-[8px] w-[8px] mb-[4px]"></span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+
 
                         {status !== "authenticated" && (
                             <div className="w-auto ml-0 md:ml-[0.8rem]">
@@ -246,7 +251,7 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
 
                         {/* Profile Area (Avatar when logged in, or Login Text when logged out) */}
                         {status === "authenticated" && session?.user ? (
-                            <div className="w-auto ml-0 md:ml-[0.6rem] relative" ref={profileRef}>
+                            <div className={cn("hidden md:flex w-auto ml-0 md:ml-[0.6rem] relative", isProductPage && "hidden md:block")} ref={profileRef}>
                                 <button
                                     className="p-[6px] md:p-[8px] flex items-center"
                                     onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -305,48 +310,74 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                 </div>
             </div>
 
-            {/* ROW 3: Category Navigation */}
+
+
+            {/* Desktop Category Image Slider (hidden on mobile) */}
             {mainCategories && mainCategories.length > 0 && (
-                <div className="hidden lg:block w-full border-t border-b border-border-light bg-white h-[61px] relative z-40">
-                    <div className="container mx-auto px-6 md:px-[60px] h-full">
-                        <nav className="flex items-center h-full justify-start space-x-[35px] overflow-hidden">
-                            {mainCategories.map(c => ({ label: c.name, href: c.href })).map((cat, i) => (
+                <div className="hidden md:block w-full bg-[#f8f8f8] border-b border-gray-200 py-4">
+                    <div className="container mx-auto px-6 md:px-[60px]">
+                        <div
+                            className="flex justify-start overflow-x-auto gap-6 pb-2"
+                            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                        >
+                            {mainCategories.map((cat) => (
                                 <Link
-                                    key={cat.href}
+                                    key={`desktop-slider-${cat.id}`}
                                     href={cat.href}
-                                    className={cn(
-                                        "flex-shrink-0 font-sans text-[15px] font-medium leading-none whitespace-nowrap transition-colors decoration-2 underline-offset-4 hover:underline",
-                                        i === 0 ? "text-primary" : "text-[#172026] hover:text-primary"
-                                    )}
+                                    className="flex flex-col items-center gap-2 flex-shrink-0 w-[110px] group"
                                 >
-                                    {cat.label}
+                                    <div className="w-[100px] h-[100px] rounded-full overflow-hidden border-2 border-white shadow-md bg-white relative flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
+                                        {cat.mobileImage ? (
+                                            <Image
+                                                src={cat.mobileImage}
+                                                alt={cat.name}
+                                                fill
+                                                className="object-cover"
+                                                sizes="100px"
+                                            />
+                                        ) : (
+                                            <span className="block w-full h-full bg-[#f3f3f3]" />
+                                        )}
+                                    </div>
+                                    <span className="text-[14px] font-semibold text-center leading-tight text-stone-800 group-hover:text-primary transition-colors">
+                                        {cat.name}
+                                    </span>
                                 </Link>
                             ))}
-                        </nav>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* ROW 4: Announcement Bar / Promotional Banner */}
-            {isBannerVisible === true && (
-                <div className="flex w-full bg-primary px-[15px] py-[8px] text-center text-[#fff] text-[13px] relative h-[36px] pr-[40px] items-center justify-center leading-none">
-                    <Link href="/shipping-policy" className="inline-block w-full h-full font-sans tracking-wide truncate">
-                        <span className="font-semibold mr-[4px]">Free National Shipping</span>
-                        on orders above Rs.30000* on
-                        <span className="text-[#fff] underline text-[13px] ml-[4px]">Selected Cities</span>
-                    </Link>
-                    <button
-                        className="absolute md:right-[15px] right-[10px] top-[50%] -translate-y-1/2 bg-transparent px-[8px] py-[8px] shadow-none outline-none hover:opacity-80"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            dismissBanner();
-                        }}
-                    >
-                        <svg width="15" height="15" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" style={{ display: 'inline-block', verticalAlign: 'middle' }}>
-                            <path d="M997.293 124.385l-97.76-97.76-387.574 387.573-387.573-387.573-97.76 97.76 387.573 387.573-387.573 387.574 97.76 97.76 387.573-387.574 387.574 387.574 97.76-97.76-387.574-387.574 387.574-387.573z" style={{ fill: 'rgb(255, 255, 255)' }}></path>
-                        </svg>
-                    </button>
+            {/* Mobile Category Slider (Visible only on mobile, hidden on product pages) */}
+            {!(pathname?.startsWith('/shop/') && pathname !== '/shop') && (
+                <div className="md:hidden w-full bg-[#f8f8f8] py-3 border-b border-gray-200">
+                    <div className="flex overflow-x-auto gap-4 px-4 pb-2 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                        {mainCategories.map(cat => (
+                            <Link
+                                key={`mobile-slider-${cat.id}`}
+                                href={cat.href}
+                                className="flex flex-col items-center gap-2 flex-shrink-0 w-[90px]"
+                            >
+                                <div className="w-[80px] h-[80px] rounded-full overflow-hidden border-2 border-white shadow-md bg-white relative flex items-center justify-center">
+                                    {cat.mobileImage ? (
+                                        <Image
+                                            src={cat.mobileImage}
+                                            alt={cat.name}
+                                            fill
+                                            className="object-cover"
+                                            sizes="80px"
+                                        />
+                                    ) : (
+                                        <span className="text-[#e0e0e0] opacity-50 block w-full h-full bg-[#f3f3f3]" />
+                                    )}
+                                </div>
+                                <span className="text-[13px] font-semibold text-center leading-tight truncate w-full text-stone-800">
+                                    {cat.name}
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -407,14 +438,71 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                                 <div className="p-6 text-center text-gray-500">No categories available</div>
                             )}
 
-                            {/* Sign Out — shown only when logged in */}
+                            {/* Logged Out Links (Distinct Section) */}
+                            {status !== "authenticated" && (
+                                <div className="bg-[#f0ece1] pt-[8px] pb-[32px] mt-auto flex-1 min-h-full">
+                                    <button
+                                        onClick={() => { setIsMobileMenuOpen(false); setIsLoginModalOpen(true); }}
+                                        className="w-full text-left px-[20px] py-[14px] text-[15px] font-medium text-[#172026] hover:bg-[#e6e2d6] transition-colors"
+                                    >
+                                        Log In / Sign Up
+                                    </button>
+                                    {[
+                                        { label: "My Account", href: "/profile" },
+                                        { label: "My Orders", href: "/orders" },
+                                        { label: "Wishlist", href: "/wishlist" },
+                                        { label: "Gift Card", href: "/gift-cards" },
+                                        { label: "Book an Appointment", href: "/appointment" },
+                                        { label: "Store Locator", href: "/stores" },
+                                        { label: "Contact Us", href: "/contact" },
+                                    ].map((link, idx) => (
+                                        <Link
+                                            key={idx}
+                                            href={link.href}
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="block px-[20px] py-[14px] text-[15px] font-medium text-[#172026] hover:bg-[#e6e2d6] transition-colors"
+                                        >
+                                            {link.label}
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Account Links — shown only when logged in */}
                             {status === "authenticated" && (
-                                <button
-                                    onClick={() => { setIsMobileMenuOpen(false); clearUserCart(); clearWishlist(); signOut(); }}
-                                    className="w-full text-left px-[20px] py-[16px] text-[15px] text-[#0a0a0a] font-bold border-b border-[#F0F0F0] hover:bg-[#F9F9F9] transition-colors"
-                                >
-                                    Sign Out
-                                </button>
+                                <div className="bg-[#f0ece1] pb-[32px]">
+                                    {[
+                                        { label: "My Account", href: "/profile" },
+                                        { label: "My Orders", href: "/orders" },
+                                        { label: "Wishlist", href: "/wishlist" },
+                                        { label: "Gift Card", href: "/gift-cards" },
+                                        { label: "Book an Appointment", href: "/appointment" },
+                                        { label: "Store Locator", href: "/stores" },
+                                        { label: "Contact Us", href: "/contact" },
+                                    ].map((link) => {
+                                        const isActive = pathname === link.href;
+                                        return (
+                                            <Link
+                                                key={link.href}
+                                                href={link.href}
+                                                onClick={() => setIsMobileMenuOpen(false)}
+                                                className={`block px-[20px] py-[16px] text-[15px] transition-colors ${
+                                                    isActive
+                                                        ? "text-[#42120F] font-semibold"
+                                                        : "text-[#3D2C1E] font-normal hover:text-[#42120F]"
+                                                }`}
+                                            >
+                                                {link.label}
+                                            </Link>
+                                        );
+                                    })}
+                                    <button
+                                        onClick={() => { setIsMobileMenuOpen(false); clearUserCart(); clearWishlist(); signOut(); }}
+                                        className="w-full text-left px-[20px] py-[16px] text-[15px] font-normal text-[#3D2C1E] hover:text-[#42120F] transition-colors"
+                                    >
+                                        Logout
+                                    </button>
+                                </div>
                             )}
                         </nav>
                     </div>

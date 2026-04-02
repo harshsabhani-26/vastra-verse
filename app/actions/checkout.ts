@@ -152,6 +152,7 @@ export async function createOrder(formData: FormData) {
                 customerName,
                 customerPhone: recipientPhone || phone || "",
                 shippingAddress: fullAddress,
+                shippingCity: city,
                 shippingState: state,
                 couponCode,
                 couponId,
@@ -246,6 +247,7 @@ export async function createOrder(formData: FormData) {
                 customerName: customerName,
                 customerPhone: recipientPhone || phone || "",
                 shippingAddress: fullAddress,
+                shippingCity: city || "Unknown",
                 shippingState: state || "Unknown",
                 items: {
                     create: items.map((item: any) => ({
@@ -375,6 +377,7 @@ export async function createOrderAfterPayment(data: {
     customerName: string;
     customerPhone: string;
     shippingAddress: string;
+    shippingCity: string;
     shippingState: string;
     couponCode?: string | null;
     couponId?: string | null;
@@ -436,6 +439,7 @@ export async function createOrderAfterPayment(data: {
                 customerName: data.customerName,
                 customerPhone: data.customerPhone,
                 shippingAddress: data.shippingAddress,
+                shippingCity: data.shippingCity,
                 shippingState: data.shippingState,
                 items: {
                     create: data.items.map((item: any) => ({

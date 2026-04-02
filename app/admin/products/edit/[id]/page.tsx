@@ -82,6 +82,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     const [finalPrice, setFinalPrice] = useState(0);
     const [selectedColors, setSelectedColors] = useState<string[]>([]);
     const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
+    const [selectedWeaveTypes, setSelectedWeaveTypes] = useState<string[]>([]);
     const [hasBlousePiece, setHasBlousePiece] = useState(true);
     const [isNewArrival, setIsNewArrival] = useState(false);
     const [isBestSeller, setIsBestSeller] = useState(false);
@@ -108,6 +109,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     setFinalPrice(data.finalPrice || data.price || 0);
                     setSelectedColors(data.colors || []);
                     setSelectedOccasions(data.occasions || []);
+                    setSelectedWeaveTypes(
+                        data.weaveType
+                            ? data.weaveType.split(",").map((w: string) => w.trim()).filter(Boolean)
+                            : []
+                    );
                     setHasBlousePiece(data.hasBlousePiece !== false);
                     setIsNewArrival(data.isNewArrival || false);
                     setIsBestSeller(data.isBestSeller || false);
@@ -163,6 +169,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         );
     };
 
+    const toggleWeaveType = (weave: string) => {
+        setSelectedWeaveTypes(prev =>
+            prev.includes(weave)
+                ? prev.filter(w => w !== weave)
+                : [...prev, weave]
+        );
+    };
+
     async function handleSubmit(saveAction: "DRAFT" | "PUBLISH") {
         setSaving(true);
 
@@ -213,6 +227,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         }
         formData.append("colors", JSON.stringify(selectedColors));
         formData.append("occasions", JSON.stringify(selectedOccasions));
+        formData.append("weaveType", selectedWeaveTypes.join(", "));
         formData.append("finalPrice", finalPrice.toString());
         formData.append("isNewArrival", isNewArrival.toString());
         formData.append("isBestSeller", isBestSeller.toString());
@@ -455,19 +470,23 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             </select>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="weaveType">Weave Type</Label>
-                            <select
-                                id="weaveType"
-                                name="weaveType"
-                                className="w-full h-10 rounded-md border border-stone-200 bg-white px-3 text-sm"
-                                defaultValue={product.weaveType}
-                            >
-                                <option value="">Select Weave</option>
+                        <div className="md:col-span-2 space-y-2">
+                            <Label>Weave Type (Select all that apply)</Label>
+                            <div className="flex flex-wrap gap-2">
                                 {WEAVE_TYPES.map((weave) => (
-                                    <option key={weave} value={weave}>{weave}</option>
+                                    <button
+                                        key={weave}
+                                        type="button"
+                                        onClick={() => toggleWeaveType(weave)}
+                                        className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${selectedWeaveTypes.includes(weave)
+                                                ? "bg-primary text-white"
+                                                : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+                                            }`}
+                                    >
+                                        {weave}
+                                    </button>
                                 ))}
-                            </select>
+                            </div>
                         </div>
 
                         <div className="md:col-span-2 space-y-2">

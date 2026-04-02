@@ -125,6 +125,7 @@ export async function POST(req: NextRequest) {
             customerName: orderData.customerName,
             customerPhone: orderData.customerPhone,
             shippingAddress: orderData.shippingAddress,
+            shippingCity: orderData.shippingCity || "Unknown",
             shippingState: orderData.shippingState,
             couponCode: orderData.couponCode || null,
             couponId: orderData.couponId || null,

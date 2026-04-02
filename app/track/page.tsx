@@ -193,7 +193,7 @@ function TrackOrderContent() {
                             <div className="pt-4 border-t border-stone-200">
                                 <Button asChild variant="outline" className="w-full">
                                     <a href={tracking.trackingUrl} target="_blank" rel="noopener noreferrer">
-                                        View Detailed Tracking on Shiprocket
+                                        View Detailed Tracking on Courier Website
                                     </a>
                                 </Button>
                             </div>

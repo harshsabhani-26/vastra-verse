@@ -20,7 +20,7 @@ export function AccountSidebar() {
     const { data: session } = useSession();
 
     return (
-        <nav className="w-full md:w-64 flex-shrink-0 animate-fade-in bg-surface/30 p-6 rounded-sm border border-primary/5 h-fit">
+        <nav className="hidden md:block w-full md:w-64 flex-shrink-0 animate-fade-in bg-surface/30 p-6 rounded-sm border border-primary/5 h-fit">
             {/* User Info */}
             <div className="mb-8 pb-6 border-b border-primary/10">
                 <p className="font-serif text-xl text-primary tracking-tight">

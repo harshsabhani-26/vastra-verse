@@ -22,6 +22,7 @@ import {
     Activity,
     BookOpen,
     Share2,
+    Video,
 } from 'lucide-react';
 
 // ─── Navigation Structure ────────────────────────────────────────────────────
@@ -72,6 +73,7 @@ const navGroups: NavGroup[] = [
         title: 'Customers',
         items: [
             { href: '/admin/customer-management', icon: <Users size={18} />, label: 'Customer Management' },
+            { href: '/admin/live-shopping', icon: <Video size={18} />, label: 'Live Video Shopping' },
         ],
     },
     {

@@ -1,77 +1,180 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkUserRateLimit } from '@/lib/rate-limit';
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
-import { createShipment, generateAWB, getShippingLabel, checkServiceability } from "@/lib/shipping-provider";
-import { createShipmentRecord } from "@/lib/shipment-service";
-import { getRecommendedCourier } from "@/lib/courier-performance";
-import { EventDispatcher } from "@/lib/services/event-dispatcher";
+
+export const dynamic = "force-dynamic";
+
+/**
+ * GET /api/admin/shipments
+ *
+ * Admin-only: List shipments with pagination, status filter, AWB search.
+ * Also returns KPI summary in a single request.
+ */
+export async function GET(req: NextRequest) {
+    try {
+        const session = await auth();
+        if (!session || session.user?.role !== "ADMIN") {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const { searchParams } = new URL(req.url);
+        const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+        const pageSize = Math.min(50, Math.max(1, parseInt(searchParams.get("pageSize") || "20")));
+        const status = searchParams.get("status");
+        const search = searchParams.get("search")?.trim();
+
+        // Build where clause
+        const where: any = {};
+        if (status && status !== "all") {
+            where.status = status;
+        }
+        if (search) {
+            where.OR = [
+                { awbNumber: { contains: search, mode: "insensitive" } },
+                { order: { customerName: { contains: search, mode: "insensitive" } } },
+            ];
+        }
+
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        // Parallel fetch: shipments + total count + KPIs
+        const [shipments, totalCount, ...kpiResults] = await Promise.all([
+            prisma.shipment.findMany({
+                where,
+                include: {
+                    order: {
+                        select: {
+                            customerName: true,
+                            paymentMethod: true,
+                            total: true,
+                        },
+                    },
+                },
+                orderBy: { createdAt: "desc" },
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+            }),
+            prisma.shipment.count({ where }),
+            // KPI: Active shipments
+            prisma.shipment.count({
+                where: {
+                    status: {
+                        notIn: ["DELIVERED", "CANCELLED", "FAILED", "RETURN_DELIVERED", "RTO_DELIVERED"],
+                    },
+                },
+            }),
+            // KPI: Delivered today
+            prisma.shipment.count({
+                where: { status: "DELIVERED", deliveredAt: { gte: today } },
+            }),
+            // KPI: Delayed
+            prisma.shipment.count({
+                where: {
+                    status: { in: ["IN_TRANSIT", "OUT_FOR_DELIVERY"] },
+                    estimatedDeliveryAt: { lt: now },
+                },
+            }),
+            // KPI: RTO initiated
+            prisma.shipment.count({
+                where: { status: { in: ["RTO_INITIATED", "RETURN_INITIATED", "RETURN_PICKED"] } },
+            }),
+            // KPI: Pending pickups
+            prisma.shipment.count({
+                where: { status: { in: ["READY_TO_SHIP", "LABEL_GENERATED"] } },
+            }),
+            // KPI: Total shipments
+            prisma.shipment.count(),
+        ]);
+
+        const [activeShipments, deliveredToday, delayedShipments, rtoInitiated, pendingPickups, totalShipments] =
+            kpiResults;
+
+        // Serialize Decimal fields
+        const serializedShipments = shipments.map((s) => ({
+            id: s.id,
+            orderId: s.orderId,
+            awbNumber: s.awbNumber,
+            courierName: s.courierName,
+            status: s.status,
+            isReturn: s.isReturn,
+            pickupScheduledAt: s.pickupScheduledAt?.toISOString() || null,
+            shippedAt: s.shippedAt?.toISOString() || null,
+            deliveredAt: s.deliveredAt?.toISOString() || null,
+            estimatedDeliveryAt: s.estimatedDeliveryAt?.toISOString() || null,
+            shippingCost: s.shippingCost ? Number(s.shippingCost) : null,
+            profitImpact: s.profitImpact ? Number(s.profitImpact) : null,
+            createdAt: s.createdAt.toISOString(),
+            order: {
+                customerName: s.order.customerName,
+                paymentMethod: s.order.paymentMethod,
+                total: Number(s.order.total),
+            },
+        }));
+
+        return NextResponse.json({
+            shipments: serializedShipments,
+            totalCount,
+            kpis: {
+                activeShipments,
+                deliveredToday,
+                delayedShipments,
+                rtoInitiated,
+                pendingPickups,
+                totalShipments,
+            },
+        });
+    } catch (error: any) {
+        console.error("[Admin Shipments API] Error:", error);
+        return NextResponse.json(
+            { error: "Failed to fetch shipments" },
+            { status: 500 }
+        );
+    }
+}
 
 /**
  * POST /api/admin/shipments
- * Create a new shipment for an order
+ *
+ * Create a new shipment for an order via Shiprocket
  */
 export async function POST(req: NextRequest) {
     try {
-        // SECURITY: Rate limiting (30 req/min for admin)
-        const rateLimitResult = await checkUserRateLimit(req, 'admin');
-        if (rateLimitResult instanceof NextResponse) {
-            return rateLimitResult;
-        }
-
         const session = await auth();
-        if (!session?.user || session.user.role !== "ADMIN") {
-            return NextResponse.json(
-                { error: "Unauthorized" },
-                { status: 401 }
-            );
+        if (!session || session.user?.role !== "ADMIN") {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         const body = await req.json();
-        const { orderId, weight, length, breadth, height, preferredCourier } = body;
+        const { orderId, dimensions, pickupLocation, pickupPincode } = body;
 
         if (!orderId) {
-            return NextResponse.json(
-                { error: "Order ID is required" },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
         }
 
-        // Fetch order with items
+        // Fetch Order details
         const order = await prisma.order.findUnique({
             where: { id: orderId },
             include: {
-                items: {
-                    include: {
-                        product: true
-                    }
-                },
-                user: true
-            }
+                items: { include: { product: true } },
+                user: true,
+            },
         });
 
         if (!order) {
-            return NextResponse.json(
-                { error: "Order not found" },
-                { status: 404 }
-            );
+            return NextResponse.json({ error: "Order not found" }, { status: 404 });
         }
 
-        // Validate order status
-        if (order.status === "PENDING" || order.status === "CANCELLED") {
+        if (order.status !== "CONFIRMED" && order.status !== "PACKED") {
             return NextResponse.json(
-                { error: "Order must be confirmed before creating shipment" },
+                { error: "Order must be CONFIRMED or PACKED to create shipment" },
                 { status: 400 }
             );
         }
 
         // Check if shipment already exists
         const existingShipment = await prisma.shipment.findFirst({
-            where: {
-                orderId,
-                isReturn: false,
-                status: { notIn: ["CANCELLED", "FAILED"] }
-            }
+            where: { orderId: orderId, status: { notIn: ["CANCELLED", "FAILED"] } },
         });
 
         if (existingShipment) {
@@ -81,167 +184,97 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Parse shipping address
-        const addressParts = (order.shippingAddress || "").split(", ");
-        if (addressParts.length < 6) {
-            return NextResponse.json(
-                { error: "Invalid shipping address format. Please update order shipping address." },
-                { status: 400 }
-            );
-        }
+        // Import Shiprocket dynamically to avoid circular issues
+        const { createShipment, assignAwb } = await import("@/lib/shiprocket/shipment");
 
-        const [address, city, state, country, zip] = addressParts;
+        // Parse address fields
+        const addressMatch = order.shippingAddress?.match(/\d{6}/);
+        const pincode = addressMatch ? addressMatch[0] : "110001";
 
-        // Validate pincode and state (basic check)
-        if (!zip || zip.length !== 6) {
-            return NextResponse.json(
-                { error: "Invalid pincode format" },
-                { status: 400 }
-            );
-        }
+        // Build Shiprocket order payload
+        const nameParts = (order.customerName || order.user.name || "Customer").split(" ");
+        const weight = dimensions?.weight || Math.max(order.items.length * 0.5, 0.5);
 
-        // Default dimensions if not provided
-        const finalWeight = Number(weight) || 0.5;
-        const finalLength = Number(length) || 30;
-        const finalBreadth = Number(breadth) || 20;
-        const finalHeight = Number(height) || 10;
-
-        // Get courier recommendation
-        let recommendedCourier: string | null = null;
-        if (!preferredCourier) {
-            recommendedCourier = await getRecommendedCourier(zip);
-            console.log("[Admin] Recommended courier:", recommendedCourier);
-        }
-
-        // Prepare shipment data
-        const shipmentParams = {
-            orderId: order.id,
-            orderNumber: order.id.slice(0, 10),
-            orderDate: order.createdAt.toISOString().split("T")[0],
-            pickupLocation: "Primary",
-            billingCustomerName: order.customerName?.split(" ")[0] || "Customer",
-            billingLastName: order.customerName?.split(" ").slice(1).join(" ") || "Name",
-            billingAddress: address,
-            billingCity: city,
-            billingState: state,
-            billingPincode: zip,
-            billingCountry: country || "India",
-            billingEmail: order.user?.email || "customer@example.com",
-            billingPhone: order.customerPhone || "0000000000",
-            shippingIsBilling: true,
-            orderItems: order.items.map((item) => ({
+        const payload = {
+            order_id: order.id,
+            order_date: order.createdAt.toISOString().split("T")[0],
+            channel_id: "",
+            billing_customer_name: nameParts[0] || "Customer",
+            billing_last_name: nameParts.slice(1).join(" ") || "",
+            billing_address: order.shippingAddress || "N/A",
+            billing_city: order.shippingCity || "Unknown",
+            billing_pincode: pincode,
+            billing_state: order.shippingState || "Unknown",
+            billing_country: "India",
+            billing_email: order.user.email || "",
+            billing_phone: (order.customerPhone || "9999999999").replace(/\D/g, "").slice(-10),
+            shipping_is_billing: true,
+            order_items: order.items.map((item) => ({
                 name: item.product.name,
-                sku: item.product.sku || item.product.id.slice(0, 10),
+                sku: item.product.sku || item.product.id,
                 units: item.quantity,
                 selling_price: Number(item.price),
-                discount: 0,
-                tax: 0,
-                hsn: 0
             })),
-            paymentMethod: order.paymentMethod === "COD" ? "COD" as const : "Prepaid" as const,
-            subTotal: Number(order.subtotal || order.total),
-            length: finalLength,
-            breadth: finalBreadth,
-            height: finalHeight,
-            weight: finalWeight
+            payment_method: order.paymentMethod === "COD" ? "COD" : "Prepaid",
+            sub_total: Number(order.total),
+            length: dimensions?.length || 30,
+            breadth: dimensions?.breadth || 20,
+            height: dimensions?.height || 10,
+            weight,
+            pickup_location: pickupLocation || process.env.SHIPROCKET_PICKUP_LOCATION || "Vastraa Verse- Office",
         };
 
-        // Retry logic for shipment creation
-        let shiprocketResponse;
-        let lastError;
-        const maxRetries = 2;
+        // Create order on Shiprocket
+        const shiprocketResponse = await createShipment(payload as any);
+        console.log("[SHIPROCKET RESPONSE]:", JSON.stringify(shiprocketResponse, null, 2));
 
-        for (let attempt = 0; attempt < maxRetries; attempt++) {
-            try {
-                console.log(`[Admin] Creating Shiprocket shipment (Attempt ${attempt + 1}/${maxRetries})`);
-                shiprocketResponse = await createShipment(shipmentParams);
-                break; // Success, exit loop
-            } catch (error: any) {
-                lastError = error;
-                console.error(`[Admin] Attempt ${attempt + 1} failed:`, error.message);
-
-                if (attempt < maxRetries - 1) {
-                    // Wait before retry (exponential backoff)
-                    await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
-                }
-            }
+        if (!shiprocketResponse.order_id || !shiprocketResponse.shipment_id) {
+            throw new Error(`Shiprocket error: ${shiprocketResponse.status_code} — ${JSON.stringify(shiprocketResponse)}`);
         }
 
-        if (!shiprocketResponse) {
-            console.error("[Admin] All shipment creation attempts failed");
-            return NextResponse.json(
-                { error: `Failed to create shipment: ${lastError?.message || "Unknown error"}` },
-                { status: 500 }
-            );
-        }
-
-        // Generate AWB
-        let awbData;
+        // Assign AWB
+        let awbNumber: string | null = null;
+        let courierName: string | null = "Shiprocket";
         try {
-            awbData = await generateAWB(shiprocketResponse.shipment_id);
-        } catch (error) {
-            console.error("[Admin] AWB generation failed:", error);
-            // Continue without AWB for now
+            const awbResponse = await assignAwb({
+                shipment_id: shiprocketResponse.shipment_id,
+            });
+            awbNumber = awbResponse.response?.data?.awb_code || null;
+            courierName = awbResponse.response?.data?.courier_name || "Shiprocket";
+        } catch (awbErr) {
+            console.warn("[SHIPROCKET] AWB assignment failed, will retry:", awbErr);
         }
 
-        // Get label URL
-        let labelUrl;
-        try {
-            const label = await getShippingLabel([shiprocketResponse.shipment_id]);
-            labelUrl = label.label_url;
-        } catch (error) {
-            console.error("[Admin] Label generation failed:", error);
-        }
-
-        // Create shipment record in database
-        const shipment = await createShipmentRecord({
-            orderId: order.id,
-            providerShipmentId: shiprocketResponse.shipment_id.toString(),
-            awbNumber: awbData?.awb_code || shiprocketResponse.awb_code,
-            courierName: awbData?.courier_name || shiprocketResponse.courier_name || recommendedCourier || undefined,
-            labelUrl: labelUrl,
-            trackingUrl: `https://shiprocket.co/tracking/${awbData?.awb_code || shiprocketResponse.awb_code}`,
-            status: "READY_TO_SHIP",
-            providerResponse: shiprocketResponse,
-            weight: finalWeight,
-            length: finalLength,
-            breadth: finalBreadth,
-            height: finalHeight,
-            createdBy: session.user.id
-        });
-
-        // Update order status
-        await prisma.order.update({
-            where: { id: orderId },
+        // Save Shipment to DB
+        const shipment = await prisma.shipment.create({
             data: {
-                status: "PACKED",
-                trackingNumber: shipment.awbNumber
-            }
+                orderId: order.id,
+                awbNumber,
+                shiprocketOrderId: String(shiprocketResponse.order_id),
+                courierName,
+                status: "READY_TO_SHIP",
+                carrier: "SHIPROCKET",
+                weight,
+                length: dimensions?.length || 30,
+                breadth: dimensions?.breadth || 20,
+                height: dimensions?.height || 10,
+                providerResponse: shiprocketResponse as any,
+            },
         });
 
-        // Fire event notification (non-blocking)
-        EventDispatcher.shipmentCreated({
-            id: shipment.id,
-            orderId: order.id,
-            awbNumber: shipment.awbNumber,
-            courierName: shipment.courierName,
-        }).catch(() => { });
-
-        return NextResponse.json({
-            success: true,
-            shipment: {
-                id: shipment.id,
-                awbNumber: shipment.awbNumber,
-                courierName: shipment.courierName,
-                labelUrl: shipment.labelUrl,
-                trackingUrl: shipment.trackingUrl,
-                status: shipment.status,
-                recommendedCourier: recommendedCourier || undefined
-            }
+        // Update Order status
+        await prisma.order.update({
+            where: { id: order.id },
+            data: {
+                status: "SHIPPED",
+                trackingNumber: awbNumber || String(shiprocketResponse.order_id),
+                courierName,
+            },
         });
 
+        return NextResponse.json({ success: true, shipment });
     } catch (error: any) {
-        console.error("[Admin] Shipment creation error:", error);
+        console.error("[Admin Shipment Create API] Error:", error);
         return NextResponse.json(
             { error: error.message || "Failed to create shipment" },
             { status: 500 }

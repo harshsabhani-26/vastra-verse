@@ -20,6 +20,8 @@ import { processOrderPlaced, processOrderStatusUpdated } from '@/lib/jobs/order-
 import { processPaymentCaptured, processPaymentFailed } from '@/lib/jobs/payment-job';
 import { processNotification } from '@/lib/jobs/notification-job';
 import { processInventoryUpdate } from '@/lib/jobs/inventory-job';
+import { systemMonitoringCron, dailyCleanupCron } from '@/inngest/monitoring';
+import { syncTrackingCron, ndrEscalationCron } from '@/inngest/shipping';
 
 // Register all Inngest functions here
 export const { GET, POST, PUT } = serve({
@@ -29,13 +31,20 @@ export const { GET, POST, PUT } = serve({
         sendEmailJob,
         generateInvoiceJob,
         recordAnalyticsJob,
-        // New enterprise jobs
+        // Enterprise jobs
         processOrderPlaced,
         processOrderStatusUpdated,
         processPaymentCaptured,
         processPaymentFailed,
         processNotification,
         processInventoryUpdate,
+        // Monitoring & cleanup crons (audit: added)
+        systemMonitoringCron,  // Runs every 5 min — alerts on critical issues
+        dailyCleanupCron,      // Runs at 2am — cleans expired OTPs, sessions, old logs
+        // Shipping crons
+        syncTrackingCron,      // Runs every 15 min — syncs tracking from Shiprocket
+        ndrEscalationCron,     // Runs daily at 10 AM IST — escalates unresolved NDRs
     ],
 });
+
 

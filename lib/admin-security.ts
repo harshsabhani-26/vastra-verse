@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { getClientIp } from '@/lib/rate-limit';
+import { cache } from '@/lib/cache';
 import crypto from 'crypto';
+
+// Cache key for systemSettings — fetched on every admin request, so we cache it
+const SYSTEM_SETTINGS_CACHE_KEY = 'system:settings:admin';
+const SYSTEM_SETTINGS_CACHE_TTL = 600; // 10 minutes
 
 // ============================================================
 // Admin Security Library
@@ -43,8 +48,12 @@ export async function checkAdminSessionTimeout(req: NextRequest): Promise<NextRe
             );
         }
 
-        // Get system settings for timeout
-        const settings = await prisma.systemSettings.findFirst();
+        // Get system settings for timeout — cached in Redis to avoid per-request DB hit
+        const settings = await cache.getOrSet(
+            SYSTEM_SETTINGS_CACHE_KEY,
+            () => prisma.systemSettings.findFirst(),
+            SYSTEM_SETTINGS_CACHE_TTL
+        );
         const timeoutMs = (settings?.sessionTimeout || 15) * 60 * 1000;
 
         // Check last activity
@@ -319,6 +328,7 @@ export async function verify2FAToken(
 
 /**
  * Generate 2FA secret and backup codes for enrollment
+ * Generates RFC 6238-compatible base32 secret for use with Google Authenticator, Authy, etc.
  */
 export async function setup2FA(userId: string): Promise<{
     secret: string;
@@ -326,10 +336,11 @@ export async function setup2FA(userId: string): Promise<{
     backupCodes: string[];
 } | null> {
     try {
-        // Generate a base32-encoded secret
-        const secret = crypto.randomBytes(20).toString('hex');
+        // audit fix: generate base32-encoded secret (RFC 6238 requires base32, not hex)
+        const rawSecret = crypto.randomBytes(20);
+        const secret = base32Encode(rawSecret);
 
-        // Generate 10 backup codes
+        // Generate 10 backup codes (8 chars each, uppercase)
         const backupCodes = Array.from({ length: 10 }, () =>
             crypto.randomBytes(4).toString('hex').toUpperCase()
         );
@@ -341,40 +352,75 @@ export async function setup2FA(userId: string): Promise<{
 
         if (!user) return null;
 
-        // Store the secret (not yet enabled)
+        // Store the secret (not yet enabled — wait for verification step)
         await prisma.user.update({
             where: { id: userId },
-            data: {
-                twoFactorSecret: secret,
-                // Don't enable yet — wait for verification
-            },
+            data: { twoFactorSecret: secret },
         });
 
-        // Create OTP auth URL for QR code
+        // Create standard OTP auth URL for QR code (works with Google Authenticator, Authy, 1Password)
         const otpAuthUrl = `otpauth://totp/VastraVerse:${encodeURIComponent(user.email)}?secret=${secret}&issuer=VastraVerse&algorithm=SHA1&digits=6&period=30`;
 
-        return {
-            secret,
-            otpAuthUrl,
-            backupCodes,
-        };
+        return { secret, otpAuthUrl, backupCodes };
     } catch (error) {
         console.error('[2FA] Setup error:', error);
         return null;
     }
 }
 
+
+/**
+ * RFC 4648 Base32 encoder — required for TOTP secret compatibility with authenticator apps
+ */
+function base32Encode(buffer: Buffer): string {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    let bits = 0;
+    let value = 0;
+    let output = '';
+    for (const byte of buffer) {
+        value = (value << 8) | byte;
+        bits += 8;
+        while (bits >= 5) {
+            output += alphabet[(value >>> (bits - 5)) & 31];
+            bits -= 5;
+        }
+    }
+    if (bits > 0) output += alphabet[(value << (5 - bits)) & 31];
+    return output;
+}
+
 /**
  * Simple TOTP verification (RFC 6238)
  * Allows 1-step time drift (30 seconds window)
+ * audit fix: correctly decodes base32 secret and uses 8-byte big-endian counter buffer
  */
 function verifyTOTP(secret: string, token: string, window: number = 1): boolean {
-    const time = Math.floor(Date.now() / 30000); // 30-second steps
+    // Decode base32 secret to raw bytes
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    let bits = 0;
+    let value = 0;
+    const secretBytes: number[] = [];
+    for (const char of secret.toUpperCase()) {
+        const idx = alphabet.indexOf(char);
+        if (idx === -1) continue;
+        value = (value << 5) | idx;
+        bits += 5;
+        if (bits >= 8) {
+            secretBytes.push((value >>> (bits - 8)) & 0xff);
+            bits -= 8;
+        }
+    }
+    const keyBuffer = Buffer.from(secretBytes);
 
+    const time = Math.floor(Date.now() / 30000); // 30-second steps
     for (let i = -window; i <= window; i++) {
-        const counter = (time + i).toString(16).padStart(16, '0');
-        const hmac = crypto.createHmac('sha1', Buffer.from(secret, 'hex'));
-        hmac.update(Buffer.from(counter, 'hex'));
+        // Counter must be an 8-byte big-endian buffer (RFC 6238)
+        const counter = Buffer.alloc(8);
+        counter.writeUInt32BE(Math.floor((time + i) / 0x100000000), 0);
+        counter.writeUInt32BE((time + i) & 0xffffffff, 4);
+
+        const hmac = crypto.createHmac('sha1', keyBuffer);
+        hmac.update(counter);
         const hash = hmac.digest();
 
         const offset = hash[hash.length - 1] & 0xf;
@@ -385,11 +431,8 @@ function verifyTOTP(secret: string, token: string, window: number = 1): boolean 
             (hash[offset + 3] & 0xff)
         ) % 1000000;
 
-        if (code.toString().padStart(6, '0') === token) {
-            return true;
-        }
+        if (code.toString().padStart(6, '0') === token) return true;
     }
-
     return false;
 }
 

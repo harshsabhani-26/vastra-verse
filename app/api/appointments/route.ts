@@ -19,13 +19,13 @@ export async function POST(req: NextRequest) {
             message,
             allowPhoneContact,
             newsletterSignup,
+            appointmentType,
         } = body;
 
         if (
             !customerName ||
             !customerEmail ||
             !customerPhone ||
-            !storeLocation ||
             !appointmentDate ||
             !preferredTime
         ) {
@@ -35,19 +35,23 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        const resolvedLocation =
+            storeLocation || (appointmentType === "VIDEO_CALL" ? "Virtual" : "Main Store");
+
         // Create appointment
         const appointment = await prisma.appointment.create({
             data: {
                 customerName,
                 customerEmail,
                 customerPhone,
-                storeLocation,
+                storeLocation: resolvedLocation,
                 appointmentDate: new Date(appointmentDate),
                 preferredTime,
                 eventDate: eventDate ? new Date(eventDate) : null,
                 message: message || null,
                 allowPhoneContact: allowPhoneContact ?? true,
                 newsletterSignup: newsletterSignup ?? false,
+                appointmentType: appointmentType || "STORE",
             },
         });
 

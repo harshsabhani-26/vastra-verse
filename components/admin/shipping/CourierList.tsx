@@ -293,7 +293,7 @@ export default function CourierList({ initialPartners }: CourierListProps) {
                                 onChange={(e) =>
                                     setFormData({ ...formData, name: e.target.value })
                                 }
-                                placeholder="e.g., Delhivery, BlueDart, etc."
+                                placeholder="e.g., Shiprocket, BlueDart, etc."
                                 className="mt-1"
                             />
                         </div>

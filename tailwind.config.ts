@@ -20,6 +20,7 @@ const config: Config = {
                     DEFAULT: "#42120F", // Dark Maroon
                     dark: "#2A0907",
                 },
+                surface: "#FFFFFF",
                 text: {
                     main: "#172026", // Off-black standard text
                     muted: "#666666",

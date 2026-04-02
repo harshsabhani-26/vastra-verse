@@ -6,6 +6,18 @@ import cloudinary, { type CloudinaryUploadResult } from "@/lib/cloudinary";
 // Prevent Next.js from caching upload/delete responses
 export const dynamic = 'force-dynamic';
 
+// Raise the body size limit for this route to 50MB (overrides the 10MB default)
+export const maxDuration = 60; // seconds — allow time for large uploads + Cloudinary
+
+// Next.js App Router: raise the request body size for this specific route
+export const config = {
+    api: {
+        bodyParser: {
+            sizeLimit: '50mb',
+        },
+    },
+};
+
 /**
  * Extract Cloudinary public_id from a Cloudinary secure_url.
  * Example: https://res.cloudinary.com/xxx/image/upload/v123/vastra/products/abc.jpg

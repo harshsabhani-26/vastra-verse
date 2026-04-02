@@ -101,3 +101,56 @@ export async function deleteCategory(categoryId: string) {
         throw new Error(error.message || "Failed to delete category");
     }
 }
+
+/** Preview what will be deleted when a sub-category is removed */
+export async function getSubCategoryDeletePreview(categoryId: string) {
+    try {
+        const products = await prisma.product.findMany({
+            where: { categoryId },
+            select: { id: true }
+        });
+        const productIds = products.map(p => p.id);
+
+        const totalStories = productIds.length > 0
+            ? await prisma.story.count({ where: { productId: { in: productIds } } })
+            : 0;
+
+        return {
+            success: true,
+            data: {
+                subCategories: [] as { id: string; name: string; productCount: number }[],
+                totalProducts: productIds.length,
+                totalStories,
+            }
+        };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
+
+/** Cascade delete sub-category: Stories → Wishlist → Cart → ProductImages → Products → Category */
+export async function cascadeDeleteSubCategory(categoryId: string) {
+    try {
+        const products = await prisma.product.findMany({
+            where: { categoryId },
+            select: { id: true }
+        });
+        const productIds = products.map(p => p.id);
+
+        if (productIds.length > 0) {
+            await prisma.story.deleteMany({ where: { productId: { in: productIds } } });
+            await prisma.wishlist.deleteMany({ where: { productId: { in: productIds } } });
+            await prisma.cartItem.deleteMany({ where: { productId: { in: productIds } } });
+            await prisma.productImage.deleteMany({ where: { productId: { in: productIds } } });
+            await prisma.product.deleteMany({ where: { id: { in: productIds } } });
+        }
+
+        await prisma.category.delete({ where: { id: categoryId } });
+
+        revalidatePath("/admin/categories");
+        revalidatePath("/", "layout");
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}

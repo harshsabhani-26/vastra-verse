@@ -29,6 +29,15 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
             isNewArrival: true,
             isBestSeller: true,
             categoryId: true,
+            colors: true,
+            occasions: true,
+            borderDescription: true,
+            palluDescription: true,
+            blouseFabric: true,
+            hasBlousePiece: true,
+            shortDescription: true,
+            sareeLength: true,
+            blouseLength: true,
             category: {
                 select: {
                     id: true,
@@ -69,7 +78,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     return (
         <div className="min-h-screen bg-background">
             {/* Breadcrumb / Top Bar */}
-            <div className="border-b border-primary/10">
+            <div className="hidden md:block border-b border-primary/10">
                 <div className="container mx-auto px-4 md:px-8 py-4">
                     <div className="text-[10px] uppercase tracking-widest text-text-muted">
                         Home / Shop / {product.category?.name} / {product.name}

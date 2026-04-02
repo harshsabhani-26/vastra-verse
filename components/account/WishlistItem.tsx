@@ -7,6 +7,7 @@ import { toast } from "react-hot-toast";
 import { Trash2, ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import { useCartStore } from "@/lib/store";
+import { useWishlistStore } from "@/lib/wishlist-store";
 
 interface Product {
     id: string;
@@ -20,8 +21,12 @@ interface Product {
 export function WishlistItem({ product }: { product: Product }) {
     const [isPending, startTransition] = useTransition();
     const { addItem } = useCartStore();
+    const { removeItem: removeFromStore } = useWishlistStore();
 
     function handleRemove() {
+        // Optimistically remove from local store too (updates header badge count)
+        removeFromStore(product.id);
+
         startTransition(async () => {
             const result = await removeFromWishlist(product.id);
             if (result.error) {
@@ -39,7 +44,7 @@ export function WishlistItem({ product }: { product: Product }) {
             price: product.price,
             image: product.images[0] || "/images/placeholder.jpg",
             quantity: 1,
-            color: "Standard" // Default
+            color: "Standard"
         });
         toast.success("Moved to bag");
         handleRemove();
@@ -73,7 +78,7 @@ export function WishlistItem({ product }: { product: Product }) {
                     </div>
 
                     <div className="flex items-center gap-4 text-xs text-text-muted uppercase tracking-wide">
-                        <span>Classic Collection</span> {/* Placeholder for category? */}
+                        <span>Classic Collection</span>
                     </div>
                 </div>
 

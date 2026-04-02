@@ -234,7 +234,7 @@ export default async function OrderDetailsPage(props: { params: Promise<{ id: st
                                         <p className="text-sm text-primary font-mono bg-surface/50 px-2 py-1 inline-block rounded-sm border border-primary/10">
                                             {order.trackingNumber}
                                         </p>
-                                        <Link href="/track-order" className="block mt-4">
+                                        <Link href={`/track/${order.trackingNumber}`} className="block mt-4">
                                             <button className="w-full text-[10px] bg-surface hover:bg-primary hover:text-white border border-primary/20 text-primary px-4 py-3 rounded-sm transition-all uppercase tracking-[0.2em] font-bold">
                                                 Track Shipment
                                             </button>

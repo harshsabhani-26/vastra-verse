@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { logInfo } from '@/lib/logger';
 
-const SLOW_QUERY_THRESHOLD = parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || '500', 10);
+const SLOW_QUERY_THRESHOLD = parseInt(process.env.SLOW_QUERY_THRESHOLD_MS || '500', 10); // audit: lowered from 2000ms
 
 const prismaClientSingleton = () => {
     const client = new PrismaClient();

@@ -55,8 +55,8 @@ export function WhatsAppButton(props: WhatsAppButtonConfig = {}) {
             style={{
                 /* Positioning */
                 position: "fixed",
-                bottom: "24px",
-                right: "24px",
+                bottom: "80px",
+                right: "16px",
                 zIndex: 9999,
 
                 /* Shape */

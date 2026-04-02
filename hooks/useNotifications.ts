@@ -52,6 +52,13 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 
             const response = await fetch(`/api/notifications?${params}`);
 
+            // 401 = not logged in — silently ignore, not an error
+            if (response.status === 401) {
+                setNotifications([]);
+                setUnreadCount(0);
+                return;
+            }
+
             if (!response.ok) {
                 throw new Error('Failed to fetch notifications');
             }
@@ -72,7 +79,7 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
     useEffect(() => {
         if (status === 'authenticated') {
             fetchNotifications();
-        } else if (status === 'unauthenticated') {
+        } else if (status === 'unauthenticated' || status === 'loading') {
             setLoading(false);
         }
     }, [fetchNotifications, status]);

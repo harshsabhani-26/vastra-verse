@@ -84,7 +84,7 @@ export const CACHE_TTL = {
 
     // Store
     STORE_SETTINGS: 600,       // 10 min
-    HOMEPAGE_DATA: 60,         // 1 min
+    HOMEPAGE_DATA: 300,        // 5 min (audit: increased from 60s to reduce DB pressure)
 
     // User / Session
     USER_SESSION: 1800,        // 30 min

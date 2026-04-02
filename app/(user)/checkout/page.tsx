@@ -258,6 +258,41 @@ export default function CheckoutPage() {
         });
     };
 
+    // Apply coupon handler
+    const handleApplyCoupon = async () => {
+        if (!couponCode.trim()) return;
+        setCouponError("");
+        setIsApplyingCoupon(true);
+        try {
+            const result = await applyCoupon(couponCode.trim(), {
+                userId: session?.user?.id || "guest",
+                subtotal,
+                shippingCharges,
+                items: cartItems.map((item) => ({
+                    productId: item.id,
+                    categoryId: item.categoryId || "",
+                    price: item.price,
+                    quantity: item.quantity,
+                })),
+            });
+            if (result.success) {
+                setAppliedCoupon({
+                    code: result.couponCode!,
+                    discount: result.discount!,
+                    type: result.couponType!,
+                });
+                setCouponCode("");
+                toast({ title: "Coupon Applied!", description: `You saved ₹${result.discount?.toLocaleString('en-IN')}` });
+            } else {
+                setCouponError(result.error || "Invalid coupon code");
+            }
+        } catch {
+            setCouponError("Failed to apply coupon. Please try again.");
+        } finally {
+            setIsApplyingCoupon(false);
+        }
+    };
+
     // Initial Cart Logic (omitted for brevity, keep existing)
     useEffect(() => {
         setMounted(true);
@@ -305,6 +340,19 @@ export default function CheckoutPage() {
 
     const handleNext = async () => {
         if (step === 'shipping') {
+            // If phone is not verified, trigger OTP verification first
+            if (!isPhoneVerified) {
+                if (!formData.phone || formData.phone.length !== 10) {
+                    // Scroll to phone field and show error
+                    setErrors(prev => ({ ...prev, phone: "Please enter a valid 10-digit number to verify" }));
+                    document.querySelector<HTMLInputElement>('input[name="phone"]')?.focus();
+                    return;
+                }
+                // Trigger OTP verification — after success, isPhoneVerified becomes true
+                handleVerifyPhone();
+                return;
+            }
+
             if (validateForm()) {
                 // Save address to Address Book if checkbox is checked
                 if (saveToAddressBook && addressTitle.trim()) {
@@ -382,13 +430,10 @@ export default function CheckoutPage() {
                 const discount = appliedCoupon?.discount || 0;
                 payload.append("discount", discount.toString());
 
-                // Calculate tax using dynamic settings
-                // Assuming intra-state (CGST + SGST) for now as address logic is complex
-                // You might want to compare formData.state with settings.stateOfReg
-                const gstRate = settings.gstEnabled ? (settings.cgstRate + settings.sgstRate) : 0;
-                const taxAmount = subtotal * (gstRate / 100);
+                // No GST calculation per current settings
+                const taxAmount = 0;
 
-                const finalTotal = subtotal + taxAmount - discount + shippingCharges;
+                const finalTotal = subtotal - discount + shippingCharges;
                 payload.append("total", finalTotal.toString());
 
                 if (appliedCoupon) {
@@ -914,6 +959,65 @@ export default function CheckoutPage() {
                                     </div>
                                 </div>
 
+                                {/* Coupon Code */}
+                                <div className="space-y-3 pt-4 border-t border-stone-200">
+                                    <div className="flex items-center gap-2">
+                                        <Tag className="w-4 h-4 text-stone-400" />
+                                        <span className="text-sm font-medium text-[#1C1917]">Apply Coupon Code</span>
+                                    </div>
+
+                                    {appliedCoupon ? (
+                                        <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-sm px-4 py-3">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                                    <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-semibold text-green-800 tracking-wide">{appliedCoupon.code}</p>
+                                                    <p className="text-xs text-green-600 mt-0.5">You save ₹{appliedCoupon.discount.toLocaleString('en-IN')}</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => { setAppliedCoupon(null); setCouponError(""); }}
+                                                className="text-green-600 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50"
+                                                title="Remove coupon"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={couponCode}
+                                                onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError(""); }}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                                                placeholder="Enter coupon code"
+                                                className={cn(
+                                                    "flex-1 h-10 px-4 border bg-white text-sm text-[#1C1917] focus:outline-none rounded-sm transition-all uppercase tracking-wider placeholder:normal-case placeholder:tracking-normal",
+                                                    couponError ? "border-red-400 focus:border-red-500" : "border-stone-200 focus:border-[#1C1917]"
+                                                )}
+                                            />
+                                            <button
+                                                onClick={handleApplyCoupon}
+                                                disabled={isApplyingCoupon || !couponCode.trim()}
+                                                className="h-10 px-5 bg-[#1C1917] text-white text-[10px] uppercase tracking-widest font-bold hover:bg-[#333333] transition-colors rounded-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 flex-shrink-0"
+                                            >
+                                                {isApplyingCoupon ? (
+                                                    <><Loader2 className="w-3 h-3 animate-spin" /> Applying</>
+                                                ) : 'Apply'}
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {couponError && (
+                                        <p className="text-xs text-red-500 flex items-center gap-1">
+                                            <X className="w-3 h-3" />
+                                            {couponError}
+                                        </p>
+                                    )}
+                                </div>
+
                                 {/* Payment Options */}
                                 <div className="space-y-4 pt-4 border-t border-stone-200">
                                     <h3 className="text-sm font-medium text-[#1C1917]">Payment options</h3>
@@ -936,25 +1040,7 @@ export default function CheckoutPage() {
                                             </div>
                                         </div>
 
-                                        <div className="flex items-start gap-3">
-                                            <div className="mt-1">
-                                                <input
-                                                    type="radio"
-                                                    id="pod"
-                                                    name="paymentMethod"
-                                                    checked={paymentMethod === 'COD'}
-                                                    onChange={() => setPaymentMethod('COD')}
-                                                    disabled={subtotal > 50000}
-                                                    className="accent-[#1C1917]"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label htmlFor="pod" className={cn("text-sm font-medium block", subtotal > 50000 ? "text-stone-400" : "text-[#1C1917]")}>Pay On Delivery</label>
-                                                {subtotal > 50000 && (
-                                                    <p className="text-xs text-[#AA8C2C] mt-1">POD is not applicable for order greater than 50,000 amount</p>
-                                                )}
-                                            </div>
-                                        </div>
+
                                     </div>
                                 </div>
                             </>
@@ -990,17 +1076,9 @@ export default function CheckoutPage() {
                                     <span>Subtotal ({cartItems.reduce((acc, item) => acc + item.quantity, 0)} Items)</span>
                                     <span>₹{subtotal.toLocaleString()}</span>
                                 </div>
-                                <div className="flex justify-between text-xs text-stone-500">
-                                    <span>CGST (9%)</span>
-                                    <span>₹{(subtotal * 0.09).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                </div>
-                                <div className="flex justify-between text-xs text-stone-500">
-                                    <span>SGST (9%)</span>
-                                    <span>₹{(subtotal * 0.09).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                </div>
                                 <div className="flex justify-between text-sm font-bold text-[#1C1917]">
                                     <span>Total</span>
-                                    <span>₹{(subtotal + (subtotal * 0.18) + shippingCharges - (appliedCoupon?.discount || 0)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                                    <span>₹{(subtotal + shippingCharges - (appliedCoupon?.discount || 0)).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
                                 </div>
                             </div>
 
@@ -1013,15 +1091,22 @@ export default function CheckoutPage() {
                             {step === 'shipping' && !isPhoneVerified && (
                                 <p className="text-xs text-amber-600 mb-3 text-center flex items-center justify-center gap-1.5">
                                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                    Please verify your phone number to continue
+                                    Phone verification required — clicking below will open OTP
                                 </p>
                             )}
                             <Button
                                 onClick={handleNext}
-                                disabled={processing || (step === 'shipping' && !isPhoneVerified)}
+                                disabled={processing || isVerifying}
                                 className="w-full h-12 bg-[#1C1917] hover:bg-[#333333] disabled:opacity-50 text-white rounded-none uppercase tracking-widest text-xs font-bold"
                             >
-                                {processing ? 'PROCESSING...' : (step === 'shipping' ? 'Next: Payment' : 'Place Order')}
+                                {isVerifying
+                                    ? 'SENDING OTP...'
+                                    : processing
+                                        ? 'PROCESSING...'
+                                        : step === 'shipping'
+                                            ? (!isPhoneVerified ? 'VERIFY & CONTINUE' : 'NEXT: PAYMENT')
+                                            : 'PLACE ORDER'
+                                }
                             </Button>
                         </div>
                     </div>

@@ -52,9 +52,9 @@ export default function StoreLocatorPage() {
 
             <div className="container mx-auto px-4 py-8">
                 {/* Content Split */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[600px]">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[700px] lg:h-[75vh]">
                     {/* List View */}
-                    <div className="lg:col-span-4 overflow-y-auto pr-2 space-y-4">
+                    <div className="lg:col-span-4 overflow-y-auto pr-2 space-y-4 max-h-[300px] lg:max-h-none">
                         {STORES.map((store) => (
                             <div
                                 key={store.id}
@@ -118,7 +118,7 @@ export default function StoreLocatorPage() {
                         {/* Map Container */}
                         <div
                             ref={mapContainerRef}
-                            className="bg-stone-200 flex-1 w-full relative border border-stone-200 shadow-inner rounded-b-md overflow-hidden"
+                            className="bg-stone-200 flex-1 w-full relative border border-stone-200 shadow-inner rounded-b-md overflow-hidden min-h-[450px] lg:min-h-0"
                         >
                             <iframe
                                 key={`${selectedStore.id}-${mapType}-${mapKey}`}
@@ -129,7 +129,7 @@ export default function StoreLocatorPage() {
                                 allowFullScreen
                                 loading="lazy"
                                 referrerPolicy="no-referrer-when-downgrade"
-                                className="w-full h-[calc(100%+450px)] -mt-[150px]"
+                                className="w-full h-full absolute inset-0"
                             ></iframe>
 
                             {/* Place Card Overlay - Kept inside but positioned bottom-left to avoid top area */}

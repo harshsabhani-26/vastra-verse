@@ -49,12 +49,11 @@ export const useWishlistStore = create<WishlistStore>()(
 
             totalItems: () => get().items.length,
 
-            // Sync Logic
+            // Sync Logic — fetches from server and replaces local state
             syncWithUser: async () => {
                 set({ isGuest: false });
 
                 try {
-                    // Fetch wishlist from server
                     const serverWishlist = await getWishlist();
                     if (serverWishlist) {
                         const wishlistItems: WishlistItem[] = serverWishlist.map((item: any) => ({
@@ -73,7 +72,8 @@ export const useWishlistStore = create<WishlistStore>()(
         }),
         {
             name: 'vastra-verse-wishlist-storage',
-            skipHydration: true,
+            // Don't skip hydration — let the store load from localStorage automatically
+            // This fixes the bug where persisted wishlist items were never restored
         }
     )
 );
