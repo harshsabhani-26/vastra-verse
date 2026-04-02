@@ -2,9 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Infant, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { LiveShoppingButton } from "@/components/live-shopping/LiveShoppingButton";
-
+// Removed WhatsAppButton and LiveShoppingButton unused imports
 const plusJakartaSans = Plus_Jakarta_Sans({
     variable: "--font-plus-jakarta-sans", // Match custom tailwind variable
     subsets: ["latin"],
@@ -55,11 +53,6 @@ export default async function RootLayout({
                 <Providers session={session}>
                     {children}
                 </Providers>
-                <LiveShoppingButton />
-                <WhatsAppButton
-                    phoneNumber="919876543210"
-                    defaultMessage="Hello! I'm interested in your saree collection."
-                />
             </body>
         </html>
     );

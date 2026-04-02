@@ -1,5 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { LiveShoppingButton } from "@/components/live-shopping/LiveShoppingButton";
 import { getCategories } from "@/lib/data/categories";
 import prisma from "@/lib/prisma";
 
@@ -30,6 +32,11 @@ export default async function MainLayout({
                 instagram={(settings as any)?.instagram || null}
                 youtube={(settings as any)?.youtube || null}
                 facebook={(settings as any)?.facebook || null}
+            />
+            <LiveShoppingButton />
+            <WhatsAppButton
+                phoneNumber="919876543210"
+                defaultMessage="Hello! I'm interested in your saree collection."
             />
         </div>
     );
