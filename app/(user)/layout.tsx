@@ -3,17 +3,21 @@ import { Footer } from "@/components/layout/Footer";
 import { getCategories } from "@/lib/data/categories";
 import prisma from "@/lib/prisma";
 
+export const revalidate = 3600; // 1 hour for layout-level global cache
+
 export default async function MainLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
     const categories = await getCategories();
-    const settings = await prisma.storeSettings.findFirst();
+    
+    // Fallbacks for build step to avoid crashing when DB is inaccessible
+    const settings = await prisma.storeSettings.findFirst().catch(() => null);
     const mainCategories = await prisma.mainCategory.findMany({
         where: { isActive: true },
         orderBy: { createdAt: 'asc' }
-    });
+    }).catch(() => []);
 
     return (
         <div className="flex min-h-screen flex-col">

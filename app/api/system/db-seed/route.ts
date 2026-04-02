@@ -30,12 +30,12 @@ export async function POST(req: Request) {
 
         // Dynamically import and run seeds
         // Using dynamic import since seeds are CommonJS
-        const { seedStoreSettings } = require('@/../prisma/seeds/store.seed');
-        const { seedTaxSettings } = require('@/../prisma/seeds/tax.seed');
-        const { seedShippingSettings } = require('@/../prisma/seeds/shipping.seed');
-        const { seedCourierPartners } = require('@/../prisma/seeds/courier.seed');
-        const { seedEmailSettings } = require('@/../prisma/seeds/email.seed');
-        const { seedSystemSettings } = require('@/../prisma/seeds/system.seed');
+        const { seedStoreSettings } = require('@/prisma/seeds/store.seed');
+        const { seedTaxSettings } = require('@/prisma/seeds/tax.seed');
+        const { seedShippingSettings } = require('@/prisma/seeds/shipping.seed');
+        const { seedCourierPartners } = require('@/prisma/seeds/courier.seed');
+        const { seedEmailSettings } = require('@/prisma/seeds/email.seed');
+        const { seedSystemSettings } = require('@/prisma/seeds/system.seed');
 
         const results: { name: string; status: string; error?: string }[] = [];
 

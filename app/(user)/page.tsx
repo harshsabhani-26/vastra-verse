@@ -18,14 +18,14 @@ export const revalidate = 300;
 
 export default async function Home() {
     const [categories, heroBanners, midPageBanners, bottomPageBanners, activeStories, socialImages, socialVideos, storeSettings] = await Promise.all([
-        getCategories(),
-        getActiveHeroBanners(),
-        getActiveMidPageBanners(),
-        getActiveBottomPageBanners(),
-        getActiveStories(),
-        getActiveSocialImages(),
-        getActiveSocialVideos(),
-        prisma.storeSettings.findFirst(),
+        getCategories().catch(() => []),
+        getActiveHeroBanners().catch(() => []),
+        getActiveMidPageBanners().catch(() => []),
+        getActiveBottomPageBanners().catch(() => []),
+        getActiveStories().catch(() => []),
+        getActiveSocialImages().catch(() => []),
+        getActiveSocialVideos().catch(() => []),
+        prisma.storeSettings.findFirst().catch(() => null),
     ]);
 
     return (
