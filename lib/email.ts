@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+﻿import nodemailer from "nodemailer";
 
 export const sendOrderShippedEmail = async (
     to: string,
@@ -23,7 +23,7 @@ export const sendOrderShippedEmail = async (
         ` : '';
 
         const mailOptions = {
-            from: `"Vastra Verse" <${process.env.EMAIL_USER}>`,
+            from: `"Vastraa Verse" <${process.env.EMAIL_USER}>`,
             to: to,
             subject: `Your Order #${orderId.slice(-6)} has been Shipped!`,
             html: `
@@ -36,7 +36,7 @@ export const sendOrderShippedEmail = async (
                                 <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; margin-top: 20px; margin-bottom: 20px;">
                                     <tr>
                                         <td align="left" bgcolor="${brandColor}" style="padding: 15px 20px;">
-                                            <h1 style="color: #ffffff; margin: 0; font-size: 20px;">Vastra Verse</h1>
+                                            <h1 style="color: #ffffff; margin: 0; font-size: 20px;">Vastraa Verse</h1>
                                         </td>
                                         <td align="right" bgcolor="${brandColor}" style="padding: 15px 20px;">
                                             <span style="color: #ffffff; font-size: 14px;">Status: Shipped</span>
@@ -88,13 +88,13 @@ export const sendInvoiceEmail = async (
             },
         });
 
-        // Brand Color: #1a4d3a (Deep Green to match Vastra Verse theme)
+        // Brand Color: #1a4d3a (Deep Green to match Vastraa Verse theme)
         const brandColor = "#1a4d3a";
 
         const mailOptions = {
-            from: `"Vastra Verse" <${process.env.EMAIL_USER}>`,
+            from: `"Vastraa Verse" <${process.env.EMAIL_USER}>`,
             to: to,
-            subject: `Invoice Copy for Vastra Verse Order ${orderId}`,
+            subject: `Invoice Copy for Vastraa Verse Order ${orderId}`,
             html: `
                 <!DOCTYPE html>
                 <html>
@@ -113,7 +113,7 @@ export const sendInvoiceEmail = async (
                                     <!-- Header -->
                                     <tr>
                                         <td align="left" bgcolor="${brandColor}" style="padding: 15px 20px;">
-                                            <h1 style="color: #ffffff; margin: 0; font-size: 20px;">Vastra Verse</h1>
+                                            <h1 style="color: #ffffff; margin: 0; font-size: 20px;">Vastraa Verse</h1>
                                         </td>
                                         <td align="right" bgcolor="${brandColor}" style="padding: 15px 20px;">
                                             <span style="color: #ffffff; font-size: 14px;">Order Status: Confirmed</span>
@@ -128,7 +128,7 @@ export const sendInvoiceEmail = async (
                                             </p>
                                             
                                             <p style="color: #333333; font-size: 14px; margin-bottom: 20px;">
-                                                Thank you for shopping with Vastra Verse.
+                                                Thank you for shopping with Vastraa Verse.
                                             </p>
                                             
                                             <p style="color: #333333; font-size: 14px; margin-bottom: 20px;">
@@ -141,7 +141,7 @@ export const sendInvoiceEmail = async (
 
                                             <p style="color: #333333; font-size: 14px; margin-top: 30px;">
                                                 Thank you for shopping!<br/>
-                                                <strong>Vastra Verse</strong>
+                                                <strong>Vastraa Verse</strong>
                                             </p>
                                         </td>
                                     </tr>
@@ -212,22 +212,22 @@ export const sendOTPEmail = async (
         });
 
         const brandColor = "#1a4d3a";
-        let subject = "Your Vastra Verse OTP";
+        let subject = "Your Vastraa Verse OTP";
         let message = `Here is your OTP: ${otp}`;
 
         if (type === "register") {
-            subject = "Verify your email - Vastra Verse";
-            message = `Welcome to Vastra Verse! Your verification code is: <strong style="font-size: 24px; letter-spacing: 5px;">${otp}</strong>. It expires in 5 minutes.`;
+            subject = "Verify your email - Vastraa Verse";
+            message = `Welcome to Vastraa Verse! Your verification code is: <strong style="font-size: 24px; letter-spacing: 5px;">${otp}</strong>. It expires in 5 minutes.`;
         } else if (type === "login") {
-            subject = "Login OTP - Vastra Verse";
+            subject = "Login OTP - Vastraa Verse";
             message = `Your login code is: <strong style="font-size: 24px; letter-spacing: 5px;">${otp}</strong>. It expires in 5 minutes.`;
         } else if (type === "forgot-password") {
-            subject = "Reset your password - Vastra Verse";
+            subject = "Reset your password - Vastraa Verse";
             message = `Your password reset code is: <strong style="font-size: 24px; letter-spacing: 5px;">${otp}</strong>. It expires in 5 minutes.`;
         }
 
         const mailOptions = {
-            from: `"Vastra Verse" <${process.env.EMAIL_USER}>`,
+            from: `"Vastraa Verse" <${process.env.EMAIL_USER}>`,
             to: to,
             subject: subject,
             html: `
@@ -240,7 +240,7 @@ export const sendOTPEmail = async (
                                 <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; margin-top: 40px; margin-bottom: 40px; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                                     <tr>
                                         <td align="center" bgcolor="${brandColor}" style="padding: 30px 20px;">
-                                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; letter-spacing: 2px; text-transform: uppercase;">Vastra Verse</h1>
+                                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; letter-spacing: 2px; text-transform: uppercase;">Vastraa Verse</h1>
                                         </td>
                                     </tr>
                                     <tr>

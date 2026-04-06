@@ -236,9 +236,24 @@ export function FashionGallery({ images, productName }: FashionGalleryProps) {
             {/* Fullscreen Lightbox — scrollable full-width image */}
             {lightboxOpen && (
                 <div className="fixed inset-0 z-[9999] bg-black">
-                    {/* Scrollable image area */}
+                    {/* Mobile: centered fit — Desktop: scrollable */}
+                    {/* Mobile view: flex centered so image fills screen without black gap */}
                     <div
-                        className="w-full h-full overflow-y-auto overflow-x-hidden"
+                        className="flex md:hidden w-full h-full items-center justify-center"
+                        onClick={closeLightbox}
+                    >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src={images[lightboxIndex].url}
+                            alt={images[lightboxIndex].alt || productName}
+                            className="w-full h-full object-contain select-none"
+                            draggable={false}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                    {/* Desktop view: scrollable tall image */}
+                    <div
+                        className="hidden md:block w-full h-full overflow-y-auto overflow-x-hidden"
                         onClick={closeLightbox}
                     >
                         {/* eslint-disable-next-line @next/next/no-img-element */}

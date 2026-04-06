@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Event Dispatcher System
  * 
  * Decouples business operations from side effects.
@@ -111,7 +111,7 @@ async function handleOrderCreated(payload: OrderCreatedPayload) {
             <p>${itemsList}</p>
             <p><strong>Total: ₹${payload.orderTotal.toLocaleString('en-IN')}</strong></p>
             <p>We'll notify you when your order ships.</p>
-            <p>— Vastra Verse</p>
+            <p>— Vastraa Verse</p>
         `,
         type: 'order_confirmation',
         orderId: payload.orderId,
@@ -133,7 +133,7 @@ async function handlePaymentSuccess(payload: PaymentSuccessPayload) {
             <p>Hi ${payload.customerName},</p>
             <p>We've received your payment of <strong>₹${payload.amount.toLocaleString('en-IN')}</strong> via ${payload.method}.</p>
             <p>Your order is now being processed.</p>
-            <p>— Vastra Verse</p>
+            <p>— Vastraa Verse</p>
         `,
         type: 'payment_receipt',
         orderId: payload.orderId,
@@ -150,7 +150,7 @@ async function handlePaymentFailed(payload: PaymentFailedPayload) {
             <p>Your payment of <strong>₹${payload.amount.toLocaleString('en-IN')}</strong> could not be processed.</p>
             ${payload.reason ? `<p>Reason: ${payload.reason}</p>` : ''}
             <p>You can retry your payment from the order page.</p>
-            <p>— Vastra Verse</p>
+            <p>— Vastraa Verse</p>
         `,
         type: 'security_alert',
         orderId: payload.orderId,
@@ -173,7 +173,7 @@ async function handleReturnApproved(payload: ReturnApprovedPayload) {
             <h3>Items Being Returned</h3>
             <p>${itemsList}</p>
             <p>A refund of <strong>₹${payload.refundAmount.toLocaleString('en-IN')}</strong> will be processed shortly.</p>
-            <p>— Vastra Verse</p>
+            <p>— Vastraa Verse</p>
         `,
         type: 'return_approval',
         orderId: payload.orderId,
@@ -200,7 +200,7 @@ async function handleRefundProcessed(payload: RefundProcessedPayload) {
             <p>Hi ${payload.customerName},</p>
             <p>Your refund of <strong>₹${payload.amount.toLocaleString('en-IN')}</strong> has been processed.</p>
             <p>It may take 5-7 business days to reflect in your account.</p>
-            <p>— Vastra Verse</p>
+            <p>— Vastraa Verse</p>
         `,
         type: 'refund_confirmation',
         orderId: payload.orderId,
@@ -211,7 +211,7 @@ async function handleRefundProcessed(payload: RefundProcessedPayload) {
         await notificationQueue().add('refund-sms', {
             type: 'sms',
             phone: payload.customerPhone,
-            message: `Your refund of ₹${payload.amount.toLocaleString('en-IN')} has been processed. It will reflect in 5-7 business days. — Vastra Verse`,
+            message: `Your refund of ₹${payload.amount.toLocaleString('en-IN')} has been processed. It will reflect in 5-7 business days. — Vastraa Verse`,
         });
     }
 }

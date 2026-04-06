@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { getBanners } from "./actions";
+import { getBanners, type HeroBanner } from "./actions";
 import { BannersList } from "@/components/admin/BannersList";
 
 export default async function BannersPage() {
-    const banners = await getBanners();
+    const banners = await getBanners() as HeroBanner[];
 
     return (
         <div className="space-y-6">
@@ -22,8 +22,8 @@ export default async function BannersPage() {
                 </Link>
             </div>
 
-            {/* Banners List */}
-            <div className="bg-white rounded-lg border border-stone-200">
+            {/* Banners List with tabs */}
+            <div className="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
                 {banners.length === 0 ? (
                     <div className="p-12 text-center">
                         <p className="text-stone-500 mb-4">No banners yet. Create your first banner to get started.</p>

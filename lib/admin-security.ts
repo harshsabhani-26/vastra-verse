@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { getClientIp } from '@/lib/rate-limit';
@@ -191,14 +191,14 @@ async function sendNewIPNotification(
                 <p style="color: #718096;">If this was you, no action is needed.</p>
                 <p style="color: #E53E3E;"><strong>If you did NOT log in, change your password immediately and contact support.</strong></p>
                 <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;" />
-                <p style="color: #A0AEC0; font-size: 12px;">Vastra Verse Security System</p>
+                <p style="color: #A0AEC0; font-size: 12px;">Vastraa Verse Security System</p>
             </div>
         `;
 
         await transporter.sendMail({
             from: process.env.EMAIL_FROM || 'security@vastraverse.com',
             to: email,
-            subject: '⚠️ New Login Location Detected - Vastra Verse Admin',
+            subject: '⚠️ New Login Location Detected - Vastraa Verse Admin',
             html,
         });
 

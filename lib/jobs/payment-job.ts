@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Inngest Job: Payment Event Handling
  *
  * Handles payment lifecycle events:
@@ -91,7 +91,7 @@ export const processPaymentCaptured = inngest.createFunction(
                       <p><strong>Payment ID:</strong> ${gatewayPaymentId}<br><strong>Method:</strong> ${method}</p>
                       <p>Your order is being processed and you'll receive updates shortly.</p>
                       <hr>
-                      <p style="font-size:12px;color:#999">Vastra Verse — Tradition Woven in Every Thread</p>
+                      <p style="font-size:12px;color:#999">Vastraa Verse — Tradition Woven in Every Thread</p>
                     </div>`,
                     orderId,
                     type: 'payment_receipt',
@@ -168,7 +168,7 @@ export const processPaymentFailed = inngest.createFunction(
                       <p>No amount has been charged. If deducted, it will be refunded within 5-7 business days.</p>
                       <p>Please try again or use a different payment method.</p>
                       <hr>
-                      <p style="font-size:12px;color:#999">Vastra Verse — Tradition Woven in Every Thread</p>
+                      <p style="font-size:12px;color:#999">Vastraa Verse — Tradition Woven in Every Thread</p>
                     </div>`,
                     orderId,
                     type: 'payment_failed',

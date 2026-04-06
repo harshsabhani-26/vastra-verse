@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 
@@ -350,7 +350,7 @@ export default function LiveShoppingModal({ isOpen, onClose }: LiveShoppingModal
                             color: "#999",
                             fontSize: "11px",
                         }}>
-                            ✨ Powered by Vastra Verse
+                            ✨ Powered by Vastraa Verse
                         </div>
                     </div>
                 )}

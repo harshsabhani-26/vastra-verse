@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { ArrowRight } from "lucide-react";
@@ -33,7 +33,7 @@ export function Newsletter() {
                     {/* Left - Heading */}
                     <h3 className="text-base md:text-lg font-serif tracking-[0.05em] text-center md:text-left leading-relaxed text-white">
                         Enter Into The World of <br className="hidden md:block" />
-                        <span className="text-secondary italic">Vastra Verse</span>
+                        <span className="text-secondary italic">Vastraa Verse</span>
                     </h3>
 
                     {/* Right - Email Input */}

@@ -965,22 +965,24 @@ model SearchQuery {
 }
 
 model HeroBanner {
-  id           String          @id @default(cuid())
+  id           String             @id @default(cuid())
   ctaLink      String
   imageUrl     String
-  displayOrder Int             @default(0)
-  isActive     Boolean         @default(true)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  mediaType    BannerMediaType @default(IMAGE)
+  displayOrder Int                @default(0)
+  isActive     Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  mediaType    BannerMediaType    @default(IMAGE)
   videoUrl     String?
-  bannerType   BannerType      @default(HERO)
+  bannerType   BannerType         @default(HERO)
+  displayFor   BannerDisplayFor   @default(BOTH)
 
   @@index([isActive])
   @@index([displayOrder])
   @@index([bannerType])
   @@index([bannerType, isActive])
   @@index([isActive, bannerType, displayOrder])
+  @@index([displayFor])
 }
 
 model Appointment {
@@ -1246,6 +1248,12 @@ enum BannerType {
   HERO
   MID_PAGE
   BOTTOM_PAGE
+}
+
+enum BannerDisplayFor {
+  WEB
+  MOBILE
+  BOTH
 }
 
 enum AppointmentStatus {

@@ -317,7 +317,7 @@ export function Footer({ categories = [], footerBg, footerLogo, instagram, youtu
                     {/* Bottom - Copyright Text */}
                     <div className="w-full pt-[20px] pb-[20px] flex flex-col md:flex-row items-center md:items-start justify-between">
                         <p className="text-[12px] md:text-[13px] font-medium text-[#A0A0A0] tracking-wide text-center md:text-left">
-                            © Copyright All rights reserved {new Date().getFullYear()} Vâstrâ Verse.
+                            © Copyright All rights reserved {new Date().getFullYear()} Vastraa Verse.
                         </p>
                     </div>
 

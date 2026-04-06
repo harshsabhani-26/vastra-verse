@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { RefreshCcw, ShieldCheck, Clock, CheckCircle } from "lucide-react";
 
 export default function ReturnsPolicyPage() {
@@ -15,7 +15,7 @@ export default function ReturnsPolicyPage() {
 
                     {/* Intro */}
                     <p className="text-stone-600 text-center leading-relaxed text-lg italic">
-                        "At Vastra Verse, we are committed to delivering the exact product you ordered in perfect condition. Returns are accepted only for wrong or defective products."
+                        "At Vastraa Verse, we are committed to delivering the exact product you ordered in perfect condition. Returns are accepted only for wrong or defective products."
                     </p>
 
                     {/* Return Window */}

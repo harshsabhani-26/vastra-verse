@@ -162,14 +162,17 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                         </div>
                     )}
 
-                    {/* Logo — Left aligned, scaled appropriately for mobile to prevent overlap */}
-                    <div className={cn("flex items-center shrink-0 pl-0 md:pl-[48px] xl:pl-0 h-[40px] md:h-[50px] xl:-ml-[30px] md:-ml-[20px]",
-                        isProductPage ? "hidden md:flex ml-auto md:ml-0" : "ml-[5px]"
+                    {/* Logo — Centered on mobile, left aligned on desktop */}
+                    <div className={cn(
+                        "flex items-center shrink-0 h-[40px] md:h-[50px]",
+                        isProductPage
+                            ? "hidden md:flex md:pl-[48px] xl:pl-0 xl:-ml-[30px] md:-ml-[20px] ml-auto md:ml-0"
+                            : "absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 md:pl-[48px] xl:pl-0 xl:-ml-[30px] md:-ml-[20px]"
                     )}>
-                        <Link href="/" className="w-[100px] md:w-[150px] h-full flex items-center" aria-label="Vastra Verse">
+                        <Link href="/" className="w-[100px] md:w-[150px] h-full flex items-center" aria-label="Vastraa Verse">
                             <Image
                                 src={logo || "/logo.png"}
-                                alt="Vastra Verse Logo"
+                                alt="Vastraa Verse Logo"
                                 width={150}
                                 height={50}
                                 className="object-contain max-h-full w-auto scale-[2] md:scale-[3] origin-left"
@@ -317,7 +320,7 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                 <div className="hidden md:block w-full bg-[#f8f8f8] border-b border-gray-200 py-4">
                     <div className="container mx-auto px-6 md:px-[60px]">
                         <div
-                            className="flex justify-start overflow-x-auto gap-6 pb-2"
+                            className="flex justify-start overflow-x-auto gap-6 pb-2 md:pl-[75px]"
                             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                         >
                             {mainCategories.map((cat) => (
@@ -486,11 +489,10 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                                                 key={link.href}
                                                 href={link.href}
                                                 onClick={() => setIsMobileMenuOpen(false)}
-                                                className={`block px-[20px] py-[16px] text-[15px] transition-colors ${
-                                                    isActive
-                                                        ? "text-[#42120F] font-semibold"
-                                                        : "text-[#3D2C1E] font-normal hover:text-[#42120F]"
-                                                }`}
+                                                className={`block px-[20px] py-[16px] text-[15px] transition-colors ${isActive
+                                                    ? "text-[#42120F] font-semibold"
+                                                    : "text-[#3D2C1E] font-normal hover:text-[#42120F]"
+                                                    }`}
                                             >
                                                 {link.label}
                                             </Link>

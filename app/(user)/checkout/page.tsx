@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 
 import { createOrder, checkUserPhoneVerification } from "@/app/actions/checkout";
@@ -477,7 +477,7 @@ export default function CheckoutPage() {
                                 key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
                                 amount: razorpayOrder.amount,
                                 currency: razorpayOrder.currency,
-                                name: "Vastra Verse",
+                                name: "Vastraa Verse",
                                 description: "Order Payment",
                                 image: "/images/logo.png",
                                 order_id: razorpayOrder.id,

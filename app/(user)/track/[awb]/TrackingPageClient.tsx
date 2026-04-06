@@ -115,7 +115,7 @@ export default function TrackingPageClient({ awb, initialData }: TrackingPageCli
             try {
                 await navigator.share({
                     title: `Track Shipment ${awb}`,
-                    text: `Track your Vastra Verse shipment: ${awb}`,
+                    text: `Track your Vastraa Verse shipment: ${awb}`,
                     url: shareUrl,
                 });
             } catch {

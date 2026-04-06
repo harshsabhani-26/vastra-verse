@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -100,7 +100,7 @@ export default function ContactPage() {
                         </div>
 
                         <div className="pt-8 border-t border-stone-200 space-y-4 text-sm text-stone-600">
-                            <h3 className="font-serif text-lg text-primary">Vastra Verse Private Limited</h3>
+                            <h3 className="font-serif text-lg text-primary">Vastraa Verse Private Limited</h3>
                             <p>
                                 <span className="font-semibold block text-primary">CIN:</span> U17116MH1995PTC086449
                             </p>
@@ -229,7 +229,7 @@ export default function ContactPage() {
                                     className="mt-1 accent-[#1C1917]"
                                 />
                                 <label htmlFor="newsletter" className="text-sm text-stone-600">
-                                    Sign up for our newsletters and stay up to date on the latest news, collections and events from Vastra Verse.
+                                    Sign up for our newsletters and stay up to date on the latest news, collections and events from Vastraa Verse.
                                 </label>
                             </div>
 

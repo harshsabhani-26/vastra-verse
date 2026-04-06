@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Inngest Job: Email Sending
  *
  * Handles async email delivery with automatic retries.
@@ -37,7 +37,7 @@ export const sendEmailJob = inngest.createFunction(
             });
 
             await transporter.sendMail({
-                from: from || `"Vastra Verse" <${process.env.EMAIL_USER}>`,
+                from: from || `"Vastraa Verse" <${process.env.EMAIL_USER}>`,
                 to,
                 subject,
                 html,

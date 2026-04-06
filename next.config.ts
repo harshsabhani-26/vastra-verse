@@ -52,10 +52,10 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
     serverActions: {
-      bodySizeLimit: '10mb',  // audit: reduced from 50mb — limits DoS via large upload payloads
+      bodySizeLimit: '50mb',
     },
     // Raise the max body size for API Route Handlers
-    middlewareClientMaxBodySize: '10mb',  // audit: reduced from 50mb
+    middlewareClientMaxBodySize: '50mb',
   },
 
   // Enterprise Security Headers for Production

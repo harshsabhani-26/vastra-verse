@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useTransition } from "react";
 import { useCartStore, useHeaderStore } from "@/lib/store";
@@ -6,6 +6,7 @@ import { useWishlistStore } from "@/lib/wishlist-store";
 import { toggleWishlist as toggleWishlistAction } from "@/app/actions/account";
 import { toast } from "react-hot-toast";
 import { Heart, ChevronDown, ChevronUp } from "lucide-react";
+import { ShareButton } from "@/components/product/ShareButton";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 
@@ -657,6 +658,12 @@ export function ProductDetails({
                             className={isWishlisted ? "fill-red-500 text-red-500" : "text-gray-500"}
                         />
                     </button>
+
+                    <ShareButton
+                        productName={product.name}
+                        productId={product.id}
+                        iconOnly
+                    />
                 </div>
 
                 {/* Fixed Bottom Action Bar (Mobile) */}
@@ -685,6 +692,12 @@ export function ProductDetails({
                             className={isWishlisted ? "fill-red-500 text-red-500" : "text-gray-500"}
                         />
                     </button>
+
+                    <ShareButton
+                        productName={product.name}
+                        productId={product.id}
+                        iconOnly
+                    />
                 </div>
 
 
@@ -770,7 +783,7 @@ export function ProductDetails({
                                     </div>
                                     <div className="spec-card-cell">
                                         <div className="spec-card-label">Sold by</div>
-                                        <div className="spec-card-value">Vastra Verse</div>
+                                        <div className="spec-card-value">Vastraa Verse</div>
                                     </div>
                                     <div className="spec-card-cell">
                                         <div className="spec-card-label">Country of Origin</div>
@@ -951,7 +964,7 @@ export function ProductDetails({
                                             </div>
                                             <div className="spec-card-cell">
                                                 <div className="spec-card-label">Sold by</div>
-                                                <div className="spec-card-value">Vastra Verse</div>
+                                                <div className="spec-card-value">Vastraa Verse</div>
                                             </div>
                                             <div className="spec-card-cell">
                                                 <div className="spec-card-label">Country of Origin</div>

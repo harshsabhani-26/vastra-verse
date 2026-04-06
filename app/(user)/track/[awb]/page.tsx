@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ awb: string }> }) {
     const { awb } = await params;
     return {
-        title: `Track Shipment ${awb} | Vastra Verse`,
-        description: `Track your Vastra Verse shipment with AWB number ${awb}`,
+        title: `Track Shipment ${awb} | Vastraa Verse`,
+        description: `Track your Vastraa Verse shipment with AWB number ${awb}`,
     };
 }
 

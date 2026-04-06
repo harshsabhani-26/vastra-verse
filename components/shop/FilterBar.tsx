@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { ChevronDown, SlidersHorizontal, LayoutGrid, List } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -143,7 +143,7 @@ export function FilterBar({ categories = [], totalCount = 0 }: { categories?: Ca
                         </FilterDropdown>
 
                         <FilterDropdown label="Brand">
-                            <p className="text-sm text-text-muted">Vastra Verse</p>
+                            <p className="text-sm text-text-muted">Vastraa Verse</p>
                         </FilterDropdown>
 
                         <FilterDropdown label="Product Type">

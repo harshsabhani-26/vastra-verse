@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { toast } from "react-hot-toast";
 export default function AppointmentPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
-        storeLocation: "Vastra Verse Surat",
+        storeLocation: "Vastraa Verse Surat",
         preferredTime: "Morning (10AM - 1PM)",
         appointmentDate: "",
         customerName: "",
@@ -73,7 +73,7 @@ export default function AppointmentPage() {
                 );
                 // Reset form
                 setFormData({
-                    storeLocation: "Vastra Verse Surat",
+                    storeLocation: "Vastraa Verse Surat",
                     preferredTime: "Morning (10AM - 1PM)",
                     appointmentDate: "",
                     customerName: "",
@@ -124,7 +124,7 @@ export default function AppointmentPage() {
                                 required
                                 className="w-full h-10 px-3 border border-stone-300 bg-white text-sm focus:outline-none focus:border-primary"
                             >
-                                <option>Vastra Verse Surat</option>
+                                <option>Vastraa Verse Surat</option>
                                 <option>Virtual Appointment</option>
                             </select>
                         </div>
@@ -262,7 +262,7 @@ export default function AppointmentPage() {
                                     className="text-sm text-stone-600"
                                 >
                                     Sign up for our newsletters and stay up to date on
-                                    the latest news, collections and events from Vastra Verse.
+                                    the latest news, collections and events from Vastraa Verse.
                                 </label>
                             </div>
                             <div className="flex items-start gap-2">

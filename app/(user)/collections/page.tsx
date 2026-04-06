@@ -1,9 +1,9 @@
-import { ProductCard } from "@/components/product/ProductCard";
+﻿import { ProductCard } from "@/components/product/ProductCard";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 
 export const metadata = {
-    title: "Collections | Vastra Verse",
+    title: "Collections | Vastraa Verse",
     description: "Explore our exclusive collections of heritage weaves and contemporary designs.",
 };
 

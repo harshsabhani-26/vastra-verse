@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Inngest Job: Order Processing
  *
  * Orchestrates the full post-order workflow:
@@ -187,7 +187,7 @@ function buildOrderConfirmationHtml(
       <p style="font-size:18px;font-weight:bold;text-align:right">Total: ₹${totalAmount.toLocaleString('en-IN')}</p>
       <p><strong>Order Number:</strong> ${orderNumber}<br><strong>Payment:</strong> ${paymentMethod}</p>
       <hr>
-      <p style="font-size:12px;color:#999">Vastra Verse — Tradition Woven in Every Thread</p>
+      <p style="font-size:12px;color:#999">Vastraa Verse — Tradition Woven in Every Thread</p>
     </div>
     `;
 }
@@ -207,7 +207,7 @@ function buildStatusUpdateHtml(
         <p style="margin:0"><span style="color:#999">${formatStatus(previousStatus)}</span> → <strong style="color:#8B4513">${formatStatus(newStatus)}</strong></p>
       </div>
       <hr>
-      <p style="font-size:12px;color:#999">Vastra Verse — Tradition Woven in Every Thread</p>
+      <p style="font-size:12px;color:#999">Vastraa Verse — Tradition Woven in Every Thread</p>
     </div>
     `;
 }

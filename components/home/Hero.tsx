@@ -93,7 +93,7 @@ export function Hero({ banners, heroBg }: HeroProps) {
 
     return (
         <section
-            className="relative w-full pt-[08px] md:pt-[10px] lg:pt-[15px] pb-[20px] md:pb-[25px] lg:pb-[35px] px-8 md:px-[80px] lg:px-[142px] xl:px-[202px] 2xl:px-[262px] bg-white overflow-hidden"
+            className="relative w-full pt-0 md:pt-[10px] lg:pt-[15px] pb-0 md:pb-[25px] lg:pb-[35px] px-0 md:px-[80px] lg:px-[142px] xl:px-[202px] 2xl:px-[262px] bg-white overflow-hidden"
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
         >
@@ -111,7 +111,7 @@ export function Hero({ banners, heroBg }: HeroProps) {
                 ></div>
             )}
 
-            <div className="relative w-full max-w-[2000px] mx-auto aspect-[16/9] md:aspect-[2.15/1] lg:aspect-[2.65/1] xl:aspect-[3.05/1] overflow-hidden rounded-md shadow-[0_8px_40px_rgba(0,0,0,0.12)] bg-black z-10">
+            <div className="relative w-full max-w-[2000px] mx-auto aspect-[5/6] md:aspect-[2.15/1] lg:aspect-[2.65/1] xl:aspect-[3.05/1] overflow-hidden rounded-none md:rounded-md shadow-[0_8px_40px_rgba(0,0,0,0.12)] bg-black z-10">
                 {/* Background */}
                 <AnimatePresence initial={false}>
                     <motion.div
@@ -156,30 +156,12 @@ export function Hero({ banners, heroBg }: HeroProps) {
                     <span className="sr-only">View {slides[currentSlide].buttonLink}</span>
                 </Link>
 
-                {/* Navigation Arrows - Only show when multiple slides */}
-                {slides.length > 1 && (
-                    <>
-                        <button
-                            onClick={prevSlide}
-                            className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white rounded-full shadow-[0_2px_15px_rgba(0,0,0,0.15)] text-black hover:scale-105 transition-transform duration-300 z-20 group"
-                            aria-label="Previous slide"
-                        >
-                            <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 stroke-[2] ml-[-2px]" />
-                        </button>
-                        <button
-                            onClick={nextSlide}
-                            className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white rounded-full shadow-[0_2px_15px_rgba(0,0,0,0.15)] text-black hover:scale-105 transition-transform duration-300 z-20 group"
-                            aria-label="Next slide"
-                        >
-                            <ChevronRight className="w-5 h-5 md:w-6 md:h-6 stroke-[2] mr-[-2px]" />
-                        </button>
-                    </>
-                )}
+
             </div>
 
             {/* Navigation Dots - Below the banner container */}
             {slides.length > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-5">
+                <div className="hidden md:flex items-center justify-center gap-2 mt-5">
                     {slides.map((_, index) => (
                         <button
                             key={index}

@@ -1,4 +1,4 @@
-import { FileText, ShoppingBag, CreditCard, UserCheck, AlertCircle, Package } from "lucide-react";
+﻿import { FileText, ShoppingBag, CreditCard, UserCheck, AlertCircle, Package } from "lucide-react";
 
 export default function TermsConditionsPage() {
     return (
@@ -16,7 +16,7 @@ export default function TermsConditionsPage() {
                     {/* Introduction */}
                     <div>
                         <p className="text-stone-600 leading-relaxed">
-                            Welcome to Vastra Verse. By accessing and using our website, you agree to be bound by these Terms and Conditions. Please read them carefully before making any purchase or using our services. If you do not agree with any part of these terms, please refrain from using our website.
+                            Welcome to Vastraa Verse. By accessing and using our website, you agree to be bound by these Terms and Conditions. Please read them carefully before making any purchase or using our services. If you do not agree with any part of these terms, please refrain from using our website.
                         </p>
                     </div>
 
@@ -152,7 +152,7 @@ export default function TermsConditionsPage() {
                                 <li>Trademarks and brand names</li>
                             </ul>
                             <p className="mt-3">
-                                are the property of Vastra Verse and protected by Indian and international copyright laws. Unauthorized use, reproduction, or distribution is strictly prohibited.
+                                are the property of Vastraa Verse and protected by Indian and international copyright laws. Unauthorized use, reproduction, or distribution is strictly prohibited.
                             </p>
                         </div>
                     </div>

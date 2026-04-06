@@ -52,7 +52,7 @@ async function main() {
 
     console.log('');
     console.log('═══════════════════════════════════════════');
-    console.log(`  🌱 Vastra Verse Database Seeder v${SEED_VERSION}`);
+    console.log(`  🌱 Vastraa Verse Database Seeder v${SEED_VERSION}`);
     console.log(`  📍 Environment: ${env.toUpperCase()}`);
     console.log(`  ⏰ Started: ${new Date().toISOString()}`);
     console.log('═══════════════════════════════════════════');

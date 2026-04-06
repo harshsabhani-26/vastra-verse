@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Production Migration Runner
  * Safe migration deployment with pre-flight checks and logging
  * 
@@ -53,7 +53,7 @@ async function main() {
 
     console.log('');
     console.log('╔══════════════════════════════════════════════════════════╗');
-    console.log('║          Vastra Verse — Migration Runner                 ║');
+    console.log('║          Vastraa Verse — Migration Runner                 ║');
     console.log('╚══════════════════════════════════════════════════════════╝');
     console.log('');
 

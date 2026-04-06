@@ -27,6 +27,8 @@ export function BannerForm({ banner }: BannerFormProps) {
         videoUrl: banner?.videoUrl || "",
         // Banner Type
         bannerType: (banner?.bannerType as "HERO" | "MID_PAGE" | "BOTTOM_PAGE") || "HERO",
+        // Display Target
+        displayFor: (banner?.displayFor as "WEB" | "MOBILE" | "BOTH") || "WEB",
         displayOrder: banner?.displayOrder || 0,
         isActive: banner?.isActive !== undefined ? banner.isActive : true
     });
@@ -131,6 +133,7 @@ export function BannerForm({ banner }: BannerFormProps) {
                 imageUrl: formData.imageUrl,
                 videoUrl: formData.videoUrl || null,
                 bannerType: formData.bannerType,
+                displayFor: formData.displayFor,
                 displayOrder: formData.displayOrder,
                 isActive: formData.isActive,
             };
@@ -203,6 +206,30 @@ export function BannerForm({ banner }: BannerFormProps) {
                     <option value="BOTTOM_PAGE">Bottom Banner (Between best sellers & appointment)</option>
                 </select>
                 <p className="text-xs text-stone-500">Choose where this banner will display on the homepage</p>
+            </div>
+
+            {/* Display For Selection */}
+            <div className="space-y-2">
+                <Label htmlFor="displayFor">Display For *</Label>
+                <select
+                    id="displayFor"
+                    value={formData.displayFor}
+                    onChange={(e) => setFormData(prev => ({ ...prev, displayFor: e.target.value as "WEB" | "MOBILE" | "BOTH" }))}
+                    className="w-full px-3 py-2 border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1C1917]"
+                >
+                    <option value="WEB">Web / Desktop only</option>
+                    <option value="MOBILE">Mobile only</option>
+                </select>
+                {formData.displayFor === "MOBILE" && (
+                    <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                        📱 <strong>Mobile banner:</strong> Recommended image ratio is <strong>4:3</strong> (e.g. 1200×900 px). The slider will render at 4:3 on mobile screens.
+                    </p>
+                )}
+                {formData.displayFor === "WEB" && (
+                    <p className="text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded px-3 py-2">
+                        🖥️ <strong>Web banner:</strong> Recommended wide ratio (e.g. 1920×700 px). This banner will only appear on tablet and desktop screens.
+                    </p>
+                )}
             </div>
 
             {/* Image Upload - Show only when IMAGE is selected */}

@@ -1,4 +1,4 @@
-import { UnifiedAuthForm } from "@/components/auth/UnifiedAuthForm";
+﻿import { UnifiedAuthForm } from "@/components/auth/UnifiedAuthForm";
 import Image from "next/image";
 import { Suspense } from "react";
 
@@ -10,7 +10,7 @@ export default function LoginPage() {
             </Suspense>
 
             <div className="mt-8 text-center text-[10px] text-text-muted max-w-sm tracking-wide">
-                By continuing, I agree to Vastra Verse&apos;s <span className="text-primary font-medium hover:underline cursor-pointer">Privacy Policy</span> and <span className="text-primary font-medium hover:underline cursor-pointer">Terms of Use</span>.
+                By continuing, I agree to Vastraa Verse&apos;s <span className="text-primary font-medium hover:underline cursor-pointer">Privacy Policy</span> and <span className="text-primary font-medium hover:underline cursor-pointer">Terms of Use</span>.
             </div>
         </div>
     );

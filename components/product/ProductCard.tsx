@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { WishlistToggle } from "@/components/product/WishlistToggle";
+import { ShareButton } from "@/components/product/ShareButton";
 import { Button } from "@/components/ui/button";
 
 interface ProductCardProps {
@@ -43,12 +44,19 @@ export function ProductCard({
                     ) : null}
                 </div>
 
-                {/* Wishlist Toggle */}
-                <WishlistToggle
-                    productId={id}
-                    initialIsWishlisted={isWishlisted}
-                    className="absolute top-4 right-4 z-10 transition-transform duration-300 hover:scale-110 text-primary hover:text-secondary"
-                />
+                {/* Wishlist + Share – stacked top-right */}
+                <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 items-center">
+                    <WishlistToggle
+                        productId={id}
+                        initialIsWishlisted={isWishlisted}
+                        className="transition-transform duration-300 hover:scale-110 text-primary hover:text-secondary"
+                    />
+                    <ShareButton
+                        productName={name}
+                        productId={id}
+                        iconOnly
+                    />
+                </div>
 
                 {/* Product Image */}
                 <Image

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Button } from "@/components/ui/button";
 import { Maximize2, Map as MapIcon, Satellite, CheckCircle2 } from "lucide-react";
@@ -8,7 +8,7 @@ import { useState, useRef } from "react";
 const STORES = [
     {
         id: 1,
-        name: "Vastra Verse Surat",
+        name: "Vastraa Verse Surat",
         address: "27-28 A Sk-2 Industrial, Sosyo Circle, Udhna Surat, Gandhi kutir, Surat, Gujrat, India",
         timing: "11am to 7:30pm",
         phone: "+91 81549 49599",

@@ -14,6 +14,8 @@ export interface HeroBanner {
     videoUrl?: string | null;
     // Banner Type
     bannerType: "HERO" | "MID_PAGE" | "BOTTOM_PAGE";
+    // Display Target
+    displayFor: "WEB" | "MOBILE" | "BOTH";
     displayOrder: number;
     isActive: boolean;
     createdAt: Date;

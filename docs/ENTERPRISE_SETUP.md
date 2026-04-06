@@ -1,7 +1,7 @@
-
+﻿
 # Enterprise Architecture Setup Guide
 
-Vastra Verse has been upgraded with enterprise-scaled infrastructure.
+Vastraa Verse has been upgraded with enterprise-scaled infrastructure.
 This guide covers setup for every service.
 
 ---

@@ -105,9 +105,9 @@ export async function PATCH(
 
                     let message = "";
                     if (status === "CONFIRMED") {
-                        message = `✅ Dear ${appointment.customerName},\n\nYour appointment has been CONFIRMED!\n\n📅 Date: ${appointmentDate}\n⏰ Time: ${appointment.preferredTime}\n📍 Location: ${appointment.storeLocation}\n\nWe look forward to seeing you!\n\n- Vastra Verse Team`;
+                        message = `✅ Dear ${appointment.customerName},\n\nYour appointment has been CONFIRMED!\n\n📅 Date: ${appointmentDate}\n⏰ Time: ${appointment.preferredTime}\n📍 Location: ${appointment.storeLocation}\n\nWe look forward to seeing you!\n\n- Vastraa Verse Team`;
                     } else if (status === "CANCELLED") {
-                        message = `❌ Dear ${appointment.customerName},\n\nYour appointment scheduled for ${appointmentDate} at ${appointment.preferredTime} has been CANCELLED.\n\nIf you have any questions, please contact us.\n\n- Vastra Verse Team`;
+                        message = `❌ Dear ${appointment.customerName},\n\nYour appointment scheduled for ${appointmentDate} at ${appointment.preferredTime} has been CANCELLED.\n\nIf you have any questions, please contact us.\n\n- Vastraa Verse Team`;
                     }
 
                     // Send WhatsApp message

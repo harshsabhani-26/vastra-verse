@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -213,7 +213,7 @@ export function UnifiedAuthForm() {
                 <h1 className="text-3xl font-serif text-primary tracking-tight">
                     {step === "EMAIL" && "Welcome"}
                     {step === "LOGIN" && "Welcome Back"}
-                    {step === "REGISTER" && "Join Vastra Verse"}
+                    {step === "REGISTER" && "Join Vastraa Verse"}
                 </h1>
                 <p className="text-sm text-text-muted font-light leading-relaxed px-4">
                     {step === "EMAIL" && "Sign in or create an account to continue."}

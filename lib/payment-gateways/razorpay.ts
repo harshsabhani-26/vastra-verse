@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Razorpay Payment Gateway Integration
  * Handles payment creation, verification, and refunds
  */
@@ -245,7 +245,7 @@ export function generateCheckoutOptions(order: {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: order.amount,
         currency: order.currency,
-        name: 'Vastra Verse',
+        name: 'Vastraa Verse',
         description: 'Order Payment',
         order_id: order.orderId,
         prefill: {

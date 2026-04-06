@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Automated Alert Service
  * 
  * Monitors system health and triggers alerts when thresholds are exceeded.
@@ -287,7 +287,7 @@ async function deliverEmailAlert(to: string, config: any, result: AlertCheckResu
 
     await emailQueue().add('alert-email', {
         to,
-        subject: `${severityEmoji} [${config.severity}] ${config.name} - Vastra Verse`,
+        subject: `${severityEmoji} [${config.severity}] ${config.name} - Vastraa Verse`,
         html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                 <div style="background: ${config.severity === 'CRITICAL' ? '#dc2626' : config.severity === 'WARNING' ? '#f59e0b' : '#3b82f6'}; color: white; padding: 16px 20px; border-radius: 8px 8px 0 0;">

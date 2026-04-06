@@ -1,4 +1,4 @@
-/**
+﻿/**
  * LAYER 1 — Invoice Data Builder
  * 
  * Single responsibility: fetch and combine all invoice data from database.
@@ -113,11 +113,11 @@ function generateInvoiceNumber(orderId: string): string {
 // ─── Defaults ────────────────────────────────────────────────────────────────
 
 const DEFAULT_STORE: InvoiceStoreConfig = {
-    brandName: "Vastra Verse",
+    brandName: "Vastraa Verse",
     tagline: "Premium Indian Textiles & Sarees",
     logoUrl: null,
     gstin: "N/A",
-    businessName: "Vastra Verse",
+    businessName: "Vastraa Verse",
     address: "Surat, Gujarat",
     city: "Surat",
     state: "Gujarat",

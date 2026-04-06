@@ -1,4 +1,4 @@
-import { Building2, MapPin, Mail, Phone, FileText, Store } from "lucide-react";
+﻿import { Building2, MapPin, Mail, Phone, FileText, Store } from "lucide-react";
 
 export default function CorporateInformationPage() {
     return (
@@ -26,7 +26,7 @@ export default function CorporateInformationPage() {
                             <div className="space-y-4">
                                 <div>
                                     <h3 className="text-sm font-semibold text-stone-500 uppercase tracking-wide mb-1">Business Name</h3>
-                                    <p className="text-lg text-stone-800">Vastra Verse</p>
+                                    <p className="text-lg text-stone-800">Vastraa Verse</p>
                                 </div>
 
                                 <div>
@@ -74,7 +74,7 @@ export default function CorporateInformationPage() {
 
                         <div className="bg-stone-50 p-6 rounded-lg border border-stone-200">
                             <p className="text-stone-800 leading-relaxed">
-                                Vastra Verse<br />
+                                Vastraa Verse<br />
                                 [Building Name/Number]<br />
                                 [Street Address]<br />
                                 [Locality/Area]<br />
@@ -198,7 +198,7 @@ export default function CorporateInformationPage() {
 
                         <div className="bg-stone-50 p-6 rounded-lg border border-stone-200 space-y-2">
                             <p className="text-stone-800">
-                                <span className="font-semibold">Account Name:</span> Vastra Verse
+                                <span className="font-semibold">Account Name:</span> Vastraa Verse
                             </p>
                             <p className="text-stone-800">
                                 <span className="font-semibold">Bank Name:</span> [Your Bank Name]
@@ -220,7 +220,7 @@ export default function CorporateInformationPage() {
                         <h2 className="text-2xl font-serif text-[#1C1917] mb-6">Compliance & Certifications</h2>
 
                         <div className="space-y-3 text-stone-600 leading-relaxed">
-                            <p>Vastra Verse is committed to operating in full compliance with all applicable laws and regulations:</p>
+                            <p>Vastraa Verse is committed to operating in full compliance with all applicable laws and regulations:</p>
                             <ul className="list-disc list-inside space-y-2 ml-4">
                                 <li>GST Registration & Compliance</li>
                                 <li>Consumer Protection Act, 2019</li>
@@ -235,7 +235,7 @@ export default function CorporateInformationPage() {
                     <div>
                         <h2 className="text-2xl font-serif text-[#1C1917] mb-6">Our Commitment</h2>
                         <p className="text-stone-600 leading-relaxed">
-                            At Vastra Verse, we are committed to preserving traditional Indian handloom and handicraft heritage. We work directly with artisan communities, ensuring fair wages and sustainable practices. Our goal is to bring the finest Indian textiles to you while supporting the livelihoods of skilled craftspeople.
+                            At Vastraa Verse, we are committed to preserving traditional Indian handloom and handicraft heritage. We work directly with artisan communities, ensuring fair wages and sustainable practices. Our goal is to bring the finest Indian textiles to you while supporting the livelihoods of skilled craftspeople.
                         </p>
                     </div>
 

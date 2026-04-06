@@ -35,7 +35,7 @@ export default async function MainLayout({
             />
             <LiveShoppingButton />
             <WhatsAppButton
-                phoneNumber="919876543210"
+                phoneNumber="918154949599"
                 defaultMessage="Hello! I'm interested in your saree collection."
             />
         </div>

@@ -1,4 +1,4 @@
-import { Shield, AlertCircle, Eye, Cookie, Lock, UserCheck } from "lucide-react";
+﻿import { Shield, AlertCircle, Eye, Cookie, Lock, UserCheck } from "lucide-react";
 
 export default function PrivacyPolicyPage() {
     return (
@@ -22,7 +22,7 @@ export default function PrivacyPolicyPage() {
                             <h2 className="text-2xl font-serif text-primary">Our Commitment to Your Privacy</h2>
                         </div>
                         <p className="text-stone-600 leading-relaxed">
-                            At Vastra Verse, we are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your data when you visit our website or make a purchase from us.
+                            At Vastraa Verse, we are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your data when you visit our website or make a purchase from us.
                         </p>
                     </div>
 

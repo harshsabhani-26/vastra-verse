@@ -17,7 +17,7 @@ interface WhatsAppButtonConfig {
 const DEFAULT_CONFIG: Required<WhatsAppButtonConfig> = {
     scrollThreshold: 10,
     animationDuration: 300,
-    phoneNumber: "919876543210", // Replace with actual number
+    phoneNumber: "918154949599", // Replace with actual number
     defaultMessage: "Hello! I'm interested in your saree collection.",
 };
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * VastraVerse — k6 Load Test Orchestrator
+ * VastraaVerse — k6 Load Test Orchestrator
  *
  * Called by npm scripts. Runs k6 with the correct flags,
  * then auto-generates the HTML report.
@@ -68,7 +68,7 @@ const envFlags = [
 const cmd = `${k6} run ${envFlags} "${mainScript}"`;
 
 console.log('\n╔══════════════════════════════════════════════════════╗');
-console.log(`║  VastraVerse Load Test — ${mode.toUpperCase().padEnd(28)}║`);
+console.log(`║  VastraaVerse Load Test — ${mode.toUpperCase().padEnd(28)}║`);
 console.log('╚══════════════════════════════════════════════════════╝');
 console.log(`\n  Target:  ${baseUrl}`);
 console.log(`  Mode:    ${mode}`);

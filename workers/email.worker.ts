@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Email Worker
  * 
  * Processes email jobs from the emailQueue.
@@ -51,7 +51,7 @@ async function processEmailJob(job: Job<EmailJobData>) {
     const transport = getTransporter();
 
     const info = await transport.sendMail({
-        from: from || `"Vastra Verse" <${emailUser}>`,
+        from: from || `"Vastraa Verse" <${emailUser}>`,
         to,
         subject,
         html,

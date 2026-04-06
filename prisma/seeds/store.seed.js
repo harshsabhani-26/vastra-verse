@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Store Settings Seed
  * Upsert-based: creates if not exists, updates if exists
  */
@@ -13,7 +13,7 @@ async function seedStoreSettings(prisma) {
         await prisma.storeSettings.update({
             where: { id: existing.id },
             data: {
-                storeName: 'Vastra Verse',
+                storeName: 'Vastraa Verse',
                 tagline: 'Timeless Indian Fashion',
                 country: 'India',
                 updatedAt: new Date(),
@@ -23,7 +23,7 @@ async function seedStoreSettings(prisma) {
     } else {
         await prisma.storeSettings.create({
             data: {
-                storeName: 'Vastra Verse',
+                storeName: 'Vastraa Verse',
                 tagline: 'Timeless Indian Fashion',
                 country: 'India',
             },
