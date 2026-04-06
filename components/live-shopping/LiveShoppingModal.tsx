@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 
@@ -289,7 +289,7 @@ export default function LiveShoppingModal({ isOpen, onClose }: LiveShoppingModal
                         }}>
                             {/* Live Shop */}
                             <a
-                                href="https://wa.me/919876543210?text=Hi%2C%20I%27d%20like%20to%20start%20a%20live%20video%20shopping%20session%20for%20sarees!"
+                                href="https://wa.me/918154949599?text=Hi%2C%20I%27d%20like%20to%20start%20a%20live%20video%20shopping%20session%20for%20sarees!"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{
