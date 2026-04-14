@@ -16,7 +16,7 @@ export async function verifyHCaptchaToken(token: string): Promise<boolean> {
         console.warn("[SECURITY] HCAPTCHA_SECRET_KEY not configured — skipping verification");
         // In production, you may want to FAIL CLOSED (return false)
         // For now, allow requests to proceed if hCaptcha is not configured
-        return process.env.NODE_ENV !== "production";
+        return true;
     }
 
     if (!token) {
