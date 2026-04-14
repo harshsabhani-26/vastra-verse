@@ -4,64 +4,90 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 
 
-// Initialize Redis client
-const redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL!,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
+// ─── Lazy Redis Initialization ──────────────────────────────────────────────
+// Redis + rate limiters are initialized lazily on first use.
+// If UPSTASH env vars are missing, all rate-limit checks become no-ops.
+
+let _redis: Redis | null = null;
+let _rateLimitConfigs: Record<string, Ratelimit> | null = null;
+let _redisAvailable: boolean | null = null;
+
+function isRedisConfigured(): boolean {
+    if (_redisAvailable !== null) return _redisAvailable;
+    _redisAvailable = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+    if (!_redisAvailable) {
+        console.warn('[RateLimit] UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN not set — rate limiting disabled');
+    }
+    return _redisAvailable;
+}
+
+function getRedis(): Redis | null {
+    if (!isRedisConfigured()) return null;
+    if (!_redis) {
+        _redis = new Redis({
+            url: process.env.UPSTASH_REDIS_REST_URL!,
+            token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+        });
+    }
+    return _redis;
+}
+
+function getRateLimitConfigs(): Record<string, Ratelimit> | null {
+    if (!isRedisConfigured()) return null;
+    if (!_rateLimitConfigs) {
+        const redis = getRedis()!;
+        _rateLimitConfigs = {
+            auth: new Ratelimit({
+                redis,
+                limiter: Ratelimit.slidingWindow(5, '1 m' as any),
+                analytics: true,
+                prefix: 'ratelimit:auth',
+            }),
+            paymentVerify: new Ratelimit({
+                redis,
+                limiter: Ratelimit.slidingWindow(3, '1 m' as any),
+                analytics: true,
+                prefix: 'ratelimit:payment:verify',
+            }),
+            payment: new Ratelimit({
+                redis,
+                limiter: Ratelimit.slidingWindow(10, '1 m' as any),
+                analytics: true,
+                prefix: 'ratelimit:payment',
+            }),
+            orderCreate: new Ratelimit({
+                redis,
+                limiter: Ratelimit.slidingWindow(5, '1 m' as any),
+                analytics: true,
+                prefix: 'ratelimit:order:create',
+            }),
+            admin: new Ratelimit({
+                redis,
+                limiter: Ratelimit.slidingWindow(30, '1 m' as any),
+                analytics: true,
+                prefix: 'ratelimit:admin',
+            }),
+            default: new Ratelimit({
+                redis,
+                limiter: Ratelimit.slidingWindow(20, '1 m' as any),
+                analytics: true,
+                prefix: 'ratelimit:default',
+            }),
+        };
+    }
+    return _rateLimitConfigs;
+}
 
 /**
- * Rate Limit Configurations
+ * Rate Limit Configurations (kept for backward compat — lazy accessor)
  */
-export const rateLimitConfigs = {
-    // Auth routes: 5 requests per minute
-    auth: new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(5, '1 m' as any),
-        analytics: true,
-        prefix: 'ratelimit:auth',
-    }),
-
-    // Payment verification: 3 requests per minute
-    paymentVerify: new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(3, '1 m' as any),
-        analytics: true,
-        prefix: 'ratelimit:payment:verify',
-    }),
-
-    // Payment general: 10 requests per minute
-    payment: new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(10, '1 m' as any),
-        analytics: true,
-        prefix: 'ratelimit:payment',
-    }),
-
-    // Order creation: 5 requests per minute
-    orderCreate: new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(5, '1 m' as any),
-        analytics: true,
-        prefix: 'ratelimit:order:create',
-    }),
-
-    // Admin routes: 30 requests per minute
-    admin: new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(30, '1 m' as any),
-        analytics: true,
-        prefix: 'ratelimit:admin',
-    }),
-
-    // Default/general API: 20 requests per minute
-    default: new Ratelimit({
-        redis,
-        limiter: Ratelimit.slidingWindow(20, '1 m' as any),
-        analytics: true,
-        prefix: 'ratelimit:default',
-    }),
-} as const;
+export const rateLimitConfigs = new Proxy({} as Record<string, Ratelimit>, {
+    get(_target, prop: string) {
+        const configs = getRateLimitConfigs();
+        if (!configs) return undefined;
+        return configs[prop];
+    },
+});
 
 /**
  * Get identifier for rate limiting
@@ -164,13 +190,16 @@ export async function checkRateLimit(
     req: NextRequest,
     type: keyof typeof rateLimitConfigs
 ): Promise<{ success: true; identifier: string } | NextResponse> {
+    if (!isRedisConfigured()) {
+        const identifier = await getRateLimitIdentifier(req);
+        return { success: true, identifier };
+    }
     const identifier = await getRateLimitIdentifier(req);
     const ratelimit = rateLimitConfigs[type];
 
     const result = await applyRateLimit(ratelimit, identifier);
 
     if (result instanceof NextResponse) {
-        // Log rate limit violation
         console.warn(`[RateLimit] ${type.toUpperCase()} exceeded for ${identifier}`);
         return result;
     }
@@ -191,10 +220,15 @@ export async function checkCustomRateLimit(
     maxRequests: number,
     window: string
 ): Promise<{ success: true; identifier: string } | NextResponse> {
+    if (!isRedisConfigured()) {
+        const identifier = await getRateLimitIdentifier(req);
+        return { success: true, identifier };
+    }
     const identifier = await getRateLimitIdentifier(req);
+    const redisClient = getRedis()!;
 
     const customRateLimit = new Ratelimit({
-        redis,
+        redis: redisClient,
         limiter: Ratelimit.slidingWindow(maxRequests, window as any),
         analytics: true,
         prefix: 'ratelimit:custom',
@@ -218,6 +252,10 @@ export async function checkIpRateLimit(
     req: NextRequest,
     type: keyof typeof rateLimitConfigs
 ): Promise<{ success: true; ip: string } | NextResponse> {
+    if (!isRedisConfigured()) {
+        const ip = getClientIp(req);
+        return { success: true, ip };
+    }
     const ip = getClientIp(req);
     const identifier = `ip:${ip}`;
     const ratelimit = rateLimitConfigs[type];
@@ -247,6 +285,11 @@ export async function checkUserRateLimit(
                 { error: 'UNAUTHORIZED', message: 'Authentication required' },
                 { status: 401 }
             );
+        }
+
+        // If Redis is not configured, skip rate limiting but still auth
+        if (!isRedisConfigured()) {
+            return { success: true, userId: session.user.id };
         }
 
         const identifier = `user:${session.user.id}`;
