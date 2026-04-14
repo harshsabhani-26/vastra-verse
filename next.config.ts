@@ -63,9 +63,9 @@ const nextConfig: NextConfig = {
     // Strict Content Security Policy - Least Privilege Principle
     const csp = [
       "default-src 'self'",
-      // Scripts: Only trusted domains for Razorpay, MSG91, hCaptcha
+      // Scripts: Only trusted domains for Razorpay, MSG91, hCaptcha, Google Tag Manager
       // NOTE: unsafe-eval kept for Razorpay checkout SDK compatibility
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://api.razorpay.com https://verify.msg91.com https://control.msg91.com https://js.hcaptcha.com https://hcaptcha.com https://cdnjs.cloudflare.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://api.razorpay.com https://verify.msg91.com https://control.msg91.com https://js.hcaptcha.com https://hcaptcha.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com",
       // Workers: Allow web workers from self and blobs (required for Sentry/Razorpay)
       "worker-src 'self' blob:",
       // Styles: Self + Google Fonts + MSG91 widget styles
@@ -73,9 +73,9 @@ const nextConfig: NextConfig = {
       // Fonts: Self + Google Fonts + data URIs
       "font-src 'self' https://fonts.gstatic.com data:",
       // Images: Trusted CDNs and blob URIs
-      "img-src 'self' data: blob: https://images.unsplash.com https://*.razorpay.com https://*.supabase.co https://res.cloudinary.com https://maps.googleapis.com https://maps.gstatic.com https://cdnjs.cloudflare.com",
-      // Connect: API endpoints + Sentry for error reporting
-      "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://verify.msg91.com https://control.msg91.com https://api.msg91.com https://*.supabase.co https://hcaptcha.com https://*.hcaptcha.com https://api.db-ip.com https://*.sentry.io https://*.ingest.sentry.io",
+      "img-src 'self' data: blob: https://images.unsplash.com https://*.razorpay.com https://*.supabase.co https://res.cloudinary.com https://maps.googleapis.com https://maps.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com",
+      // Connect: API endpoints + Sentry + Google Analytics
+      "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://verify.msg91.com https://control.msg91.com https://api.msg91.com https://*.supabase.co https://hcaptcha.com https://*.hcaptcha.com https://api.db-ip.com https://*.sentry.io https://*.ingest.sentry.io https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://*.google-analytics.com",
       // Media: Video/audio from CDNs
       "media-src 'self' data: blob: https://res.cloudinary.com https://*.supabase.co",
       // Frames: Payment gateways, maps, hCaptcha, MSG91 widget, video embeds

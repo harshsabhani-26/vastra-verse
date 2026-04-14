@@ -39,7 +39,7 @@ function getRateLimitConfigs(): Record<string, Ratelimit> | null {
         _rateLimitConfigs = {
             auth: new Ratelimit({
                 redis,
-                limiter: Ratelimit.slidingWindow(5, '1 m' as any),
+                limiter: Ratelimit.slidingWindow(15, '1 m' as any),
                 analytics: true,
                 prefix: 'ratelimit:auth',
             }),
