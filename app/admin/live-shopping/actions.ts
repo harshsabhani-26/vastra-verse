@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache"
 
 export async function getLiveShoppingBg(): Promise<string> {
     const settings = await prisma.storeSettings.findFirst()
-    return (settings as any)?.liveShoppingBg || ""
+    return settings?.liveShoppingBg || ""
 }
 
 export async function updateLiveShoppingBg(url: string) {
@@ -13,11 +13,11 @@ export async function updateLiveShoppingBg(url: string) {
     if (settings) {
         await prisma.storeSettings.update({
             where: { id: settings.id },
-            data: { liveShoppingBg: url } as any,
+            data: { liveShoppingBg: url },
         })
     } else {
         await prisma.storeSettings.create({
-            data: { liveShoppingBg: url } as any,
+            data: { liveShoppingBg: url },
         })
     }
     revalidatePath("/admin/live-shopping")

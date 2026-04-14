@@ -17,16 +17,12 @@ export default async function LiveShoppingAdminPage() {
     // Fetch background setting + appointments in parallel
     const [liveShoppingBg, appointments] = await Promise.all([
         getLiveShoppingBg(),
-        (prisma.appointment.findMany as Function)({
+        prisma.appointment.findMany({
             where: { appointmentType: "VIDEO_CALL" },
             orderBy: { createdAt: "desc" },
-        }) as Promise<Array<{
-            id: string; customerName: string; customerEmail: string; customerPhone: string;
-            storeLocation: string; appointmentDate: Date; preferredTime: string;
-            message: string | null; status: string; adminNotes: string | null;
-            createdAt: Date; appointmentType: string;
-        }>>,
+        }),
     ]);
+
 
     // Stats
     const total = appointments.length;
