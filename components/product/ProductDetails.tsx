@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useTransition } from "react";
 import { useCartStore, useHeaderStore } from "@/lib/store";
@@ -268,28 +268,7 @@ export function ProductDetails({
                     margin-top: 3px;
                 }
 
-                /* Stock badge */
-                .pd-stock-badge {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
-                    padding: 3px 12px;
-                    border-radius: 999px;
-                    font-size: 11.5px;
-                    font-weight: 600;
-                    margin-top: 8px;
-                    border: 1px solid;
-                }
-                .pd-stock-badge.in-stock {
-                    background: #f0fdf4;
-                    color: #15803d;
-                    border-color: #86efac;
-                }
-                .pd-stock-badge.out-stock {
-                    background: #fef2f2;
-                    color: #dc2626;
-                    border-color: #fca5a5;
-                }
+
 
                 /* Action buttons */
                 .pd-actions {
@@ -606,28 +585,7 @@ export function ProductDetails({
                         ₹{Number(product.finalPrice || product.price).toLocaleString("en-IN")}
                     </div>
                     <div className="pd-price-sub">MRP (Inclusive of all taxes)</div>
-                    {stock !== null && (
-                        <div
-                            className={`pd-stock-badge ${currentStock > 0 ? "in-stock" : "out-stock"}`}
-                        >
-                            {currentStock > 0 ? (
-                                <>
-                                    <span
-                                        style={{
-                                            width: 7,
-                                            height: 7,
-                                            background: "#22c55e",
-                                            borderRadius: "50%",
-                                            display: "inline-block",
-                                        }}
-                                    />
-                                    In Stock ({currentStock} pcs)
-                                </>
-                            ) : (
-                                "Out of Stock"
-                            )}
-                        </div>
-                    )}
+
                 </div>
 
 

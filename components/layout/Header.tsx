@@ -79,7 +79,6 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
     const [isTrackOrderOpen, setIsTrackOrderOpen] = useState(false);
     const { openCart, totalItems, syncWithUser, clearUserCart } = useCartStore();
     const { totalItems: wishlistCount, syncWithUser: syncWishlist, clearWishlist } = useWishlistStore();
@@ -114,12 +113,7 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
     }, [status, syncWithUser, clearUserCart, syncWishlist, clearWishlist]);
 
 
-    const handleSearchSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (searchQuery.trim()) {
-            window.location.href = `/shop?search=${encodeURIComponent(searchQuery.trim())}`;
-        }
-    };
+
 
     return (
         <header className="w-full bg-white z-50 relative sticky top-0 font-sans shadow-sm">
@@ -183,24 +177,17 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                     </div>
 
                     {/* Search Bar (Middle - Light Grey BG) - Hidden on mobile */}
-                    <form
-                        onSubmit={handleSearchSubmit}
-                        className="searchTrigger-root hidden md:flex h-[48px] items-center ml-0 md:ml-[8px] lg:ml-[16px] w-full md:w-[320px] lg:w-[420px] xl:w-[550px] bg-[#F3F3F3] border border-gray-200 mt-[12px] md:mt-0 px-[16px] md:px-[24px] rounded-[6px] overflow-hidden hover:bg-[#e8e8e8] duration-[300ms] transition-colors cursor-text shrink-0"
-                        onClick={() => {
-                            const input = document.getElementById('header-search-input');
-                            if (input) input.focus();
-                        }}
+                    <button
+                        type="button"
+                        onClick={() => setIsSearchOpen(true)}
+                        className="searchTrigger-root hidden md:flex h-[48px] items-center ml-0 md:ml-[8px] lg:ml-[16px] w-full md:w-[320px] lg:w-[420px] xl:w-[550px] bg-[#F3F3F3] border border-gray-200 mt-[12px] md:mt-0 px-[16px] md:px-[24px] rounded-[6px] overflow-hidden hover:bg-[#e8e8e8] duration-[300ms] transition-colors cursor-text shrink-0 text-left"
+                        aria-label="Open search"
                     >
                         <Icons.Search />
-                        <input
-                            id="header-search-input"
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="searchTrigger-label sm:ml-2 pl-[16px] text-[14px] font-[400] text-text-muted w-full bg-transparent border-none outline-none placeholder-text-muted"
-                            placeholder="Search for products and more"
-                        />
-                    </form>
+                        <span className="searchTrigger-label sm:ml-2 pl-[16px] text-[14px] font-[400] text-text-muted">
+                            Search for products and more
+                        </span>
+                    </button>
 
                     {/* Right Actions Container */}
                     <div className="flex items-center ml-auto shrink-0 gap-[2px] md:gap-0">

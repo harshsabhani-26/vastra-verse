@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Button } from "@/components/ui/button";
 import { Maximize2, Map as MapIcon, Satellite, CheckCircle2 } from "lucide-react";
@@ -9,11 +9,11 @@ const STORES = [
     {
         id: 1,
         name: "Vastraa Verse Surat",
-        address: "27-28 A Sk-2 Industrial, Sosyo Circle, Udhna Surat, Gandhi kutir, Surat, Gujrat, India",
+        address: "Shrungal Homes, Opp D-mart, Althan, Surat, Gujarat, India",
         timing: "11am to 7:30pm",
         phone: "+91 81549 49599",
-        lat: 21.17183355867574,
-        lng: 72.82787524724728,
+        lat: 21.1448,
+        lng: 72.8152,
     }
 ];
 
