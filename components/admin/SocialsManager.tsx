@@ -296,7 +296,6 @@ function ImagesTab({ initialImages, products }: { initialImages: SocialImage[], 
                 imageFile,
                 title: title || null,
                 redirectUrl: redirectUrl || null,
-                productId: null,
                 isActive,
             };
             if (editingId) {
