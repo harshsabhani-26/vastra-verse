@@ -36,6 +36,8 @@ export async function BestSellers() {
                                         src={product.images[0].url}
                                         alt={product.images[0].alt || product.name}
                                         fill
+                                        // FIX 6: Lazy-load below-fold product images
+                                        loading="lazy"
                                         sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                                         className="object-cover object-top"
                                     />

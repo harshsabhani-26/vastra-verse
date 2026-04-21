@@ -1,9 +1,20 @@
 "use client";
 
+/**
+ * MidPageBanner
+ *
+ * FIX 4: Removed hardcoded `priority` prop that was always ON for every slide.
+ *   This section is below the fold. Loading all slide images eagerly was competing
+ *   with the hero LCP image for bandwidth. Changed to loading="lazy".
+ *
+ * BONUS FIX: Removed framer-motion (AnimatePresence + motion.div) — replaced with
+ *   CSS opacity transitions. Keeps framer-motion out of the critical bundle entirely
+ *   (this component is below-fold, so it will dynamic-import-deferred in Fix 9).
+ */
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface MidPageBannerProps {
@@ -19,7 +30,6 @@ interface MidPageBannerProps {
 }
 
 export function MidPageBanner({ banners }: MidPageBannerProps) {
-    // Don't render if no banners are provided
     if (!banners || banners.length === 0) {
         return null;
     }
@@ -38,11 +48,9 @@ export function MidPageBanner({ banners }: MidPageBannerProps) {
     // Auto-play with pause on hover
     useEffect(() => {
         if (isPaused || slides.length <= 1) return;
-
         const timer = setInterval(() => {
             setCurrentSlide((prev) => (prev + 1) % slides.length);
         }, 5000);
-
         return () => clearInterval(timer);
     }, [slides.length, isPaused]);
 
@@ -55,43 +63,56 @@ export function MidPageBanner({ banners }: MidPageBannerProps) {
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
         >
-            <AnimatePresence initial={false} mode="wait">
-                <motion.div
-                    key={currentSlide}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.8, ease: "easeInOut" }}
-                    className="absolute inset-0"
-                >
-                    {slides[currentSlide].mediaType === "VIDEO" && slides[currentSlide].videoUrl ? (
-                        <video
-                            className="absolute inset-0 w-full h-full object-cover object-center"
-                            src={slides[currentSlide].videoUrl}
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
-                        />
-                    ) : (
-                        <Image
-                            src={slides[currentSlide].image}
-                            alt={`Banner ${currentSlide + 1}`}
-                            fill
-                            priority
-                            className="object-cover object-center"
-                            sizes="100vw"
-                        />
-                    )}
-                </motion.div>
-            </AnimatePresence>
+            {/*
+              FIX 4 + CSS transition: Slides absolutely stacked, active shown via opacity.
+              opacity transition at 0.8s matches original framer-motion duration.
+              No framer-motion needed for a simple fade.
+            */}
+            {slides.map((slide, index) => {
+                const isActive = index === currentSlide;
+                return (
+                    <div
+                        key={slide.id}
+                        className="absolute inset-0"
+                        style={{
+                            opacity: isActive ? 1 : 0,
+                            transition: "opacity 0.8s ease-in-out",
+                            zIndex: isActive ? 2 : 1,
+                            pointerEvents: isActive ? "auto" : "none",
+                        }}
+                        aria-hidden={!isActive}
+                    >
+                        {slide.mediaType === "VIDEO" && slide.videoUrl ? (
+                            <video
+                                className="absolute inset-0 w-full h-full object-cover object-center"
+                                src={slide.videoUrl}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                            />
+                        ) : (
+                            <Image
+                                src={slide.image}
+                                alt={`Banner ${index + 1}`}
+                                fill
+                                // FIX 4: Removed always-on `priority`. This section is below-fold.
+                                // loading="lazy" allows the browser to defer until in-viewport.
+                                loading="lazy"
+                                className="object-cover object-center"
+                                sizes="100vw"
+                            />
+                        )}
+                    </div>
+                );
+            })}
 
-            {/* Clickable Banner Background */}
+            {/* Clickable Banner Link */}
             <Link href={slides[currentSlide].buttonLink} className="absolute inset-0 z-10">
                 <span className="sr-only">View {slides[currentSlide].buttonLink}</span>
             </Link>
 
-            {/* Navigation Arrows (Hidden Mobile, exactly like Hero) */}
+            {/* Navigation Arrows */}
             {slides.length > 1 && (
                 <>
                     <button
@@ -111,17 +132,18 @@ export function MidPageBanner({ banners }: MidPageBannerProps) {
                 </>
             )}
 
-            {/* Navigation Dots (Exactly like Hero) */}
+            {/* Navigation Dots */}
             {slides.length > 1 && (
                 <div className="absolute -bottom-8 sm:bottom-[10px] left-0 w-full flex justify-center z-20">
                     {slides.map((_, index) => (
                         <button
                             key={index}
                             onClick={() => setCurrentSlide(index)}
-                            className={`inline-block w-[8px] h-[8px] mx-[4px] rounded-[50%] transition-opacity duration-300 ${index === currentSlide
-                                ? 'bg-black opacity-100'
-                                : 'bg-black opacity-20 hover:opacity-100'
-                                }`}
+                            className={`inline-block w-[8px] h-[8px] mx-[4px] rounded-[50%] transition-opacity duration-300 ${
+                                index === currentSlide
+                                    ? "bg-black opacity-100"
+                                    : "bg-black opacity-20 hover:opacity-100"
+                            }`}
                             aria-label={`Go to slide ${index + 1}`}
                         />
                     ))}

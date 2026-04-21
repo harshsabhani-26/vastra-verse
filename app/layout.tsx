@@ -4,16 +4,21 @@ import Script from "next/script";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 // Removed WhatsAppButton and LiveShoppingButton unused imports
+// FIX 13: Added display: 'swap' to both fonts.
+// Next.js default is font-display: optional (hides text until font loads — FOIT).
+// swap shows text in the system fallback font immediately, improving perceived FCP.
 const plusJakartaSans = Plus_Jakarta_Sans({
-    variable: "--font-plus-jakarta-sans", // Match custom tailwind variable
+    variable: "--font-plus-jakarta-sans",
     subsets: ["latin"],
     weight: ["400", "500", "600", "700"],
+    display: "swap",
 });
 
 const cormorantInfant = Cormorant_Infant({
-    variable: "--font-cormorant-infant", // Match custom tailwind variable
+    variable: "--font-cormorant-infant",
     weight: ["400", "500", "600", "700"],
     subsets: ["latin"],
+    display: "swap",
 });
 
 export const metadata: Metadata = {

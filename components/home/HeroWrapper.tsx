@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Hero } from "@/components/home/Hero";
 
 interface HeroBannerConfig {
@@ -24,14 +25,19 @@ export function HeroWrapper({ banners, webBanners, mobileBanners, heroBg }: Hero
     const desktopBanners = webBanners && webBanners.length > 0 ? webBanners : defaultBanners;
     const phoneBanners = mobileBanners && mobileBanners.length > 0 ? mobileBanners : defaultBanners;
 
-    return (
-        <>
-            <div className="hidden md:block">
-                <Hero banners={desktopBanners} heroBg={heroBg} />
-            </div>
-            <div className="block md:hidden">
-                <Hero banners={phoneBanners} heroBg={heroBg} />
-            </div>
-        </>
-    );
+    // FIX 1: Single Hero mount — detect viewport on client to pick the correct banner set.
+    // Avoids double Hero renders (which caused double image fetches + double framer-motion hydration).
+    // SSR renders the desktop banners by default (most common crawler viewport).
+    const [activeBanners, setActiveBanners] = useState(desktopBanners);
+
+    useEffect(() => {
+        const update = () => {
+            setActiveBanners(window.innerWidth < 768 ? phoneBanners : desktopBanners);
+        };
+        update(); // Run immediately on mount
+        window.addEventListener("resize", update, { passive: true });
+        return () => window.removeEventListener("resize", update);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    return <Hero banners={activeBanners} heroBg={heroBg} />;
 }

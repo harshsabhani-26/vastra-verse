@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 
 import { createOrder, checkUserPhoneVerification } from "@/app/actions/checkout";
@@ -525,6 +525,18 @@ export default function CheckoutPage() {
                                 }
                             };
 
+                            // FIX 11: Safety guard — in the rare case lazyOnload
+                            // script hasn't fired yet, show a user-friendly message.
+                            if (!(window as any).Razorpay) {
+                                toast({
+                                    variant: "destructive",
+                                    title: "Payment not ready",
+                                    description: "Please wait a moment and try again."
+                                });
+                                setProcessing(false);
+                                return;
+                            }
+
                             const rzp1 = new (window as any).Razorpay(options);
 
                             rzp1.on('payment.failed', function (response: any) {
@@ -577,9 +589,15 @@ export default function CheckoutPage() {
 
     return (
         <div className="min-h-screen bg-[#FAF9F6] py-16">
+            {/*
+              FIX 11: strategy="lazyOnload" defers Razorpay SDK to browser idle time.
+              Safe because Razorpay is only called on payment button click — by then the
+              user has filled the full shipping form + OTP, giving the script ample load time.
+            */}
             <Script
                 id="razorpay-checkout-js"
                 src="https://checkout.razorpay.com/v1/checkout.js"
+                strategy="lazyOnload"
             />
             <Script
                 id="msg91-otp-widget"

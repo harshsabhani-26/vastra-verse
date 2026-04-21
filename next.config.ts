@@ -29,6 +29,22 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'razorpay.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'example.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.vimeocdn.com',
+      },
     ],
   },
   // Enable compression for better performance
@@ -50,6 +66,10 @@ const nextConfig: NextConfig = {
   // Increase body size limit for API route handlers (e.g. image uploads)
   // This applies to middleware and API routes (not Server Actions — those use experimental.serverActions.bodySizeLimit)
   experimental: {
+    // FIX 15: optimizeCss inlines critical above-fold CSS and defers the rest.
+    // Requires: npm install critters --save-dev
+    // Rollback: remove this line if CSS rendering issues appear after build.
+    optimizeCss: true,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
     serverActions: {
       bodySizeLimit: '50mb',

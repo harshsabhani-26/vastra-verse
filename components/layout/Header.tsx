@@ -322,6 +322,8 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                                                 src={cat.mobileImage}
                                                 alt={cat.name}
                                                 fill
+                                                // FIX 8: Lazy-load — off-screen slider items compete with hero
+                                                loading="lazy"
                                                 className="object-cover"
                                                 sizes="100px"
                                             />
@@ -355,6 +357,8 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                                             src={cat.mobileImage}
                                             alt={cat.name}
                                             fill
+                                            // FIX 8: Lazy-load — off-screen mobile slider items
+                                            loading="lazy"
                                             className="object-cover"
                                             sizes="80px"
                                         />

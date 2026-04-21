@@ -135,3 +135,82 @@ export function getResponsiveHeroBannerProps(publicIdOrUrl: string): {
         sizes: '100vw',
     };
 }
+
+// ─── MediaAsset Variant Resolver ──────────────────────────────────────────────
+
+export type VariantContext = 'hero' | 'product' | 'category' | 'banner';
+export type DeviceHint = 'desktop' | 'mobile';
+
+export interface MediaAssetVariants {
+    desktopUrl?: string | null;
+    mobileUrl?:  string | null;
+    largeUrl?:   string | null;
+    mediumUrl?:  string | null;
+    thumbUrl?:   string | null;
+    blurUrl?:    string | null;
+}
+
+/**
+ * getVariantUrl
+ *
+ * Resolves the optimal pre-generated WebP variant URL from a MediaAsset.
+ * Falls back to the raw URL for legacy/unmigrated images transparently.
+ *
+ * @param asset     - MediaAsset variant fields (or null for legacy images)
+ * @param context   - The rendering context (hero, product, category, banner)
+ * @param device    - Device hint (desktop or mobile) for layout-aware selection
+ * @param fallback  - Legacy URL to use when no MediaAsset is available
+ * @returns Best-fit URL string
+ *
+ * @example
+ * // In a hero component:
+ * const src = getVariantUrl(product.mediaAsset, 'hero', 'desktop', banner.imageUrl);
+ */
+export function getVariantUrl(
+    asset: MediaAssetVariants | null | undefined,
+    context: VariantContext,
+    device: DeviceHint = 'desktop',
+    fallback: string = ''
+): string {
+    if (!asset) return fallback;
+
+    switch (context) {
+        case 'hero':
+            return (device === 'mobile' ? asset.mobileUrl : asset.desktopUrl) ?? fallback;
+
+        case 'product':
+            // Products: desktop → large, mobile → medium
+            return (device === 'mobile' ? asset.mediumUrl : asset.largeUrl) ?? fallback;
+
+        case 'category':
+            return (device === 'mobile' ? asset.mobileUrl : asset.mediumUrl) ?? fallback;
+
+        case 'banner':
+            return (device === 'mobile' ? asset.mobileUrl : asset.desktopUrl) ?? fallback;
+
+        default:
+            return asset.largeUrl ?? asset.desktopUrl ?? asset.mediumUrl ?? fallback;
+    }
+}
+
+/**
+ * getThumbUrl
+ * Convenience wrapper — always returns the thumbnail variant.
+ */
+export function getThumbUrl(
+    asset: MediaAssetVariants | null | undefined,
+    fallback: string = ''
+): string {
+    return asset?.thumbUrl ?? fallback;
+}
+
+/**
+ * getBlurUrl
+ * Returns the 20px blur placeholder for use as blurDataURL in Next.js Image.
+ */
+export function getBlurUrl(
+    asset: MediaAssetVariants | null | undefined,
+    fallback: string = ''
+): string {
+    return asset?.blurUrl ?? fallback;
+}

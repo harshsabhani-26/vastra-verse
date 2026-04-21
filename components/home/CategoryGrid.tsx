@@ -44,6 +44,8 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
                             src={cat.image}
                             alt={cat.name}
                             fill
+                            // FIX 7: Lazy-load category images (below-fold on initial paint)
+                            loading="lazy"
                             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                             className="object-cover object-top group-hover:scale-[1.05] transition duration-300"
                         />

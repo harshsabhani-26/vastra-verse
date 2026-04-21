@@ -6,13 +6,19 @@ export function AppointmentBanner() {
     return (
         <section className="relative w-full h-[400px] md:h-[500px] overflow-hidden">
             {/* Background Image */}
+            {/*
+              FIX 5: Removed `priority` (this section is below-fold — never competes with LCP).
+              Added loading="lazy" so the browser only fetches when this section enters viewport.
+              MANUAL ACTION 1: Convert showroom.png (837 KB) to showroom.webp (<100 KB)
+              using squoosh.app, then update src to "/images/boutique/showroom.webp"
+            */}
             <Image
                 src="/images/boutique/showroom.png"
                 alt="Luxury Boutique Showroom"
                 fill
                 className="object-cover"
                 sizes="100vw"
-                priority
+                loading="lazy"
             />
 
             {/* Dark Overlay for better text readability */}
