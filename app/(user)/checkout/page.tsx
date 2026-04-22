@@ -540,8 +540,8 @@ export default function CheckoutPage() {
                             const rzp1 = new (window as any).Razorpay(options);
 
                             rzp1.on('payment.failed', function (response: any) {
-                                console.error('Payment failed:', response.error);
-                                toast({ variant: "destructive", title: "Payment Failed", description: response.error.description || 'Payment failed. No order was created.' });
+                                console.warn('[Razorpay] Payment failed:', response.error);
+                                toast({ variant: "destructive", title: "Payment Failed", description: response?.error?.description || 'Payment failed. No order was created.' });
                                 setProcessing(false);
                             });
 
