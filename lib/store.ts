@@ -76,7 +76,7 @@ export const useCartStore = create<CartStore>()(
                         const result = await addToCart(item.id, item.quantity || 1);
                         if (!result || !result.success) {
                             const errorMsg = result?.error || "Failed to add to cart";
-                            console.error("Failed to sync add to cart:", errorMsg);
+                            console.warn("Failed to sync add to cart (using guest fallback):", errorMsg);
 
                             // Check if it's a session/auth issue — keep item locally, switch to guest mode
                             const isSessionError = errorMsg.includes("Session expired") ||
@@ -85,10 +85,9 @@ export const useCartStore = create<CartStore>()(
                                 errorMsg.includes("constraint");
 
                             if (isSessionError) {
-                                // Don't revert — keep the item in local cart, just go guest mode
+                                // Don't revert — keep the item in local cart, just silently go to guest mode
                                 set({ isGuest: true });
-                                toast.error("Session expired. Items saved locally. Please re-login.");
-                                return; // Don't throw — item stays in cart
+                                return; // Resolves successfully without throwing
                             }
 
                             // For stock/validation errors, revert the optimistic update
@@ -111,7 +110,7 @@ export const useCartStore = create<CartStore>()(
                             throw new Error(errorMsg);
                         }
                     } catch (error: any) {
-                        console.error("Failed to sync add to cart:", error?.message || error);
+                        console.warn("Failed to sync add to cart:", error?.message || error);
                         throw error;
                     }
                 }
@@ -165,7 +164,7 @@ export const useCartStore = create<CartStore>()(
                         const result = await updateCartItem(itemToUpdate.cartItemId, quantity);
                         if (!result || !result.success) {
                             // Revert
-                            console.error("Failed to update quantity", result?.error);
+                            console.warn("Failed to update quantity", result?.error);
                             set((state) => ({
                                 items: state.items.map((i) =>
                                     i.id === id ? { ...i, quantity: itemToUpdate.quantity } : i
@@ -254,7 +253,6 @@ export const useCartStore = create<CartStore>()(
         }),
         {
             name: 'vastra-verse-cart-storage',
-            skipHydration: true, // Important for Next.js to avoid hydration mismatch, check if supported by version
         }
     )
 );

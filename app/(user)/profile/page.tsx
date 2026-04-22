@@ -36,6 +36,19 @@ export default async function ProfilePage() {
 
     return (
         <>
+            {/* Suppress MSG91+hCaptcha transient network-error noise before otp-provider loads */}
+            <script
+                dangerouslySetInnerHTML={{
+                    __html: `(function(){
+  var _ce = console.error.bind(console);
+  console.error = function() {
+    var m = String(arguments[0] || '');
+    if (m === 'network-error' || /hcaptcha/i.test(m)) return;
+    _ce.apply(console, arguments);
+  };
+})();`
+                }}
+            />
             {/* MSG91 OTP Widget Script */}
             <Script
                 src="https://verify.msg91.com/otp-provider.js"

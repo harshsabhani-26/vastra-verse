@@ -8,6 +8,17 @@ import { ArrowLeft, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCartStore, useHeaderStore } from "@/lib/store";
 import { useSession, signOut } from "next-auth/react";
+
+// Safe wrapper — prevents crash when Header renders outside SessionProvider
+// (e.g. during Next.js error-boundary recovery before Providers tree is ready)
+function useSafeSession() {
+    try {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        return useSession();
+    } catch {
+        return { data: null, status: 'loading' as const };
+    }
+}
 import { SearchOverlay } from "@/components/search/SearchOverlay";
 import { useWishlistStore } from "@/lib/wishlist-store";
 import { LoginModal } from "@/components/auth/LoginModal";
@@ -82,7 +93,7 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
     const [isTrackOrderOpen, setIsTrackOrderOpen] = useState(false);
     const { openCart, totalItems, syncWithUser, clearUserCart } = useCartStore();
     const { totalItems: wishlistCount, syncWithUser: syncWishlist, clearWishlist } = useWishlistStore();
-    const { data: session, status } = useSession();
+    const { data: session, status } = useSafeSession();
     const [mounted, setMounted] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();

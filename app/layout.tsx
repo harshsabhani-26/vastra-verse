@@ -22,8 +22,13 @@ const cormorantInfant = Cormorant_Infant({
 });
 
 export const metadata: Metadata = {
+    // FIX 5: metadataBase is required so relative canonical URLs resolve to full absolute URLs
+    metadataBase: new URL("https://vastraaverse.in"),
     title: "Vastraa Verse | Premium Indian Sarees",
     description: "Experience the elegance of traditional Indian heritage with our curated collection of premium sarees.",
+    alternates: {
+        canonical: "https://vastraaverse.in",
+    },
     icons: {
         icon: "/favicon.ico",
     },
@@ -52,19 +57,6 @@ export default async function RootLayout({
 
     return (
         <html lang="en" suppressHydrationWarning>
-            {/* Google Analytics - deferred to avoid TBT impact */}
-            <Script
-                src="https://www.googletagmanager.com/gtag/js?id=G-1YZHT1P3ED"
-                strategy="lazyOnload"
-            />
-            <Script id="google-analytics" strategy="lazyOnload">
-                {`
-                    window.dataLayer = window.dataLayer || [];
-                    function gtag(){dataLayer.push(arguments);}
-                    gtag('js', new Date());
-                    gtag('config', 'G-1YZHT1P3ED');
-                `}
-            </Script>
             <body
                 className={`${plusJakartaSans.variable} ${cormorantInfant.variable} antialiased font-sans bg-bg-grey text-text-main selection:bg-primary/30 selection:text-primary-dark`}
                 suppressHydrationWarning
@@ -72,6 +64,19 @@ export default async function RootLayout({
                 <Providers session={session}>
                     {children}
                 </Providers>
+                {/* Google Analytics - deferred to avoid TBT impact */}
+                <Script
+                    src="https://www.googletagmanager.com/gtag/js?id=G-1YZHT1P3ED"
+                    strategy="lazyOnload"
+                />
+                <Script id="google-analytics" strategy="lazyOnload">
+                    {`
+                        window.dataLayer = window.dataLayer || [];
+                        function gtag(){dataLayer.push(arguments);}
+                        gtag('js', new Date());
+                        gtag('config', 'G-1YZHT1P3ED');
+                    `}
+                </Script>
             </body>
         </html>
     );

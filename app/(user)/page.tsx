@@ -15,8 +15,8 @@ import { DynamicSocialWall } from "@/components/home/DynamicSocialWall";
 import { preload } from "react-dom";
 import { getHeroBannerUrl } from "@/lib/cloudinary-client";
 
-// Cache this page and revalidate every 5 minutes
-export const revalidate = 300;
+// force-dynamic prevents Turbopack SSR chunk caching across routes (fixes module-factory-not-available error)
+export const dynamic = 'force-dynamic';
 
 export default async function Home() {
     const [categories, heroBanners, webHeroBanners, mobileHeroBanners, midPageBanners, bottomPageBanners, activeStories, socialImages, socialVideos, storeSettings] = await Promise.all([
@@ -48,8 +48,47 @@ export default async function Home() {
         }
     }
 
+    // ── FIX 3: Organization JSON-LD (structured data) ────────────────────────
+    // Build sameAs array from whatever social links are configured in storeSettings
+    const sameAs: string[] = [];
+    if ((storeSettings as any)?.instagram) sameAs.push((storeSettings as any).instagram);
+    if ((storeSettings as any)?.facebook) sameAs.push((storeSettings as any).facebook);
+    if ((storeSettings as any)?.youtube) sameAs.push((storeSettings as any).youtube);
+
+    // Logo must be an absolute URL
+    const logoUrl = storeSettings?.logo
+        ? storeSettings.logo.startsWith("http")
+            ? storeSettings.logo
+            : `https://vastraaverse.in${storeSettings.logo}`
+        : "https://vastraaverse.in/favicon.ico";
+
+    const organizationJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        name: "Vastraa Verse",
+        url: "https://vastraaverse.in",
+        logo: {
+            "@type": "ImageObject",
+            url: logoUrl,
+        },
+        description: "Experience the elegance of traditional Indian heritage with our curated collection of premium sarees.",
+        contactPoint: {
+            "@type": "ContactPoint",
+            telephone: "+91-8154949599",
+            contactType: "customer service",
+            availableLanguage: ["English", "Hindi"],
+        },
+        ...(sameAs.length > 0 ? { sameAs } : {}),
+    };
+
     return (
         <div className="flex flex-col min-h-screen">
+            {/* FIX 3: Organization structured data (JSON-LD) */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+            />
+
             <HeroWrapper banners={heroBanners} webBanners={webHeroBanners} mobileBanners={mobileHeroBanners} heroBg={storeSettings?.heroBg} />
             <CategoryGrid categories={categories} />
             <NewArrivals />

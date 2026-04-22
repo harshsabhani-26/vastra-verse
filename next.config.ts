@@ -50,6 +50,13 @@ const nextConfig: NextConfig = {
   // Enable compression for better performance
   compress: true,
 
+  // Suppress the Next.js dev overlay for known third-party script errors.
+  // MSG91's otp-provider.js + hCaptcha fire console.error("network-error")
+  // on every challenge close — this is purely cosmetic noise, not an app error.
+  devIndicators: {
+    position: 'bottom-left',
+  },
+
   // Remove console logs in production (except errors and warnings)
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {

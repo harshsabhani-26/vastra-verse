@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { getCategories } from "@/lib/data/categories";
 import Link from "next/link";
 import { Prisma } from "@prisma/client";
+import type { Metadata } from "next";
 
 interface ShopPageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -12,6 +13,16 @@ interface ShopPageProps {
 import { auth } from "@/auth";
 
 export const dynamic = 'force-dynamic';
+
+// FIX 5 — Canonical tag for the shop listing page
+export const metadata: Metadata = {
+    title: "Shop Premium Sarees | Vastraa Verse",
+    description: "Browse our full collection of premium Indian sarees — ethnic, silk, cotton, embroidered & more. Filter by category, colour or price. Free shipping available.",
+    alternates: {
+        canonical: "https://vastraaverse.in/shop",
+    },
+};
+
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
     const params = await searchParams;
@@ -124,8 +135,32 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         ? 'grid-cols-2 lg:grid-cols-2'
         : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
 
+    // ── FIX 4: BreadcrumbList JSON-LD (matches visual breadcrumbs below) ─────
+    const shopBreadcrumbItems = [
+        { name: "Home", item: "https://vastraaverse.in" },
+        { name: "Shop", item: "https://vastraaverse.in/shop" },
+        ...(category ? [{ name: category, item: `https://vastraaverse.in/shop?category=${encodeURIComponent(category)}` }] : []),
+    ];
+
+    const shopBreadcrumbJsonLd = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: shopBreadcrumbItems.map((bc, idx) => ({
+            "@type": "ListItem",
+            position: idx + 1,
+            name: bc.name,
+            item: bc.item,
+        })),
+    };
+
     return (
         <div className="min-h-screen bg-background">
+            {/* FIX 4: BreadcrumbList structured data */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(shopBreadcrumbJsonLd) }}
+            />
+
             {/* Top Banner / Breadcrumbs Area */}
             <div className="container mx-auto px-4 md:px-6 lg:px-8 pt-4 pb-2">
                 <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-text-muted mb-4">

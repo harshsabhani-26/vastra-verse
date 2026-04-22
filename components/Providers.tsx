@@ -3,12 +3,14 @@
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "react-hot-toast";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { CartHydration } from "@/components/CartHydration";
 
 import { Session } from "next-auth";
 
 export function Providers({ children, session }: { children: React.ReactNode, session?: Session | null }) {
     return (
         <SessionProvider session={session}>
+            <CartHydration />
             {children}
             <CartDrawer />
             <Toaster

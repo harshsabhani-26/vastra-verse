@@ -1,5 +1,15 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import type { Metadata } from "next";
+
+// FIX 5 — Canonical + meta description for About page
+export const metadata: Metadata = {
+    title: "About Us | Vastraa Verse — 20 Years of Indian Saree Excellence",
+    description: "Since 2005, Vastraa Verse has crafted premium Indian sarees with 20 years of embroidery expertise, 7 years of Jacquard weaving, and modern position printing techniques.",
+    alternates: {
+        canonical: "https://vastraaverse.in/about",
+    },
+};
 
 export default function AboutPage() {
     return (

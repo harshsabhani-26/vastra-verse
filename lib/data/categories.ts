@@ -39,7 +39,8 @@ export const getCategories = unstable_cache(
             return categories;
         } catch (error) {
             console.error("Failed to fetch categories:", error);
-            return [];
+            // FIX: Throw error so Next.js does NOT cache the empty state for 1 hour!
+            throw error;
         }
     },
     ['categories-list'],

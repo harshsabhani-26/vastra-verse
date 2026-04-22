@@ -157,6 +157,15 @@ export async function syncCart(localItems: { id: string, quantity: number }[]) {
         });
 
         if (!cart) {
+            // Verify user exists in DB before creating cart (prevents FK error from stale sessions)
+            const userExists = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { id: true }
+            });
+            if (!userExists) {
+                return { success: false, error: "Session expired. Please logout and login again." };
+            }
+
             cart = await prisma.cart.create({
                 data: { userId: session.user.id }
             });

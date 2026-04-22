@@ -1,10 +1,13 @@
-﻿import { ProductCard } from "@/components/product/ProductCard";
+import { ProductCard } from "@/components/product/ProductCard";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 
 export const metadata = {
-    title: "Collections | Vastraa Verse",
-    description: "Explore our exclusive collections of heritage weaves and contemporary designs.",
+    title: "Saree Collections | Heritage Weaves & Contemporary Designs | Vastraa Verse",
+    description: "Explore our exclusive collections of heritage weaves and contemporary saree designs. Shop ethnic silk, cotton, and embroidered sarees from Vastraa Verse.",
+    alternates: {
+        canonical: "https://vastraaverse.in/collections",
+    },
 };
 
 // Cache collections page and revalidate every 5 minutes
