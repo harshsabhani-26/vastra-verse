@@ -18,6 +18,7 @@ export interface HeroBanner {
     displayFor: "WEB" | "MOBILE" | "BOTH";
     displayOrder: number;
     isActive: boolean;
+    mediaAssetId?: string | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -27,7 +28,8 @@ export async function getBanners(bannerType?: "HERO" | "MID_PAGE" | "BOTTOM_PAGE
     try {
         const banners = await prisma.heroBanner.findMany({
             where: bannerType ? { bannerType } : undefined,
-            orderBy: { displayOrder: 'asc' }
+            orderBy: { displayOrder: 'asc' },
+            include: { mediaAsset: true }
         });
         return banners;
     } catch (error) {
@@ -58,6 +60,8 @@ export const getActiveBanners = unstable_cache(
                 videoUrl: true,
                 bannerType: true,
                 displayOrder: true,
+                mediaAssetId: true,
+                mediaAsset: true
             }
         });
         return banners;

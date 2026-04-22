@@ -30,7 +30,8 @@ export function BannerForm({ banner }: BannerFormProps) {
         // Display Target
         displayFor: (banner?.displayFor as "WEB" | "MOBILE" | "BOTH") || "WEB",
         displayOrder: banner?.displayOrder || 0,
-        isActive: banner?.isActive !== undefined ? banner.isActive : true
+        isActive: banner?.isActive !== undefined ? banner.isActive : true,
+        mediaAssetId: banner?.mediaAssetId || null
     });
 
     const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,7 +68,7 @@ export function BannerForm({ banner }: BannerFormProps) {
 
             const data = await response.json();
             setImagePreview(data.url);
-            setFormData(prev => ({ ...prev, imageUrl: data.url }));
+            setFormData(prev => ({ ...prev, imageUrl: data.url, mediaAssetId: data.mediaAsset?.id || null }));
             toast.success("Image uploaded successfully");
         } catch (error) {
             console.error("Upload error:", error);
@@ -136,6 +137,7 @@ export function BannerForm({ banner }: BannerFormProps) {
                 displayFor: formData.displayFor,
                 displayOrder: formData.displayOrder,
                 isActive: formData.isActive,
+                mediaAssetId: formData.mediaAssetId,
             };
 
             if (banner) {

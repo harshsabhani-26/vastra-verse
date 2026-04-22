@@ -12,6 +12,8 @@ import { SeoTextBlock } from "@/components/home/SeoTextBlock";
 import prisma from "@/lib/prisma";
 import { DynamicMidPageBanner } from "@/components/home/DynamicMidPageBanner";
 import { DynamicSocialWall } from "@/components/home/DynamicSocialWall";
+import { preload } from "react-dom";
+import { getHeroBannerUrl } from "@/lib/cloudinary-client";
 
 // Cache this page and revalidate every 5 minutes
 export const revalidate = 300;
@@ -29,6 +31,22 @@ export default async function Home() {
         getActiveSocialVideos().catch(() => []),
         prisma.storeSettings.findFirst().catch(() => null),
     ]);
+
+    // Priority 1 Fix: Preload hero image in document head
+    if (heroBanners && heroBanners.length > 0) {
+        const firstBanner = heroBanners[0];
+        // Only preload if it's an image
+        if (firstBanner.mediaType === "IMAGE") {
+            const defaultImageUrl = getHeroBannerUrl(firstBanner.imageUrl);
+            // @ts-ignore - mediaAsset is populated via actions.ts updated include
+            const desktopUrl = firstBanner.mediaAsset?.desktopUrl || defaultImageUrl;
+            // @ts-ignore
+            const mobileUrl = firstBanner.mediaAsset?.mobileUrl || defaultImageUrl;
+
+            preload(desktopUrl, { as: "image", fetchPriority: "high", media: "(min-width: 769px)" });
+            preload(mobileUrl, { as: "image", fetchPriority: "high", media: "(max-width: 768px)" });
+        }
+    }
 
     return (
         <div className="flex flex-col min-h-screen">

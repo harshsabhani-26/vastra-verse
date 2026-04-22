@@ -99,6 +99,7 @@ export function MidPageBanner({ banners }: MidPageBannerProps) {
                                 // FIX 4: Removed always-on `priority`. This section is below-fold.
                                 // loading="lazy" allows the browser to defer until in-viewport.
                                 loading="lazy"
+                                decoding="async"
                                 className="object-cover object-center"
                                 sizes="100vw"
                             />

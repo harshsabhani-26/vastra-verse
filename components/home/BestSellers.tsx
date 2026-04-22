@@ -38,6 +38,7 @@ export async function BestSellers() {
                                         fill
                                         // FIX 6: Lazy-load below-fold product images
                                         loading="lazy"
+                                        decoding="async"
                                         sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                                         className="object-cover object-top"
                                     />

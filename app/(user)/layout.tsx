@@ -1,9 +1,8 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { WhatsAppButton } from "@/components/WhatsAppButton";
-import { LiveShoppingButton } from "@/components/live-shopping/LiveShoppingButton";
 import { getCategories } from "@/lib/data/categories";
 import prisma from "@/lib/prisma";
+import { WhatsAppButton, LiveShoppingButton } from "@/components/LazyWidgets";
 
 export const revalidate = 3600; // 1 hour for layout-level global cache
 

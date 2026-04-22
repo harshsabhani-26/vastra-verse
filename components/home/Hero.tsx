@@ -50,6 +50,13 @@ interface HeroProps {
         mediaType?: "IMAGE" | "VIDEO";
         imageUrl: string;
         videoUrl?: string | null;
+        mediaAssetId?: string | null;
+        mediaAsset?: {
+            id: string;
+            desktopUrl: string | null;
+            mobileUrl: string | null;
+            blurUrl: string | null;
+        } | null;
     }>;
     heroBg?: string | null;
 }
@@ -61,6 +68,8 @@ export function Hero({ banners, heroBg }: HeroProps) {
                   id: idx + 1,
                   mediaType: b.mediaType || "IMAGE",
                   image: getHeroBannerUrl(b.imageUrl),
+                  desktopUrl: b.mediaAsset?.desktopUrl || getHeroBannerUrl(b.imageUrl),
+                  mobileUrl: b.mediaAsset?.mobileUrl || getHeroBannerUrl(b.imageUrl),
                   videoUrl: b.videoUrl || null,
                   buttonLink: b.ctaLink,
                   title: b.title,
@@ -68,6 +77,8 @@ export function Hero({ banners, heroBg }: HeroProps) {
             : defaultSlides.map((s) => ({
                   ...s,
                   mediaType: "IMAGE" as const,
+                  desktopUrl: s.image,
+                  mobileUrl: s.image,
                   videoUrl: null,
                   buttonLink: s.link,
               }));
@@ -134,17 +145,21 @@ export function Hero({ banners, heroBg }: HeroProps) {
                                     playsInline
                                 />
                             ) : (
-                                <Image
-                                    src={slide.image}
-                                    alt={slide.title || "Hero Banner"}
-                                    fill
-                                    // FIX 3: Only slide 0 gets fetchpriority=high.
-                                    // Other slides are below-fold equiv — they are hidden off-screen.
-                                    priority={index === 0}
-                                    className="object-cover"
-                                    // FIX 3: Corrected sizes — accounts for desktop horizontal padding.
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) calc(100vw - 160px), calc(100vw - 284px)"
-                                />
+                                <picture className="w-full h-full">
+                                    <source media="(max-width: 768px)" srcSet={slide.mobileUrl} />
+                                    <source media="(min-width: 769px)" srcSet={slide.desktopUrl} />
+                                    {/* FIX 1: Explicit picture tag with fetchpriority="high" and explicit dimensions wrapper via CSS class */}
+                                    <img
+                                        src={slide.desktopUrl}
+                                        alt={slide.title || "Hero Banner"}
+                                        className="w-full h-full object-cover"
+                                        fetchPriority={index === 0 ? "high" : "auto"}
+                                        loading={index === 0 ? "eager" : "lazy"}
+                                        decoding="sync"
+                                        width={1920}
+                                        height={725}
+                                    />
+                                </picture>
                             )}
                         </div>
                     );

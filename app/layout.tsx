@@ -10,13 +10,13 @@ import { Providers } from "@/components/Providers";
 const plusJakartaSans = Plus_Jakarta_Sans({
     variable: "--font-plus-jakarta-sans",
     subsets: ["latin"],
-    weight: ["400", "500", "600", "700"],
+    weight: ["400", "600"],
     display: "swap",
 });
 
 const cormorantInfant = Cormorant_Infant({
     variable: "--font-cormorant-infant",
-    weight: ["400", "500", "600", "700"],
+    weight: ["400", "600"],
     subsets: ["latin"],
     display: "swap",
 });
@@ -52,12 +52,12 @@ export default async function RootLayout({
 
     return (
         <html lang="en" suppressHydrationWarning>
-            {/* Google Analytics */}
+            {/* Google Analytics - deferred to avoid TBT impact */}
             <Script
                 src="https://www.googletagmanager.com/gtag/js?id=G-1YZHT1P3ED"
-                strategy="afterInteractive"
+                strategy="lazyOnload"
             />
-            <Script id="google-analytics" strategy="afterInteractive">
+            <Script id="google-analytics" strategy="lazyOnload">
                 {`
                     window.dataLayer = window.dataLayer || [];
                     function gtag(){dataLayer.push(arguments);}
