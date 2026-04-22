@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { auth } from '@/auth';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { Session } from 'next-auth';
 
 // Strictly typed response helper to ensure consistency
 const jsonResponse = (data: any, status: number = 200) => {
@@ -10,7 +11,7 @@ const jsonResponse = (data: any, status: number = 200) => {
 
 export async function POST(req: NextRequest) {
     // Hoist session so the outer catch block can reference it for stale-session logging
-    let session: Awaited<ReturnType<typeof auth>> = null;
+    let session: Session | null = null;
 
     try {
         // 1. SECURITY: Rate limiting (5 req/min)
@@ -22,7 +23,8 @@ export async function POST(req: NextRequest) {
 
         // 2. SESSION VALIDATION
         session = await auth();
-        if (!session?.user?.id) {
+        const userId = session?.user?.id;
+        if (!userId) {
             console.warn(`[OTP] Unauthorized access attempt from IP: ${ip}`);
             return jsonResponse({
                 success: false,
@@ -47,12 +49,12 @@ export async function POST(req: NextRequest) {
 
         // 4. IDEMPOTENCY CHECK — skip external call if already verified
         const currentUser = await prisma.user.findUnique({
-            where: { id: session.user.id },
+            where: { id: userId },
             select: { phoneVerified: true, phone: true }
         });
 
         if (currentUser?.phoneVerified) {
-            console.log(`[OTP] User ${session.user.id} already verified.`);
+            console.log(`[OTP] User ${userId} already verified.`);
             return jsonResponse({
                 success: true,
                 verified: true,
@@ -66,18 +68,18 @@ export async function POST(req: NextRequest) {
         // (e.g. localhost/dev mode, non-standard token format), trust the widget.
         // Safe because: authenticated session + rate limit + MSG91 verified OTP on their end.
         if (widgetSuccess === true && phone && phone.length === 10) {
-            console.log(`[OTP] Widget-trusted path for user ${session.user.id}, phone ${phone}`);
+            console.log(`[OTP] Widget-trusted path for user ${userId}, phone ${phone}`);
 
             // Skip external API — update DB directly using the client-provided phone
             // (rate limit + session auth make this safe)
             await prisma.$transaction(async (tx) => {
                 await tx.user.update({
-                    where: { id: session.user.id },
+                    where: { id: userId },
                     data: { phoneVerified: true, phone }
                 });
                 await tx.activityLog.create({
                     data: {
-                        userId: session.user.id,
+                        userId: userId,
                         action: 'PHONE_VERIFIED',
                         description: `Phone verified via widget-trusted path: ${phone}`,
                         ipAddress: ip
@@ -103,7 +105,7 @@ export async function POST(req: NextRequest) {
             }, 500);
         }
 
-        console.log(`[OTP] Verifying token for user ${session.user.id}`);
+        console.log(`[OTP] Verifying token for user ${userId}`);
 
         let msg91Data;
         try {
@@ -170,12 +172,12 @@ export async function POST(req: NextRequest) {
         }
 
         // 7. ATOMIC DATABASE UPDATE
-        console.log(`[OTP] Updating DB for user ${session.user.id} with phone ${verifiedPhone}`);
+        console.log(`[OTP] Updating DB for user ${userId} with phone ${verifiedPhone}`);
 
         await prisma.$transaction(async (tx) => {
             // Update user
             await tx.user.update({
-                where: { id: session.user.id },
+                where: { id: userId },
                 data: {
                     phoneVerified: true,
                     phone: verifiedPhone,
@@ -185,7 +187,7 @@ export async function POST(req: NextRequest) {
             // Optional: Log activity
             await tx.activityLog.create({
                 data: {
-                    userId: session.user.id,
+                    userId: userId,
                     action: 'PHONE_VERIFIED',
                     description: `Phone verified: ${verifiedPhone}`,
                     ipAddress: ip
@@ -194,7 +196,7 @@ export async function POST(req: NextRequest) {
         });
 
         // 8. SUCCESS RESPONSE
-        console.log(`[OTP] Success for user ${session.user.id}`);
+        console.log(`[OTP] Success for user ${userId}`);
         return jsonResponse({
             success: true,
             verified: true,

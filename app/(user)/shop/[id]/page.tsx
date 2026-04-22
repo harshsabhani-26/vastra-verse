@@ -176,7 +176,7 @@ export default async function ProductPage({
 
     // All image URLs must be absolute for Google to crawl them
     const absoluteImageUrls = product.images
-        .filter((img) => img.type === "MAIN" || img.type === "HOVER")
+        .filter((img) => img.type === "MAIN" || img.type === "FRONT_VIEW")
         .map((img) => {
             if (img.url.startsWith("http")) return img.url;
             return `${BASE_URL}${img.url}`;
