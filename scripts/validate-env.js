@@ -1,7 +1,6 @@
 const required = [
     "DATABASE_URL",
-    "NEXTAUTH_SECRET",
-    "NODE_ENV"
+    "NEXTAUTH_SECRET"
 ];
 
 const optional = [

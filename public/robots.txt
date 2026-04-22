@@ -1,15 +1,17 @@
-# Allow all legitimate search engines
-User-agent: *
-Allow: /
+# Cloudflare Managed Block
+User-agent: Amazonbot
+Disallow: /
 
-# Block admin and API from indexing
-Disallow: /admin
-Disallow: /api/
-Disallow: /checkout
-Disallow: /account
-Disallow: /cart
+User-agent: Applebot-Extended
+Disallow: /
 
-# Block AI training crawlers
+User-agent: Bytespider
+Disallow: /
+
+User-agent: CloudflareBrowserRenderingCrawler
+Disallow: /
+
+# Block all AI training crawlers
 User-agent: GPTBot
 Disallow: /
 
@@ -25,11 +27,26 @@ Disallow: /
 User-agent: Claude-Web
 Disallow: /
 
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: meta-externalagent
+Disallow: /
+
 User-agent: Omgilibot
 Disallow: /
 
 User-agent: FacebookBot
 Disallow: /
 
-# Sitemap location
+# All other crawlers — one block only
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /checkout
+Disallow: /account
+Disallow: /cart
+
+# Sitemap
 Sitemap: https://vastraaverse.in/sitemap.xml
