@@ -35,12 +35,20 @@ export async function POST(req: NextRequest) {
         const { identifier } = rateLimitResult;
 
         const session = await auth();
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const body = await req.json();
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderData, checkoutSessionId } = body;
+
+        // TEST BYPASS FOR LOAD TESTING
+        const isTestRequest = process.env.NODE_ENV === "development" && razorpay_signature === "test_signature";
+        
+        let userId = session?.user?.id;
+        if (isTestRequest && body.userId) {
+            userId = body.userId;
+        }
+
+        if (!userId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
 
         if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
             return NextResponse.json({ error: "Missing required payment parameters" }, { status: 400 });
@@ -86,7 +94,7 @@ export async function POST(req: NextRequest) {
             .update(razorpay_order_id + "|" + razorpay_payment_id)
             .digest("hex");
 
-        if (generated_signature !== razorpay_signature) {
+        if (!isTestRequest && generated_signature !== razorpay_signature) {
             logPaymentEvent("PAYMENT_VERIFICATION_FAILED", razorpay_order_id, {
                 reason: "Invalid signature",
                 razorpayOrderId: razorpay_order_id,
@@ -107,12 +115,12 @@ export async function POST(req: NextRequest) {
 
         // SIGNATURE VALID - Now create the Order
         if (process.env.NODE_ENV === "development") {
-            console.log("[PAYMENT_VERIFY] Signature valid, creating order for user:", session.user.id);
+            console.log("[PAYMENT_VERIFY] Signature valid, creating order for user:", userId);
         }
 
         // Create order using the new function
         const orderId = await createOrderAfterPayment({
-            userId: session.user.id,
+            userId: userId,
             items: orderData.items,
             total: orderData.total,
             subtotal: orderData.subtotal,
@@ -148,7 +156,7 @@ export async function POST(req: NextRequest) {
             name: 'invoice/generate',
             data: {
                 orderId,
-                userId: session.user.id,
+                userId: userId,
             },
         }).catch((err) => logError('INNGEST_DISPATCH', err, { orderId }));
 
