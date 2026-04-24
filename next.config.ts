@@ -47,6 +47,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Disable X-Powered-By header for security
+  poweredByHeader: false,
+
   // Enable compression for better performance
   compress: true,
 
@@ -87,26 +90,25 @@ const nextConfig: NextConfig = {
 
   // Enterprise Security Headers for Production
   async headers() {
-    // Strict Content Security Policy - Least Privilege Principle
+    // Content Security Policy - Safe and Compatible
     const csp = [
       "default-src 'self'",
-      // Scripts: Only trusted domains for Razorpay, MSG91, hCaptcha, Google Tag Manager
-      // NOTE: unsafe-eval kept for Razorpay checkout SDK compatibility
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://api.razorpay.com https://verify.msg91.com https://control.msg91.com https://js.hcaptcha.com https://hcaptcha.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com",
+      // Scripts: Safe base policy using https: to not break existing external services
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
       // Workers: Allow web workers from self and blobs (required for Sentry/Razorpay)
       "worker-src 'self' blob:",
-      // Styles: Self + Google Fonts + MSG91 widget styles
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://verify.msg91.com https://control.msg91.com https://hcaptcha.com https://cdnjs.cloudflare.com",
-      // Fonts: Self + Google Fonts + data URIs
-      "font-src 'self' https://fonts.gstatic.com data:",
-      // Images: Trusted CDNs and blob URIs
-      "img-src 'self' data: blob: https://images.unsplash.com https://*.razorpay.com https://*.supabase.co https://res.cloudinary.com https://maps.googleapis.com https://maps.gstatic.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com",
-      // Connect: API endpoints + Sentry + Google Analytics
-      "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://verify.msg91.com https://control.msg91.com https://api.msg91.com https://*.supabase.co https://hcaptcha.com https://*.hcaptcha.com https://api.db-ip.com https://*.sentry.io https://*.ingest.sentry.io https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://*.google-analytics.com",
+      // Styles: Self + inline + https
+      "style-src 'self' 'unsafe-inline' https:",
+      // Fonts: Self + https + data URIs
+      "font-src 'self' https: data:",
+      // Images: Self + data + https + blob
+      "img-src 'self' data: https: blob:",
+      // Connect: API endpoints + https
+      "connect-src 'self' https:",
       // Media: Video/audio from CDNs
-      "media-src 'self' data: blob: https://res.cloudinary.com https://*.supabase.co",
-      // Frames: Payment gateways, maps, hCaptcha, MSG91 widget, video embeds
-      "frame-src 'self' https://api.razorpay.com https://verify.msg91.com https://control.msg91.com https://www.google.com https://maps.google.com https://hcaptcha.com https://*.hcaptcha.com https://newassets.hcaptcha.com https://www.youtube.com https://youtube.com https://player.vimeo.com",
+      "media-src 'self' data: blob: https:",
+      // Frames: Payment gateways, maps, hCaptcha, MSG91 widget, video embeds, Google auth
+      "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://accounts.google.com https://verify.msg91.com https://control.msg91.com https://www.google.com https://maps.google.com https://hcaptcha.com https://*.hcaptcha.com https://newassets.hcaptcha.com https://www.youtube.com https://youtube.com https://player.vimeo.com",
       // Security directives
       "object-src 'none'",
       "base-uri 'self'",
@@ -145,7 +147,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(self), interest-cohort=()'
+            value: 'camera=(), microphone=(), geolocation=()'
           },
           {
             key: 'Content-Security-Policy',
