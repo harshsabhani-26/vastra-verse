@@ -95,6 +95,7 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
     const { totalItems: wishlistCount, syncWithUser: syncWishlist, clearWishlist } = useWishlistStore();
     const { data: session, status } = useSafeSession();
     const [mounted, setMounted] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
     const pathname = usePathname();
     const router = useRouter();
@@ -104,13 +105,21 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
 
     useEffect(() => {
         setMounted(true);
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 20);
+        };
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        
         const handleClickOutside = (event: MouseEvent) => {
             if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
                 setIsProfileOpen(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
     }, []);
 
     useEffect(() => {
@@ -127,6 +136,7 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
 
 
     return (
+        <>
         <header className="w-full bg-white z-50 relative sticky top-0 font-sans shadow-sm">
             {/* ROW 2: Logo | Search | Actions */}
             <div className="container mx-auto px-6 md:px-[60px]">
@@ -169,18 +179,21 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
 
                     {/* Logo — Centered on mobile, left aligned on desktop */}
                     <div className={cn(
-                        "flex items-center shrink-0 h-[40px] md:h-[50px]",
+                        "flex items-center shrink-0 h-[45px] md:h-[65px]",
                         isProductPage
-                            ? "hidden md:flex md:pl-[48px] xl:pl-0 xl:-ml-[30px] md:-ml-[20px] ml-auto md:ml-0"
-                            : "absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 md:pl-[48px] xl:pl-0 xl:-ml-[30px] md:-ml-[20px]"
+                            ? "hidden md:flex ml-auto md:ml-[30px] xl:ml-[50px]"
+                            : "absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 md:ml-[30px] xl:ml-[50px]"
                     )}>
-                        <Link href="/" className="w-[100px] md:w-[150px] h-full flex items-center" aria-label="Vastraa Verse">
+                        <Link href="/" className="w-[120px] md:w-[180px] h-full flex items-center justify-center md:justify-center pr-[10px]" aria-label="Vastraa Verse">
                             <Image
                                 src={logo || "/logo.png"}
                                 alt="Vastraa Verse Logo"
-                                width={150}
-                                height={50}
-                                className="object-contain max-h-full w-auto scale-[2] md:scale-[3] origin-left"
+                                width={180}
+                                height={65}
+                                className={cn(
+                                    "object-contain max-h-full w-auto h-auto transition-transform duration-300 origin-center md:origin-left",
+                                    isScrolled ? "scale-[1.3] md:scale-[1.6] -translate-y-[6px] md:-translate-y-[16px]" : "scale-[1.5] md:scale-[2.2]"
+                                )}
                                 priority
                                 unoptimized
                             />
@@ -310,7 +323,7 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                     </div>
                 </div>
             </div>
-
+        </header>
 
 
             {/* Desktop Category Image Slider (hidden on mobile) */}
@@ -318,7 +331,7 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                 <div className="hidden md:block w-full bg-[#f8f8f8] border-b border-gray-200 py-4">
                     <div className="container mx-auto px-6 md:px-[60px]">
                         <div
-                            className="flex justify-start overflow-x-auto gap-6 pb-2 md:pl-[75px]"
+                            className="flex justify-start overflow-x-auto gap-6 pb-2 md:pl-[180px] xl:pl-[220px]"
                             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                         >
                             {mainCategories.map((cat) => (
@@ -545,7 +558,7 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                     </div>
                 </div>
             )}
-        </header>
+        </>
     );
 }
 

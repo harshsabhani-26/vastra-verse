@@ -18,7 +18,7 @@ export function AppointmentBanner() {
                 fill
                 className="object-cover"
                 sizes="100vw"
-                loading="lazy"
+                priority
             />
 
             {/* Dark Overlay for better text readability */}
