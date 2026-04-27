@@ -85,36 +85,114 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '50mb',
     },
     // Raise the max body size for API Route Handlers
-    middlewareClientMaxBodySize: '50mb',
+    proxyClientMaxBodySize: '50mb',
   },
 
   // Enterprise Security Headers for Production
   async headers() {
-    // Content Security Policy - Safe and Compatible
+    // Content Security Policy - Explicit allow-list (no broad https: wildcard)
+    // Explicit domains improve Lighthouse Best Practices score (avoids wildcard-scheme warnings)
     const csp = [
       "default-src 'self'",
-      // Scripts: Safe base policy using https: to not break existing external services
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+
+      // Scripts: explicit allow-list for all required third-party services
+      [
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+        // Razorpay
+        "https://checkout.razorpay.com",
+        "https://api.razorpay.com",
+        // Cloudflare
+        "https://static.cloudflareinsights.com",
+        "https://cdnjs.cloudflare.com",
+        // Google Analytics / GTM
+        "https://www.googletagmanager.com",
+        "https://www.google-analytics.com",
+        "https://ssl.google-analytics.com",
+        // hCaptcha
+        "https://js.hcaptcha.com",
+        "https://hcaptcha.com",
+        "https://newassets.hcaptcha.com",
+        // MSG91
+        "https://verify.msg91.com",
+        "https://control.msg91.com",
+        // Sentry CDN (error monitoring)
+        "https://browser.sentry-cdn.com",
+        "https://js.sentry-cdn.com",
+      ].join(' '),
+
       // Workers: Allow web workers from self and blobs (required for Sentry/Razorpay)
       "worker-src 'self' blob:",
-      // Styles: Self + inline + https
-      "style-src 'self' 'unsafe-inline' https:",
-      // Fonts: Self + https + data URIs
-      "font-src 'self' https: data:",
-      // Images: Self + data + https + blob
-      "img-src 'self' data: https: blob:",
-      // Connect: API endpoints + https
-      "connect-src 'self' https:",
+
+      // Styles: Self + inline + Google Fonts + hCaptcha
+      [
+        "style-src 'self' 'unsafe-inline'",
+        "https://fonts.googleapis.com",
+        "https://newassets.hcaptcha.com",
+      ].join(' '),
+
+      // Fonts: Self + Google Fonts + data URIs
+      "font-src 'self' https://fonts.gstatic.com data:",
+
+      // Images: Self + data + blob + all HTTPS image sources
+      "img-src 'self' data: blob: https:",
+
+      // Connect: API calls to all required services
+      [
+        "connect-src 'self'",
+        // Razorpay
+        "https://api.razorpay.com",
+        "https://lumberjack.razorpay.com",
+        "https://checkout.razorpay.com",
+        // Cloudflare analytics beacon
+        "https://cloudflareinsights.com",
+        "https://static.cloudflareinsights.com",
+        // Google Analytics
+        "https://www.google-analytics.com",
+        "https://analytics.google.com",
+        "https://www.googletagmanager.com",
+        // hCaptcha
+        "https://hcaptcha.com",
+        "https://newassets.hcaptcha.com",
+        // MSG91
+        "https://verify.msg91.com",
+        "https://control.msg91.com",
+        // Supabase
+        "https://*.supabase.co",
+        // Sentry
+        "https://*.sentry.io",
+        "https://sentry.io",
+        // Cloudinary
+        "https://api.cloudinary.com",
+        "https://res.cloudinary.com",
+      ].join(' '),
+
       // Media: Video/audio from CDNs
       "media-src 'self' data: blob: https:",
+
       // Frames: Payment gateways, maps, hCaptcha, MSG91 widget, video embeds, Google auth
-      "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://accounts.google.com https://verify.msg91.com https://control.msg91.com https://www.google.com https://maps.google.com https://hcaptcha.com https://*.hcaptcha.com https://newassets.hcaptcha.com https://www.youtube.com https://youtube.com https://player.vimeo.com",
+      [
+        "frame-src 'self'",
+        "https://api.razorpay.com",
+        "https://checkout.razorpay.com",
+        "https://accounts.google.com",
+        "https://verify.msg91.com",
+        "https://control.msg91.com",
+        "https://www.google.com",
+        "https://maps.google.com",
+        "https://hcaptcha.com",
+        "https://*.hcaptcha.com",
+        "https://newassets.hcaptcha.com",
+        "https://www.youtube.com",
+        "https://youtube.com",
+        "https://player.vimeo.com",
+      ].join(' '),
+
       // Security directives
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
       "frame-ancestors 'self'",
-      "upgrade-insecure-requests"
+      "upgrade-insecure-requests",
     ].join('; ');
 
     return [

@@ -28,7 +28,9 @@ export async function NewArrivals() {
                         <div key={product.id} className="group flex flex-col min-w-[160px] max-w-[160px] w-[45vw] snap-start shrink-0 md:w-auto md:min-w-0 md:max-w-none">
                             {/* Image Card */}
                             <Link
-                                href={`/shop/${product.id}`}
+                                href={product.slug && product.category?.slug
+                                    ? `/shop/${product.category.slug}/${product.slug}`
+                                    : `/shop/${product.id}`}
                                 className="relative w-full aspect-[1.85/3] overflow-hidden bg-[#e8e4df] mb-[20px] block"
                             >
                                 {product.images?.[0] ? (
@@ -72,7 +74,9 @@ export async function NewArrivals() {
                                 )}
 
                                 {/* Product Name */}
-                                <Link href={`/shop/${product.id}`}>
+                                <Link href={product.slug && product.category?.slug
+                                    ? `/shop/${product.category.slug}/${product.slug}`
+                                    : `/shop/${product.id}`}>
                                     <h3 className="font-sans text-[14px] md:text-[15px] text-[#172026] font-normal leading-[1.4] mb-[6px] line-clamp-2 hover:text-primary transition-colors">
                                         {product.name}
                                     </h3>

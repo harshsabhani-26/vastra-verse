@@ -65,19 +65,19 @@ const Icons = {
 };
 
 const NAV_CATEGORIES = [
-    { label: "Sarees", href: "/shop?category=sarees" },
-    { label: "Fabrics", href: "/shop?category=fabrics" },
-    { label: "Fabric To Form", href: "/shop?category=fabric-to-form" },
-    { label: "Lehenga", href: "/shop?category=lehenga" },
+    { label: "Sarees", href: "/shop/sarees" },
+    { label: "Fabrics", href: "/shop/fabrics" },
+    { label: "Fabric To Form", href: "/shop/fabric-to-form" },
+    { label: "Lehenga", href: "/shop/lehenga" },
     { label: "Wedding Collections", href: "/collections?type=wedding" },
-    { label: "Salwar Kameez", href: "/shop?category=salwar-kameez" },
+    { label: "Salwar Kameez", href: "/shop/salwar-kameez" },
     { label: "Saree Collections", href: "/collections?type=saree" },
     { label: "Festive Edits", href: "/collections?type=festive" },
-    { label: "Kurtis", href: "/shop?category=kurtis" },
-    { label: "Gowns", href: "/shop?category=gowns" },
-    { label: "Blouses", href: "/shop?category=blouses" },
-    { label: "Accessories", href: "/shop?category=accessories" },
-    { label: "Men", href: "/shop?category=men" },
+    { label: "Kurtis", href: "/shop/kurtis" },
+    { label: "Gowns", href: "/shop/gowns" },
+    { label: "Blouses", href: "/shop/blouses" },
+    { label: "Accessories", href: "/shop/accessories" },
+    { label: "Men", href: "/shop/men" },
 ];
 
 interface HeaderProps {

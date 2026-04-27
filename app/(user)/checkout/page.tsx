@@ -1,7 +1,7 @@
 "use client";
 
 
-import { createOrder, checkUserPhoneVerification } from "@/app/actions/checkout";
+import { createOrder, checkUserPhoneVerification, getUserPhoneVerificationStatus } from "@/app/actions/checkout";
 import { getAddresses, addAddress } from "@/app/actions/account";
 import { useCartStore } from "@/lib/store";
 import { applyCoupon, getAutoApplyCoupons } from "@/app/admin/coupons/actions";
@@ -47,7 +47,6 @@ interface SavedAddress {
 }
 
 import { useRouter } from "next/navigation";
-import { useTaxSettings } from "@/hooks/use-tax-settings";
 
 export default function CheckoutPage() {
     const router = useRouter();
@@ -58,7 +57,6 @@ export default function CheckoutPage() {
     const [step, setStep] = useState<'shipping' | 'payment'>('shipping');
     const [mounted, setMounted] = useState(false);
     const [processing, setProcessing] = useState(false); // Prevent double payments
-    const { settings, loading: taxLoading } = useTaxSettings();
     const { toast } = useToast();
 
     // Form Stats
@@ -94,6 +92,22 @@ export default function CheckoutPage() {
         widgetId: process.env.NEXT_PUBLIC_MSG91_WIDGET_ID || '',
         tokenAuth: process.env.NEXT_PUBLIC_MSG91_TOKEN_AUTH || '',
     };
+
+    // Fetch verified phone on mount
+    useEffect(() => {
+        if (!mounted || !session?.user?.id) return;
+        
+        // Only fetch if phone is empty
+        if (!formData.phone) {
+            getUserPhoneVerificationStatus().then((result) => {
+                if (result.isVerified && result.phone) {
+                    setIsPhoneVerified(true);
+                    setFormData(prev => ({ ...prev, phone: result.phone! }));
+                }
+            });
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mounted, session?.user?.id]);
 
     // Auto-check if the entered phone is already verified
     const checkPhoneVerification = useCallback(async (phone: string) => {
@@ -152,8 +166,32 @@ export default function CheckoutPage() {
         });
     };
 
-    // Handle MSG91 verification
-    const handleVerifyPhone = () => {
+    // Dynamically load MSG91 otp-provider.js only when needed (on "Verify" click).
+    // Loading it eagerly via <Script afterInteractive> caused "Maximum call stack
+    // size exceeded" because otp-provider.js runs hCaptcha init code that
+    // recursively errors during cold start on the checkout page.
+    const loadMsg91Script = (): Promise<void> => {
+        return new Promise((resolve, reject) => {
+            if ((window as any).initSendOTP) { resolve(); return; }
+            const existing = document.getElementById('msg91-otp-provider');
+            if (existing) {
+                // Script tag exists but initSendOTP not ready yet — wait briefly
+                const wait = setInterval(() => {
+                    if ((window as any).initSendOTP) { clearInterval(wait); resolve(); }
+                }, 100);
+                setTimeout(() => { clearInterval(wait); reject(new Error('MSG91 load timeout')); }, 8000);
+                return;
+            }
+            const s = document.createElement('script');
+            s.id = 'msg91-otp-provider';
+            s.src = 'https://verify.msg91.com/otp-provider.js';
+            s.onload = () => resolve();
+            s.onerror = () => reject(new Error('Failed to load MSG91 script'));
+            document.head.appendChild(s);
+        });
+    };
+    // Handle MSG91 verification — loads the SDK on-demand to prevent page crash
+    const handleVerifyPhone = async () => {
         const phone = formData.phone;
         if (!phone || phone.length !== 10) {
             toast({ variant: "destructive", title: "Invalid Phone", description: "Please enter a valid 10-digit mobile number" });
@@ -166,6 +204,15 @@ export default function CheckoutPage() {
         }
 
         setIsVerifying(true);
+
+        // Load MSG91 script on demand (not auto-loaded to prevent page crash)
+        try {
+            await loadMsg91Script();
+        } catch {
+            toast({ variant: "destructive", title: "Error", description: "Failed to load verification widget. Please check your connection and try again." });
+            setIsVerifying(false);
+            return;
+        }
 
         try {
             (window as any).initSendOTP({
@@ -197,12 +244,8 @@ export default function CheckoutPage() {
                         });
                 },
                 success: async (data: any) => {
-                    // MSG91 has already verified the OTP on their servers before
-                    // calling this callback. Log the raw data to diagnose token format.
                     console.log('[OTP] MSG91 success data:', JSON.stringify(data));
-
                     try {
-                        // Extract the access token — field name varies by MSG91 version
                         const token = data?.token
                             || data?.message
                             || data?.authToken
@@ -212,17 +255,12 @@ export default function CheckoutPage() {
                         console.log('[OTP] Extracted token:', token ? token.substring(0, 20) + '...' : 'null');
 
                         if (token && typeof token === 'string' && token.length > 10) {
-                            // Token looks valid — try server-side verification
                             const res = await fetch('/api/auth/verify-phone', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ token, phone })
                             });
-
-                            console.log('[OTP] API response status:', res.status);
                             const responseData = await res.json().catch(() => ({ success: false }));
-                            console.log('[OTP] API response data:', JSON.stringify(responseData));
-
                             if (res.ok && responseData.success) {
                                 toast({ title: "✓ Verified", description: responseData.alreadyVerified ? "Phone already verified" : "Phone number verified successfully!" });
                                 setIsPhoneVerified(true);
@@ -230,28 +268,20 @@ export default function CheckoutPage() {
                                 router.refresh();
                                 return;
                             }
-                            // Server verification failed — fall through to direct update
-                            console.warn('[OTP] Server verification failed, trying direct update');
                         }
 
-                        // Fallback: MSG91 widget explicitly said success, so update directly.
-                        // The widget already performed OTP verification on MSG91's servers.
                         const directRes = await fetch('/api/auth/verify-phone', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ token: token || 'widget-success', phone, widgetSuccess: true })
                         });
-
                         const directData = await directRes.json().catch(() => ({ success: false }));
-                        console.log('[OTP] Direct update response:', JSON.stringify(directData));
-
                         if (directRes.ok && directData.success) {
                             toast({ title: "✓ Verified", description: "Phone number verified successfully!" });
                             setIsPhoneVerified(true);
                             setIsVerifying(false);
                             router.refresh();
                         } else {
-                            // Last resort: poll the DB (may already be updated)
                             await pollVerificationStatus(phone);
                         }
                     } catch (error) {
@@ -260,8 +290,6 @@ export default function CheckoutPage() {
                     }
                 },
                 failure: async () => {
-                    // MSG91 fires 'failure' even for internal hCaptcha errors.
-                    // Poll the DB — if the OTP was actually valid, we accept it.
                     await pollVerificationStatus(phone);
                 }
             });
@@ -279,17 +307,35 @@ export default function CheckoutPage() {
     const [addressTitle, setAddressTitle] = useState("");
 
     // Fetch saved addresses
+    const userId = session?.user?.id;
     useEffect(() => {
-        if (!mounted || !session?.user?.id) return;
+        if (!mounted || !userId) return;
         getAddresses().then((addresses) => {
             setSavedAddresses(addresses as SavedAddress[]);
-            // Auto-select default address if exists
+            // Auto-select default address — pass addresses directly to avoid
+            // reading the stale savedAddresses closure value
             const defaultAddr = addresses.find((addr) => addr.isDefault);
             if (defaultAddr) {
-                handleSelectAddress(defaultAddr.id);
+                const address = addresses.find((a) => a.id === defaultAddr.id);
+                if (address) {
+                    setSelectedAddressId(defaultAddr.id);
+                    setFormData(prev => ({
+                        ...prev,
+                        firstName: address.firstName,
+                        lastName: address.lastName,
+                        address1: address.address1,
+                        address2: address.address2 || "",
+                        country: address.country,
+                        zip: address.zipCode,
+                        city: address.city,
+                        state: address.state,
+                        recipientPhone: address.phone,
+                    }));
+                }
             }
         });
-    }, [mounted, session]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mounted, userId]);
 
     // Handle address selection
     const handleSelectAddress = (addressId: string) => {
@@ -642,52 +688,14 @@ export default function CheckoutPage() {
 
     return (
         <div className="min-h-screen bg-[#FAF9F6] py-16">
-            {/*
-              FIX 11: strategy="lazyOnload" defers Razorpay SDK to browser idle time.
-              Safe because Razorpay is only called on payment button click — by then the
-              user has filled the full shipping form + OTP, giving the script ample load time.
-            */}
+            {/* Razorpay: deferred to browser idle — only needed on payment click */}
             <Script
                 id="razorpay-checkout-js"
                 src="https://checkout.razorpay.com/v1/checkout.js"
                 strategy="lazyOnload"
             />
-            {/* Suppress MSG91+hCaptcha transient network-error noise.
-                strategy="beforeInteractive" ensures this runs BEFORE Next.js DevTools
-                installs its own console.error interceptor, preventing the dev overlay. */}
-            <Script
-                id="suppress-msg91-errors"
-                strategy="beforeInteractive"
-                dangerouslySetInnerHTML={{
-                    __html: `(function(){
-  try {
-    var _ce = console.error.bind(console);
-    console.error = function() {
-      var m = String(arguments[0] || '');
-      if (m === 'network-error' || /hcaptcha/i.test(m) || /otp-provider/i.test(m)) return;
-      _ce.apply(console, arguments);
-    };
-    // Also patch window.onerror to swallow the same noise before React can catch it
-    var _oe = window.onerror;
-    window.onerror = function(msg) {
-      if (typeof msg === 'string' && (msg === 'network-error' || /hcaptcha/i.test(msg))) return true;
-      return _oe ? _oe.apply(this, arguments) : false;
-    };
-    // Swallow unhandled promise rejections from MSG91/hCaptcha
-    window.addEventListener('unhandledrejection', function(e) {
-      var r = e && e.reason;
-      var m2 = r ? String(r.message || r) : '';
-      if (m2 === 'network-error' || /hcaptcha/i.test(m2)) e.preventDefault();
-    });
-  } catch(e) {}
-})();`
-                }}
-            />
-            <Script
-                id="msg91-otp-widget"
-                src="https://verify.msg91.com/otp-provider.js"
-                strategy="afterInteractive"
-            />
+            {/* MSG91 otp-provider.js is now loaded on-demand in loadMsg91Script()
+                to prevent its hCaptcha init from crashing the checkout page. */}
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
 

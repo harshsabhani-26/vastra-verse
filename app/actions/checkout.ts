@@ -604,3 +604,19 @@ export async function checkUserPhoneVerification(phone: string) {
 
     return { isVerified: false };
 }
+
+export async function getUserPhoneVerificationStatus() {
+    const session = await auth();
+    if (!session?.user?.id) return { isVerified: false, phone: null };
+
+    const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { phone: true, phoneVerified: true }
+    });
+
+    if (user && user.phoneVerified && user.phone) {
+        return { isVerified: true, phone: user.phone };
+    }
+
+    return { isVerified: false, phone: null };
+}

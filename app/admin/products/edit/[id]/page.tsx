@@ -181,8 +181,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         setSaving(true);
 
         // Validate images
-        if (productImages.length < 3) {
-            alert("Please upload at least 3 images");
+        if (productImages.length < 1) {
+            alert("Please upload at least 1 image");
             setSaving(false);
             return;
         }
@@ -628,7 +628,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     <ImageUploader
                         images={productImages}
                         onChange={setProductImages}
-                        minImages={3}
+                        minImages={1}
                         maxImages={8}
                     />
                 </div>

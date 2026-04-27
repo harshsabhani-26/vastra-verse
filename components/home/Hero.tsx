@@ -156,8 +156,6 @@ export function Hero({ banners, heroBg }: HeroProps) {
                                         fetchPriority={index === 0 ? "high" : "auto"}
                                         loading={index === 0 ? "eager" : "lazy"}
                                         decoding="sync"
-                                        width={1920}
-                                        height={725}
                                     />
                                 </picture>
                             )}

@@ -504,7 +504,7 @@ export function SocialWall({ images, videos }: SocialWallProps) {
                                         ) : (
                                             <div className="w-full h-full relative bg-black flex items-center justify-center">
                                                 {vid.thumbnail ? (
-                                                    <Image src={vid.thumbnail} alt={vid.overlayText || "Social Image"} fill className="object-contain" />
+                                                    <Image src={vid.thumbnail} alt={vid.overlayText || "Social Image"} fill sizes="(max-width: 640px) 90vw, 460px" className="object-contain" />
                                                 ) : <Video className="w-16 h-16 text-stone-500" />}
                                             </div>
                                         )

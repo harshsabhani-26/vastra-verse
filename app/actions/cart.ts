@@ -35,69 +35,59 @@ export async function addToCart(productId: string, quantity: number = 1) {
 
     try {
         // Validate Stock
-        const stock = await getRealTimeStock(productId);
-        if (stock === -1) return { success: false, error: "Product not found" };
-
-        let cart = await prisma.cart.findUnique({
-            where: { userId: session.user.id }
-        });
-
-        if (!cart) {
-            // Verify user exists in DB before creating cart (prevents FK error from stale sessions)
-            const userExists = await prisma.user.findUnique({
-                where: { id: session.user.id },
-                select: { id: true }
-            });
-            if (!userExists) {
-                return { success: false, error: "Session expired. Please logout and login again." };
-            }
-
-            cart = await prisma.cart.create({
-                data: { userId: session.user.id }
-            });
-        }
-
-        const existingItem = await prisma.cartItem.findUnique({
-            where: {
-                cartId_productId: {
-                    cartId: cart.id,
-                    productId
-                }
-            }
-        });
-
-        const currentQty = existingItem ? existingItem.quantity : 0;
-        if (currentQty + quantity > stock) {
-            return {
-                success: false,
-                error: `Only ${stock} units available (you have ${currentQty})`
-            };
-        }
-
-        if (existingItem) {
-            await prisma.cartItem.update({
-                where: { id: existingItem.id },
-                data: { quantity: existingItem.quantity + quantity }
-            });
-        } else {
-            await prisma.cartItem.create({
+        await prisma.$transaction(async (tx) => {
+            // Step 1: Attempt atomic stock decrement
+            const updated = await tx.product.updateMany({
+                where: {
+                    id: productId,
+                    stock: { gte: quantity },
+                },
                 data: {
+                    stock: { decrement: quantity },
+                },
+            });
+
+            // Step 2: If no rows updated -> out of stock
+            if (updated.count === 0) {
+                throw new Error("OUT_OF_STOCK");
+            }
+
+            // Step 3: Atomic find-or-create cart
+            const cart = await tx.cart.upsert({
+                where: { userId: session.user.id },
+                create: { userId: session.user.id },
+                update: {}
+            });
+
+            await tx.cartItem.upsert({
+                where: {
+                    cartId_productId: {
+                        cartId: cart.id,
+                        productId
+                    }
+                },
+                create: {
                     cartId: cart.id,
                     productId,
                     quantity
+                },
+                update: {
+                    quantity: { increment: quantity }
                 }
             });
-        }
+        });
 
         revalidatePath('/cart');
         return { success: true };
     } catch (error: any) {
+        if (error.message === "OUT_OF_STOCK") {
+            return { success: false, error: "Item is out of stock" };
+        }
+
         console.error("=== ADD TO CART FAILED ===");
         console.error("ProductId:", productId, "| Quantity:", quantity);
         console.error("Error:", error?.message || error);
-        console.error("Error code:", error?.code);
-        console.error("Full error:", JSON.stringify(error, null, 2));
-        return { success: false, error: error?.message || "Failed to add item" };
+        return { success: false, error: "Failed to add item" };
     }
 }
 

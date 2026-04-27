@@ -8,7 +8,8 @@ interface MobileCategoryRowProps {
         id: string;
         name: string;
         image: string | null;
-        slug: string;
+        slug?: string;
+        href?: string;
     }[];
 }
 
@@ -23,7 +24,7 @@ export function MobileCategoryRow({ categories }: MobileCategoryRowProps) {
                 {categories.map((cat, idx) => (
                     <Link
                         key={cat.id}
-                        href={`/shop?category=${encodeURIComponent(cat.slug || cat.name.toLowerCase())}`}
+                        href={cat.href || `/shop/${cat.slug || cat.name.toLowerCase().replace(/\s+/g, '-')}`}
                         className="flex flex-col items-center gap-[6px] min-w-[72px] max-w-[72px] snap-center cursor-pointer shrink-0 group"
                     >
                         <div className="w-[72px] h-[72px] rounded-full overflow-hidden bg-white border-[1px] border-[#ebebeb] shadow-[0_2px_8px_rgba(0,0,0,0.04)] relative shrink-0 transition-transform group-active:scale-95">

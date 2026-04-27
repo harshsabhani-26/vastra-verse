@@ -6,7 +6,8 @@ import { revalidatePath } from "next/cache";
 export async function createMainCategory(name: string) {
     try {
         const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
-        const href = `/shop?category=${slug}`;
+        // FIX 5: clean URL — was /shop?category=${slug}
+        const href = `/shop/${slug}`;
         const cat = await prisma.mainCategory.create({ data: { name, href } });
         revalidatePath("/", "layout");
         return { success: true, data: cat };

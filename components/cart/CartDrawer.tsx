@@ -40,6 +40,7 @@ export function CartDrawer() {
         <Sheet open={isOpen} onOpenChange={(open) => !open && closeCart()}>
             <SheetContent
                 className="w-[90%] max-w-[400px] h-[95vh] m-auto fixed inset-0 top-[2.5vh] bottom-[2.5vh] left-1/2 -translate-x-1/2 translate-y-0 rounded-md sm:w-full sm:h-full sm:max-h-full sm:m-0 sm:top-0 sm:bottom-0 sm:left-auto sm:right-0 sm:translate-x-0 sm:rounded-none sm:max-w-md bg-white p-0 border border-primary/10 shadow-2xl flex flex-col z-[100]"
+                aria-describedby={undefined}
             >
                 <SheetTitle className="sr-only">Shopping Cart</SheetTitle>
                 <div className="flex flex-col flex-1 bg-white overflow-hidden rounded-md sm:rounded-none">
@@ -77,6 +78,7 @@ export function CartDrawer() {
                                             src={item.image}
                                             alt={item.name}
                                             fill
+                                            sizes="(max-width: 768px) 100px, 120px"
                                             className="object-cover transition-transform duration-700 group-hover:scale-105"
                                         />
                                     </div>

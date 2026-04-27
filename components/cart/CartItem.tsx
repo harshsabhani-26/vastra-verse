@@ -32,6 +32,7 @@ export function CartItem() {
                             src={item.image || "/images/placeholder.jpg"}
                             alt={item.name}
                             fill
+                            sizes="(max-width: 768px) 120px, 150px"
                             className="object-cover"
                         />
                     </div>

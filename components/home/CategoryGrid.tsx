@@ -9,7 +9,8 @@ interface CategoryGridProps {
         id: string;
         name: string;
         image: string | null;
-        slug: string;
+        slug?: string;
+        href?: string;
     }[];
 }
 
@@ -33,7 +34,7 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
     const CategoryCard = ({ cat, index }: { cat: typeof displayCategories[0]; index: number }) => (
         <Link
             key={`${cat.id}-${index}`}
-            href={`/shop?category=${encodeURIComponent(cat.slug || cat.name.toLowerCase())}`}
+            href={cat.href || `/shop/${cat.slug || cat.name.toLowerCase().replace(/\s+/g, '-')}`}
             className="group"
         >
             <div className="bg-white overflow-hidden">
@@ -44,9 +45,11 @@ export function CategoryGrid({ categories }: CategoryGridProps) {
                             src={cat.image}
                             alt={cat.name}
                             fill
-                            // FIX 7: Lazy-load category images (below-fold on initial paint)
-                            loading="lazy"
-                            decoding="async"
+                            // First category is usually the LCP on homepage — load eagerly
+                            {...(index === 0
+                                ? { priority: true, loading: "eager" as const }
+                                : { loading: "lazy" as const, decoding: "async" as const }
+                            )}
                             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                             className="object-cover object-top group-hover:scale-[1.05] transition duration-300"
                         />

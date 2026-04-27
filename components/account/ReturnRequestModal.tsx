@@ -144,7 +144,7 @@ export default function ReturnRequestModal({ isOpen, onClose, orderId }: ReturnR
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="p-0 gap-0 sm:max-w-[580px] max-h-[92vh] overflow-hidden rounded-sm border border-primary/10 shadow-luxury-xl bg-white">
+            <DialogContent className="p-0 gap-0 sm:max-w-[580px] max-h-[92vh] overflow-hidden rounded-sm border border-primary/10 shadow-luxury-xl bg-white" aria-describedby={undefined}>
                 <DialogTitle className="sr-only">Request Return</DialogTitle>
 
                 {/* Header */}

@@ -5,6 +5,7 @@ import { getCategories } from "@/lib/data/categories";
 import Link from "next/link";
 import { Prisma } from "@prisma/client";
 import type { Metadata } from "next";
+import { permanentRedirect } from "next/navigation";
 
 interface ShopPageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -30,6 +31,12 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     const category = typeof params.category === 'string' ? params.category : undefined;
     const sort = typeof params.sort === 'string' ? params.sort : undefined;
     const view = typeof params.view === 'string' ? params.view : '4';
+
+    // FIX 2 — 301 permanent redirect: /shop?category=saree/embroidery-saree → /shop/saree/embroidery-saree
+    // Preserves SEO ranking from any indexed query-param URLs by using permanentRedirect (308/301)
+    if (category) {
+        permanentRedirect(`/shop/${category}`);
+    }
 
     // Fetch Session & Wishlist
     const session = await auth();
@@ -106,6 +113,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         select: {
             id: true,
             name: true,
+            slug: true,
             price: true,
             finalPrice: true,
             discount: true,
@@ -113,7 +121,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             isNewArrival: true,
             category: {
                 select: {
-                    name: true
+                    name: true,
+                    slug: true,
                 }
             },
             images: {
@@ -139,7 +148,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     const shopBreadcrumbItems = [
         { name: "Home", item: "https://vastraaverse.in" },
         { name: "Shop", item: "https://vastraaverse.in/shop" },
-        ...(category ? [{ name: category, item: `https://vastraaverse.in/shop?category=${encodeURIComponent(category)}` }] : []),
+        // FIX: category is always undefined here now (redirected above), kept for safety
     ];
 
     const shopBreadcrumbJsonLd = {
@@ -208,6 +217,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                                 >
                                     <ProductCard
                                         id={product.id}
+                                        slug={(product as any).slug ?? undefined}
+                                        categorySlug={product.category?.slug ?? undefined}
                                         name={product.name}
                                         price={product.finalPrice ? parseFloat(product.finalPrice.toString()) : parseFloat(product.price.toString())}
                                         originalPrice={product.finalPrice ? parseFloat(product.price.toString()) : undefined}

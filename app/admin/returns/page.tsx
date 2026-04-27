@@ -267,7 +267,7 @@ export default function AdminReturnsPage() {
 
             {/* Returned Items Dialog */}
             <Dialog open={!!selectedReturn} onOpenChange={() => setSelectedReturn(null)}>
-                <DialogContent className="sm:max-w-[500px]">
+                <DialogContent className="sm:max-w-[500px]" aria-describedby={undefined}>
                     <DialogHeader>
                         <DialogTitle>Returned Items</DialogTitle>
                         <DialogDescription>

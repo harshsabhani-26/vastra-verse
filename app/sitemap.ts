@@ -42,6 +42,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ];
 
     // ── Categories ──────────────────────────────────────────────────────────
+    // URL format: /shop/saree/embroidery-saree
+    // Category slug already contains "/" (e.g. "saree/embroidery-saree")
+    // which becomes a natural clean path segment
     let categoryPages: MetadataRoute.Sitemap = [];
     try {
         const categories = await prisma.category.findMany({
@@ -51,7 +54,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         });
 
         categoryPages = categories.map((cat) => ({
-            url: `${BASE_URL}/shop?category=${encodeURIComponent(cat.slug)}`,
+            // FIX: was /shop?category=... — now clean path /shop/saree/embroidery-saree
+            url: `${BASE_URL}/shop/${cat.slug}`,
             lastModified: cat.updatedAt,
             changeFrequency: "weekly" as const,
             priority: 0.8,
@@ -61,20 +65,35 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     // ── Products ────────────────────────────────────────────────────────────
+    // URL format: /shop/saree/embroidery-saree/product-slug
     let productPages: MetadataRoute.Sitemap = [];
     try {
         const products = await prisma.product.findMany({
-            where: { status: "ACTIVE" },
-            select: { id: true, updatedAt: true },
+            // FIX: was status: "ACTIVE" — real values in DB are "PUBLISHED"
+            where: {
+                status: "PUBLISHED",
+                slug: { not: null },
+                stock: { gt: 0 },
+            },
+            select: {
+                slug: true,
+                updatedAt: true,
+                category: {
+                    select: { slug: true },
+                },
+            },
             orderBy: { updatedAt: "desc" },
         });
 
-        productPages = products.map((product) => ({
-            url: `${BASE_URL}/shop/${product.id}`,
-            lastModified: product.updatedAt,
-            changeFrequency: "weekly" as const,
-            priority: 0.7,
-        }));
+        productPages = products
+            .filter((p) => p.slug && p.category?.slug)
+            .map((product) => ({
+                // FIX: was /shop/${product.id} — now /shop/saree/embroidery-saree/product-slug
+                url: `${BASE_URL}/shop/${product.category.slug}/${product.slug}`,
+                lastModified: product.updatedAt,
+                changeFrequency: "weekly" as const,
+                priority: 0.7,
+            }));
     } catch {
         // DB unavailable during static generation — skip products
     }

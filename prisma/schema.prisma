@@ -194,6 +194,7 @@ model Product {
   finalPrice        Decimal?
   lowStockThreshold Int?           @default(10)
   status            String         @default("DRAFT")
+  slug              String?        @unique
   shortDescription  String?
   fabricType        String?
   weaveType         String?

@@ -32,6 +32,7 @@ export function ProductGallery({ images }: ProductGalleryProps) {
                             src={img}
                             alt={`View ${idx + 1}`}
                             fill
+                            sizes="(max-width: 1024px) 80px, 96px"
                             className="object-cover"
                         />
                     </button>
@@ -44,6 +45,7 @@ export function ProductGallery({ images }: ProductGalleryProps) {
                     src={galleryImages[selectedImage]}
                     alt="Product Main View"
                     fill
+                    sizes="(max-width: 1024px) 100vw, 50vw"
                     className="object-cover transition-all duration-500"
                     priority
                 />

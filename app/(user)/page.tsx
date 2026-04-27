@@ -3,7 +3,6 @@ import { HeroWrapper } from "@/components/home/HeroWrapper";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { NewArrivals } from "@/components/home/NewArrivals";
 import { BestSellers } from "@/components/home/BestSellers";
-import { getCategories } from "@/lib/data/categories";
 import { getActiveHeroBanners, getActiveMidPageBanners, getActiveBottomPageBanners, getActiveWebHeroBanners, getActiveMobileHeroBanners } from "@/lib/data/banners";
 import { TrendingStories } from "@/components/home/TrendingStories";
 import { getActiveStories } from "@/app/admin/stories/actions";
@@ -19,8 +18,12 @@ import { getHeroBannerUrl } from "@/lib/cloudinary-client";
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-    const [categories, heroBanners, webHeroBanners, mobileHeroBanners, midPageBanners, bottomPageBanners, activeStories, socialImages, socialVideos, storeSettings] = await Promise.all([
-        getCategories().catch(() => []),
+    const [mainCategories, heroBanners, webHeroBanners, mobileHeroBanners, midPageBanners, bottomPageBanners, activeStories, socialImages, socialVideos, storeSettings] = await Promise.all([
+        prisma.mainCategory.findMany({
+            where: { isActive: true },
+            orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+            select: { id: true, name: true, href: true, mobileImage: true },
+        }).catch(() => []),
         getActiveHeroBanners().catch(() => []),
         getActiveWebHeroBanners().catch(() => []),
         getActiveMobileHeroBanners().catch(() => []),
@@ -90,7 +93,14 @@ export default async function Home() {
             />
 
             <HeroWrapper banners={heroBanners} webBanners={webHeroBanners} mobileBanners={mobileHeroBanners} heroBg={storeSettings?.heroBg} />
-            <CategoryGrid categories={categories} />
+            <CategoryGrid
+                categories={mainCategories.map((cat) => ({
+                    id: cat.id,
+                    name: cat.name,
+                    image: cat.mobileImage ?? null,
+                    href: cat.href,
+                }))}
+            />
             <NewArrivals />
             {/* FIX 9: MidPageBanner lazily loaded via Client wrapper — below fold */}
             <DynamicMidPageBanner banners={midPageBanners} />

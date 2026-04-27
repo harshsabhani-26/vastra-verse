@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 
 interface ProductCardProps {
     id: string;
+    /** Clean URL slug, e.g. "embrodery-saree" */
+    slug?: string;
+    /** Category slug, e.g. "saree/embroidery-saree" — used to build /shop/[cat]/[product] */
+    categorySlug?: string;
     name: string;
     price: number;
     image: string;
@@ -18,6 +22,8 @@ interface ProductCardProps {
 
 export function ProductCard({
     id,
+    slug,
+    categorySlug,
     name,
     price,
     originalPrice,
@@ -27,6 +33,8 @@ export function ProductCard({
     isNew,
     isWishlisted
 }: ProductCardProps) {
+    // Clean URL when slug exists; fall back to ID for legacy products
+    const href = slug && categorySlug ? `/shop/${categorySlug}/${slug}` : `/shop/${id}`;
     return (
         <div className="group relative block animate-fade-in-up">
             <div className="relative aspect-[3/4] overflow-hidden bg-secondary/5 shadow-soft group-hover:shadow-elevated transition-all duration-700 ease-out">
@@ -73,7 +81,7 @@ export function ProductCard({
 
                 {/* Quick View Overlay */}
                 <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out z-20">
-                    <Link href={`/shop/${id}`}>
+                    <Link href={href}>
                         <Button className="w-full bg-white/95 text-primary hover:bg-primary hover:text-white border border-primary/10 shadow-lg text-xs uppercase tracking-[0.2em] h-10 font-medium transition-all duration-300">
                             Quick View
                         </Button>
@@ -85,7 +93,7 @@ export function ProductCard({
             <div className="mt-5 text-center space-y-2">
                 <p className="text-[10px] text-text-muted uppercase tracking-[0.2em] font-medium transition-colors group-hover:text-primary/70">{category}</p>
                 <h3 className="text-base font-medium text-primary font-serif line-clamp-2 px-2 group-hover:text-secondary transition-colors duration-300">
-                    <Link href={`/shop/${id}`}>
+                    <Link href={href}>
                         <span aria-hidden="true" className="absolute inset-0" />
                         {name}
                     </Link>

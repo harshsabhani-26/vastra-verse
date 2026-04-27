@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { ChevronDown, SlidersHorizontal, LayoutGrid, List } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -30,14 +30,13 @@ export function FilterBar({ categories = [], totalCount = 0 }: { categories?: Ca
         displayCategory = lastPart.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     }
 
-    const handleCategoryChange = (exclude: boolean, categoryName?: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        if (exclude || !categoryName) {
-            params.delete('category')
+    const handleCategoryChange = (exclude: boolean, categorySlug?: string) => {
+        if (exclude || !categorySlug) {
+            router.push(`/shop`)
         } else {
-            params.set('category', categoryName)
+            // FIX: navigate to clean category path instead of ?category= query param
+            router.push(`/shop/${categorySlug}`)
         }
-        router.push(`/shop?${params.toString()}`)
     }
 
     return (
@@ -57,8 +56,8 @@ export function FilterBar({ categories = [], totalCount = 0 }: { categories?: Ca
                             {categories.map((category) => (
                                 <p
                                     key={category.id}
-                                    className={`text-sm cursor-pointer transition-colors ${currentCategory === category.name ? 'text-primary font-medium' : 'text-text-muted hover:text-primary'}`}
-                                    onClick={() => handleCategoryChange(false, category.name)}
+                                    className={`text-sm cursor-pointer transition-colors ${currentCategory === category.slug ? 'text-primary font-medium' : 'text-text-muted hover:text-primary'}`}
+                                    onClick={() => handleCategoryChange(false, category.slug)}
                                 >
                                     {category.name}
                                 </p>
@@ -125,8 +124,8 @@ export function FilterBar({ categories = [], totalCount = 0 }: { categories?: Ca
                                 {categories.map((category) => (
                                     <p
                                         key={category.id}
-                                        className={`text-sm cursor-pointer transition-colors ${currentCategory === category.name ? 'text-primary font-medium' : 'text-text-muted hover:text-primary'}`}
-                                        onClick={() => handleCategoryChange(false, category.name)}
+                                        className={`text-sm cursor-pointer transition-colors ${currentCategory === category.slug ? 'text-primary font-medium' : 'text-text-muted hover:text-primary'}`}
+                                        onClick={() => handleCategoryChange(false, category.slug)}
                                     >
                                         {category.name}
                                     </p>
