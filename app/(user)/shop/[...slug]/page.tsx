@@ -505,12 +505,75 @@ export default async function ShopSlugPage({
     } else if (!category) {
         if (slug.length === 1) {
             // Check if it's a legacy product ID link
-            const product = await prisma.product.findUnique({
+            const legacyProduct = await prisma.product.findUnique({
                 where: { id: slug[0] },
-                select: { slug: true, category: { select: { slug: true } } },
+                select: {
+                    id: true, name: true, description: true, price: true,
+                    finalPrice: true, discount: true, discountType: true,
+                    stock: true, sku: true, slug: true, fabricType: true,
+                    weaveType: true, careInstructions: true, isNewArrival: true,
+                    isBestSeller: true, categoryId: true, colors: true,
+                    occasions: true, borderDescription: true, palluDescription: true,
+                    blouseFabric: true, hasBlousePiece: true, shortDescription: true,
+                    sareeLength: true, blouseLength: true, updatedAt: true,
+                    category: { select: { id: true, name: true, slug: true } },
+                    images: { orderBy: { position: "asc" }, select: { id: true, url: true, alt: true, type: true } },
+                },
             });
-            if (product?.slug && product.category?.slug) {
-                redirect(`/shop/${product.category.slug}/${product.slug}`);
+            if (legacyProduct) {
+                // If it has a proper slug, redirect to canonical URL
+                if (legacyProduct.slug && legacyProduct.category?.slug) {
+                    redirect(`/shop/${legacyProduct.category.slug}/${legacyProduct.slug}`);
+                }
+                // No slug — render the product page directly from ID
+                let isWishlisted = false;
+                if (session?.user?.id) {
+                    const wl = await prisma.wishlist.findUnique({
+                        where: { userId_productId: { userId: session.user.id, productId: legacyProduct.id } },
+                    });
+                    isWishlisted = !!wl;
+                }
+                return (
+                    <div className="min-h-screen bg-background">
+                        <div className="hidden md:block border-b border-primary/10">
+                            <div className="container mx-auto px-4 md:px-8 py-4">
+                                <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-text-muted">
+                                    <Link href="/">Home</Link>
+                                    <span>|</span>
+                                    <Link href="/shop">Shop</Link>
+                                    {legacyProduct.category && (
+                                        <>
+                                            <span>|</span>
+                                            <Link href={`/shop/${legacyProduct.category.slug}`}>
+                                                {legacyProduct.category.name}
+                                            </Link>
+                                        </>
+                                    )}
+                                    <span>|</span>
+                                    <span className="text-primary">{legacyProduct.name}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="container mx-auto px-4 md:px-8 py-12">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20">
+                                <div>
+                                    <ProductImageGallery images={legacyProduct.images || []} productName={legacyProduct.name} />
+                                </div>
+                                <div>
+                                    <ProductDetails
+                                        product={{
+                                            ...legacyProduct,
+                                            price: legacyProduct.price?.toString() ?? null,
+                                            finalPrice: legacyProduct.finalPrice?.toString() ?? null,
+                                            discount: legacyProduct.discount?.toString() ?? null,
+                                        }}
+                                        initialIsWishlisted={isWishlisted}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
             }
         }
         notFound();
