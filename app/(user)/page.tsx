@@ -1,4 +1,3 @@
-import { AppointmentBanner } from "@/components/home/AppointmentBanner";
 import { HeroWrapper } from "@/components/home/HeroWrapper";
 import { CategoryGrid } from "@/components/home/CategoryGrid";
 import { NewArrivals } from "@/components/home/NewArrivals";
@@ -18,11 +17,17 @@ import { getHeroBannerUrl } from "@/lib/cloudinary-client";
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-    const [mainCategories, heroBanners, webHeroBanners, mobileHeroBanners, midPageBanners, bottomPageBanners, activeStories, socialImages, socialVideos, storeSettings] = await Promise.all([
+    const [mainCategories, subCategories, heroBanners, webHeroBanners, mobileHeroBanners, midPageBanners, bottomPageBanners, activeStories, socialImages, socialVideos, storeSettings] = await Promise.all([
         prisma.mainCategory.findMany({
             where: { isActive: true },
             orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
             select: { id: true, name: true, href: true, mobileImage: true },
+        }).catch(() => []),
+        prisma.category.findMany({
+            where: { isActive: true },
+            orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+            take: 8,
+            select: { id: true, name: true, image: true, slug: true },
         }).catch(() => []),
         getActiveHeroBanners().catch(() => []),
         getActiveWebHeroBanners().catch(() => []),
@@ -94,11 +99,11 @@ export default async function Home() {
 
             <HeroWrapper banners={heroBanners} webBanners={webHeroBanners} mobileBanners={mobileHeroBanners} heroBg={storeSettings?.heroBg} />
             <CategoryGrid
-                categories={mainCategories.map((cat) => ({
+                categories={subCategories.map((cat) => ({
                     id: cat.id,
                     name: cat.name,
-                    image: cat.mobileImage ?? null,
-                    href: cat.href,
+                    image: cat.image ?? null,
+                    href: `/shop/${cat.slug}`,
                 }))}
             />
             <NewArrivals />
@@ -111,7 +116,6 @@ export default async function Home() {
             <SeoTextBlock />
             {/* FIX 9: Bottom MidPageBanner also lazily loaded via Client wrapper */}
             <DynamicMidPageBanner banners={bottomPageBanners} />
-            <AppointmentBanner />
         </div>
     );
 }

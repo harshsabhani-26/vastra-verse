@@ -470,7 +470,6 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                                         { label: "My Orders", href: "/orders" },
                                         { label: "Wishlist", href: "/wishlist" },
                                         { label: "Gift Card", href: "/gift-cards" },
-                                        { label: "Book an Appointment", href: "/appointment" },
                                         { label: "Store Locator", href: "/stores" },
                                         { label: "Contact Us", href: "/contact" },
                                     ].map((link, idx) => (
@@ -494,7 +493,6 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
                                         { label: "My Orders", href: "/orders" },
                                         { label: "Wishlist", href: "/wishlist" },
                                         { label: "Gift Card", href: "/gift-cards" },
-                                        { label: "Book an Appointment", href: "/appointment" },
                                         { label: "Store Locator", href: "/stores" },
                                         { label: "Contact Us", href: "/contact" },
                                     ].map((link) => {
