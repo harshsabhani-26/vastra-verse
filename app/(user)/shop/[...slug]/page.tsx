@@ -170,8 +170,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
     const { slug } = await params;
 
-    // ── Product page (3 segments: parent/category/product-slug) ──────────────
-    if (slug.length >= 3) {
+    // ── Product page (2+ segments: category/product-slug or parent/category/product-slug) ──
+    if (slug.length >= 2) {
         const productSlug = slug[slug.length - 1];
         const categorySlug = slug.slice(0, -1).join("/");
         const canonicalUrl = `${BASE_URL}/shop/${categorySlug}/${productSlug}`;
@@ -179,7 +179,7 @@ export async function generateMetadata({
         const product = await prisma.product.findFirst({
             where: {
                 slug: productSlug,
-                category: { slug: categorySlug },
+                category: { slug: { equals: categorySlug, mode: "insensitive" } },
             },
             select: {
                 name: true,
@@ -196,24 +196,27 @@ export async function generateMetadata({
             },
         });
 
-        if (!product) return { title: "Product Not Found | Vastraa Verse" };
+        if (product) {
+            if (!product) return { title: "Product Not Found | Vastraa Verse" };
 
-        const desc = buildProductDescription(product);
-        const imageUrl = product.images[0]?.url ?? null;
+            const desc = buildProductDescription(product);
+            const imageUrl = product.images[0]?.url ?? null;
 
-        return {
-            title: `${product.name} | Vastraa Verse`,
-            description: desc,
-            alternates: { canonical: canonicalUrl },
-            openGraph: {
+            return {
                 title: `${product.name} | Vastraa Verse`,
                 description: desc,
-                url: canonicalUrl,
-                siteName: "Vastraa Verse",
-                images: imageUrl ? [{ url: imageUrl, alt: product.name }] : undefined,
-                type: "website",
-            },
-        };
+                alternates: { canonical: canonicalUrl },
+                openGraph: {
+                    title: `${product.name} | Vastraa Verse`,
+                    description: desc,
+                    url: canonicalUrl,
+                    siteName: "Vastraa Verse",
+                    images: imageUrl ? [{ url: imageUrl, alt: product.name }] : undefined,
+                    type: "website",
+                },
+            };
+        }
+        // Not a product — fall through to category metadata
     }
 
     // ── Category page (1–2 segments: saree or saree/embroidery-saree) ────────
@@ -291,8 +294,8 @@ export default async function ShopSlugPage({
     const { slug } = await params;
     const session = await auth();
 
-    // ── PRODUCT PAGE (3+ segments) ─────────────────────────────────────────
-    if (slug.length >= 3) {
+    // ── PRODUCT PAGE (2+ segments: /shop/sarees/product-slug) ─────────────────
+    if (slug.length >= 2) {
         const productSlug = slug[slug.length - 1];
         const categorySlug = slug.slice(0, -1).join("/");
 
@@ -338,9 +341,8 @@ export default async function ShopSlugPage({
             },
         });
 
-        if (!product) notFound();
-
-        // Wishlist status
+        if (product) {
+            // Wishlist status
         let isWishlisted = false;
         if (session?.user?.id) {
             const wl = await prisma.wishlist.findUnique({
@@ -411,65 +413,67 @@ export default async function ShopSlugPage({
             ],
         };
 
-        return (
-            <div className="min-h-screen bg-background">
-                <script
-                    type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
-                />
-                <script
-                    type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
-                />
+            return (
+                <div className="min-h-screen bg-background">
+                    <script
+                        type="application/ld+json"
+                        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+                    />
+                    <script
+                        type="application/ld+json"
+                        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+                    />
 
-                {/* Breadcrumb */}
-                <div className="hidden md:block border-b border-primary/10">
-                    <div className="container mx-auto px-4 md:px-8 py-4">
-                        <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-text-muted">
-                            <Link href="/">Home</Link>
-                            <span>|</span>
-                            <Link href="/shop">Shop</Link>
-                            {product.category && (
-                                <>
-                                    <span>|</span>
-                                    <Link href={`/shop/${product.category.slug}`}>
-                                        {product.category.name}
-                                    </Link>
-                                </>
-                            )}
-                            <span>|</span>
-                            <span className="text-primary">{product.name}</span>
+                    {/* Breadcrumb */}
+                    <div className="hidden md:block border-b border-primary/10">
+                        <div className="container mx-auto px-4 md:px-8 py-4">
+                            <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-text-muted">
+                                <Link href="/">Home</Link>
+                                <span>|</span>
+                                <Link href="/shop">Shop</Link>
+                                {product.category && (
+                                    <>
+                                        <span>|</span>
+                                        <Link href={`/shop/${product.category.slug}`}>
+                                            {product.category.name}
+                                        </Link>
+                                    </>
+                                )}
+                                <span>|</span>
+                                <span className="text-primary">{product.name}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="container mx-auto px-4 md:px-8 py-12">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20">
+                            <div>
+                                <ProductImageGallery
+                                    images={product.images || []}
+                                    productName={product.name}
+                                />
+                            </div>
+                            <div>
+                                <ProductDetails
+                                    product={{
+                                        ...product,
+                                        price: product.price ? product.price.toString() : null,
+                                        finalPrice: product.finalPrice
+                                            ? product.finalPrice.toString()
+                                            : null,
+                                        discount: product.discount
+                                            ? product.discount.toString()
+                                            : null,
+                                    }}
+                                    initialIsWishlisted={isWishlisted}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                <div className="container mx-auto px-4 md:px-8 py-12">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20">
-                        <div>
-                            <ProductImageGallery
-                                images={product.images || []}
-                                productName={product.name}
-                            />
-                        </div>
-                        <div>
-                            <ProductDetails
-                                product={{
-                                    ...product,
-                                    price: product.price ? product.price.toString() : null,
-                                    finalPrice: product.finalPrice
-                                        ? product.finalPrice.toString()
-                                        : null,
-                                    discount: product.discount
-                                        ? product.discount.toString()
-                                        : null,
-                                }}
-                                initialIsWishlisted={isWishlisted}
-                            />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+            );
+        }
+        // Not a product page — fall through to category page logic
     }
 
     // ── CATEGORY PAGE (1–2 segments: /shop/saree or /shop/saree/embroidery-saree) ─
