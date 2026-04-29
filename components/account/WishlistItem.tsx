@@ -8,6 +8,7 @@ import { Trash2, ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import { useCartStore } from "@/lib/store";
 import { useWishlistStore } from "@/lib/wishlist-store";
+import { pixelAddToCart } from "@/lib/fbq";
 
 interface Product {
     id: string;
@@ -45,9 +46,19 @@ export function WishlistItem({ product }: { product: Product }) {
             image: product.images[0] || "/images/placeholder.jpg",
             quantity: 1,
             color: "Standard"
+        }).then(() => {
+            toast.success("Moved to bag");
+            // Meta Pixel: AddToCart
+            pixelAddToCart({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                quantity: 1,
+            });
+            handleRemove();
+        }).catch((error: any) => {
+            toast.error(error?.message || "Failed to move to bag");
         });
-        toast.success("Moved to bag");
-        handleRemove();
     }
 
     return (
