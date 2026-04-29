@@ -13,18 +13,27 @@ type FbqEventName =
     | "Search"
     | "AddToWishlist"
     | "CompleteRegistration"
-    | "Contact";
+    | "Contact"
+    | "CustomizeProduct"
+    | "Donate"
+    | "FindLocation"
+    | "Lead"
+    | "Schedule"
+    | "StartTrial"
+    | "SubmitApplication"
+    | "Subscribe";
 
 interface FbqParams {
     content_name?: string;
     content_ids?: string[];
     content_type?: string;
     content_category?: string;
-    value?: number;
+    value?: number | string;
     currency?: string;
     num_items?: number;
     search_string?: string;
     order_id?: string;
+    predicted_ltv?: number | string;
 }
 
 function fbq(event: "track", name: FbqEventName, params?: FbqParams): void {
@@ -118,4 +127,44 @@ export function pixelSearch(term: string) {
     fbq("track", "Search", {
         search_string: term,
     });
+}
+
+export function pixelCompleteRegistration(params?: { value?: number; currency?: string; content_name?: string }) {
+    fbq("track", "CompleteRegistration", params);
+}
+
+export function pixelContact(params?: { value?: number; currency?: string }) {
+    fbq("track", "Contact", params);
+}
+
+export function pixelCustomizeProduct(params?: { content_name?: string; value?: number; currency?: string }) {
+    fbq("track", "CustomizeProduct", params);
+}
+
+export function pixelDonate(params?: { value?: number; currency?: string }) {
+    fbq("track", "Donate", params);
+}
+
+export function pixelFindLocation(params?: { content_name?: string; value?: number; currency?: string }) {
+    fbq("track", "FindLocation", params);
+}
+
+export function pixelLead(params?: { content_category?: string; content_name?: string; value?: number; currency?: string }) {
+    fbq("track", "Lead", params);
+}
+
+export function pixelSchedule(params?: { content_category?: string; content_name?: string; value?: number; currency?: string }) {
+    fbq("track", "Schedule", params);
+}
+
+export function pixelStartTrial(params?: { value: number | string; currency: string; predicted_ltv?: number | string }) {
+    fbq("track", "StartTrial", params);
+}
+
+export function pixelSubmitApplication(params?: { content_category?: string; content_name?: string; value?: number; currency?: string }) {
+    fbq("track", "SubmitApplication", params);
+}
+
+export function pixelSubscribe(params?: { value: number | string; currency: string; predicted_ltv?: number | string }) {
+    fbq("track", "Subscribe", params);
 }
