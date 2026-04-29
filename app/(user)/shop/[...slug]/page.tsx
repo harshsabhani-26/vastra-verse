@@ -299,47 +299,65 @@ export default async function ShopSlugPage({
         const productSlug = slug[slug.length - 1];
         const categorySlug = slug.slice(0, -1).join("/");
 
-        const product = await prisma.product.findFirst({
+        // Helper: generate slug from name (mirrors ProductCard logic)
+        const slugify = (str: string) =>
+            str.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+        const productSelect = {
+            id: true,
+            name: true,
+            description: true,
+            price: true,
+            finalPrice: true,
+            discount: true,
+            discountType: true,
+            stock: true,
+            sku: true,
+            slug: true,
+            fabricType: true,
+            weaveType: true,
+            careInstructions: true,
+            isNewArrival: true,
+            isBestSeller: true,
+            categoryId: true,
+            colors: true,
+            occasions: true,
+            borderDescription: true,
+            palluDescription: true,
+            blouseFabric: true,
+            hasBlousePiece: true,
+            shortDescription: true,
+            sareeLength: true,
+            blouseLength: true,
+            updatedAt: true,
+            category: {
+                select: { id: true, name: true, slug: true },
+            },
+            images: {
+                orderBy: { position: "asc" as const },
+                select: { id: true, url: true, alt: true, type: true },
+            },
+        };
+
+        // 1️⃣ Try exact slug match
+        let product = await prisma.product.findFirst({
             where: {
                 slug: productSlug,
                 category: { slug: { equals: categorySlug, mode: "insensitive" } },
             },
-            select: {
-                id: true,
-                name: true,
-                description: true,
-                price: true,
-                finalPrice: true,
-                discount: true,
-                discountType: true,
-                stock: true,
-                sku: true,
-                slug: true,
-                fabricType: true,
-                weaveType: true,
-                careInstructions: true,
-                isNewArrival: true,
-                isBestSeller: true,
-                categoryId: true,
-                colors: true,
-                occasions: true,
-                borderDescription: true,
-                palluDescription: true,
-                blouseFabric: true,
-                hasBlousePiece: true,
-                shortDescription: true,
-                sareeLength: true,
-                blouseLength: true,
-                updatedAt: true,
-                category: {
-                    select: { id: true, name: true, slug: true },
-                },
-                images: {
-                    orderBy: { position: "asc" },
-                    select: { id: true, url: true, alt: true, type: true },
-                },
-            },
+            select: productSelect,
         });
+
+        // 2️⃣ Fallback: find by name-derived slug (for products without a slug in DB)
+        if (!product) {
+            const allInCategory = await prisma.product.findMany({
+                where: {
+                    category: { slug: { equals: categorySlug, mode: "insensitive" } },
+                },
+                select: productSelect,
+            });
+            product = allInCategory.find((p) => slugify(p.name) === productSlug) ?? null;
+        }
 
         if (product) {
             // Wishlist status

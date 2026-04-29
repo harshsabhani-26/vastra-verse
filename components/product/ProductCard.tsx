@@ -33,8 +33,10 @@ export function ProductCard({
     isNew,
     isWishlisted
 }: ProductCardProps) {
-    // Clean URL when slug exists; fall back to ID for legacy products
-    const href = slug && categorySlug ? `/shop/${categorySlug}/${slug}` : `/shop/${id}`;
+    // Auto-generate a slug from name when DB slug is missing
+    const slugify = (str: string) => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const productUrlSlug = slug || slugify(name);
+    const href = categorySlug ? `/shop/${categorySlug}/${productUrlSlug}` : `/shop/${id}`;
     return (
         <div className="group relative block animate-fade-in-up">
             <div className="relative aspect-[3/4] overflow-hidden bg-secondary/5 shadow-soft group-hover:shadow-elevated transition-all duration-700 ease-out">
