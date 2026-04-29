@@ -118,6 +118,8 @@ const nextConfig: NextConfig = {
         // Sentry CDN (error monitoring)
         "https://browser.sentry-cdn.com",
         "https://js.sentry-cdn.com",
+        // Meta Pixel
+        "https://connect.facebook.net",
       ].join(' '),
 
       // Workers: Allow web workers from self and blobs (required for Sentry/Razorpay)
@@ -164,6 +166,8 @@ const nextConfig: NextConfig = {
         // Cloudinary
         "https://api.cloudinary.com",
         "https://res.cloudinary.com",
+        // Meta Pixel
+        "https://www.facebook.com",
       ].join(' '),
 
       // Media: Video/audio from CDNs
