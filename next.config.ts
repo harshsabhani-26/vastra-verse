@@ -170,6 +170,8 @@ const nextConfig: NextConfig = {
         // Meta Pixel
         "https://www.facebook.com",
         "https://connect.facebook.net",
+        // Madgicx CAPI Gateway
+        "https://capig.madgicx.ai",
       ].join(' '),
 
       // Media: Video/audio from CDNs
