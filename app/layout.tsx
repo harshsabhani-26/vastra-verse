@@ -32,6 +32,9 @@ export const metadata: Metadata = {
     icons: {
         icon: "/favicon.ico",
     },
+    other: {
+        "facebook-domain-verification": "iyawbo3x2xkd0bznhh86svj9z015gt",
+    },
 };
 
 export const viewport = {
