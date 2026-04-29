@@ -109,7 +109,7 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
             setIsScrolled(window.scrollY > 20);
         };
         window.addEventListener("scroll", handleScroll, { passive: true });
-        
+
         const handleClickOutside = (event: MouseEvent) => {
             if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
                 setIsProfileOpen(false);
@@ -137,193 +137,193 @@ export function Header({ logo, mainCategories = [] }: HeaderProps) {
 
     return (
         <>
-        <header className="w-full bg-white z-50 relative sticky top-0 font-sans shadow-sm">
-            {/* ROW 2: Logo | Search | Actions */}
-            <div className="container mx-auto px-6 md:px-[60px]">
-                <div className="relative flex py-[8px] md:py-[12px] items-center">
+            <header className="w-full bg-white z-50 relative sticky top-0 font-sans shadow-sm">
+                {/* ROW 2: Logo | Search | Actions */}
+                <div className="container mx-auto px-6 md:px-[60px]">
+                    <div className="relative flex py-[8px] md:py-[12px] items-center">
 
-                    {/* Mobile Header Left Section */}
-                    {isProductPage ? (
-                        <div className="flex md:hidden items-center gap-3 shrink-0 h-[40px] pl-[5px]">
-                            <button
-                                onClick={() => router.back()}
-                                className="p-1 -ml-2 text-[#42120F]"
-                                aria-label="Go back"
-                            >
-                                <ArrowLeft className="w-6 h-6" />
-                            </button>
-                            <Link
-                                href="/"
-                                className="w-[32px] h-[32px] rounded-full bg-[#42120F] text-white flex items-center justify-center shadow-sm shrink-0"
-                                aria-label="Home"
-                            >
-                                <Home className="w-[16px] h-[16px]" strokeWidth={2} />
-                            </Link>
-                            <h1 className="text-[18px] font-medium text-[#42120F] truncate w-full flex-1 ml-2 text-center mr-auto mr-1" style={{ fontFamily: '"Playfair Display", serif', letterSpacing: '0.05em' }}>
-                                {productName}
-                            </h1>
-                        </div>
-                    ) : (
-                        <div className="xl:hidden relative md:absolute md:left-0 flex items-center z-10 shrink-0">
-                            <button
-                                className="navTrigger-root cursor-pointer inline-flex items-center justify-center leading-none pointer-events-auto text-center h-[40px] md:h-[4rem] w-[40px] md:w-[4rem] flex-col"
-                                onClick={() => setIsMobileMenuOpen(true)}
-                                aria-label="Toggle navigation panel"
-                            >
-                                <span className="w-[24px] md:w-[30px] h-[2px] md:h-[3px] my-[3px] md:my-[5px] bg-primary"></span>
-                                <span className="w-[24px] md:w-[30px] h-[2px] md:h-[3px] my-[3px] md:my-[5px] bg-primary"></span>
-                                <span className="w-[24px] md:w-[30px] h-[2px] md:h-[3px] my-[3px] md:my-[5px] bg-primary"></span>
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Logo — Centered on mobile, left aligned on desktop */}
-                    <div className={cn(
-                        "flex items-center shrink-0 h-[45px] md:h-[65px]",
-                        isProductPage
-                            ? "hidden md:flex ml-auto md:ml-[30px] xl:ml-[50px]"
-                            : "absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 md:ml-[30px] xl:ml-[50px]"
-                    )}>
-                        <Link href="/" className="w-[120px] md:w-[180px] h-full flex items-center justify-center md:justify-center pr-[10px]" aria-label="Vastraa Verse">
-                            <Image
-                                src={logo || "/logo.png"}
-                                alt="Vastraa Verse Logo"
-                                width={180}
-                                height={65}
-                                className={cn(
-                                    "object-contain max-h-full w-auto h-auto transition-transform duration-300 origin-center md:origin-left",
-                                    isScrolled ? "scale-[1.3] md:scale-[1.6] -translate-y-[6px] md:-translate-y-[16px]" : "scale-[1.5] md:scale-[2.2]"
-                                )}
-                                priority
-                                unoptimized
-                            />
-                        </Link>
-                    </div>
-
-                    {/* Search Bar (Middle - Light Grey BG) - Hidden on mobile */}
-                    <button
-                        type="button"
-                        onClick={() => setIsSearchOpen(true)}
-                        className="searchTrigger-root hidden md:flex h-[48px] items-center ml-0 md:ml-[8px] lg:ml-[16px] w-full md:w-[320px] lg:w-[420px] xl:w-[550px] bg-[#F3F3F3] border border-gray-200 mt-[12px] md:mt-0 px-[16px] md:px-[24px] rounded-[6px] overflow-hidden hover:bg-[#e8e8e8] duration-[300ms] transition-colors cursor-text shrink-0 text-left"
-                        aria-label="Open search"
-                    >
-                        <Icons.Search />
-                        <span className="searchTrigger-label sm:ml-2 pl-[16px] text-[14px] font-[400] text-text-muted">
-                            Search for products and more
-                        </span>
-                    </button>
-
-                    {/* Right Actions Container */}
-                    <div className="flex items-center ml-auto shrink-0 gap-[2px] md:gap-0">
-
-                        {/* Search Icon (Mobile Only) */}
-                        <div className="w-auto md:hidden block ml-[5px]">
-                            <button className="p-[6px] flex items-center relative" onClick={(e) => { e.preventDefault(); setIsSearchOpen(true); }}>
-                                <Icons.Search width="20" height="20" />
-                            </button>
-                        </div>
-
-
-
-                        {status !== "authenticated" && (
-                            <div className="w-auto ml-0 md:ml-[0.8rem]">
-                                <button className="p-[6px] md:p-[8px] flex items-center relative" onClick={() => setIsTrackOrderOpen(true)}>
-                                    <Icons.Truck width="20" height="20" className="md:w-[24px] md:h-[24px]" />
+                        {/* Mobile Header Left Section */}
+                        {isProductPage ? (
+                            <div className="flex md:hidden items-center gap-3 shrink-0 h-[40px] pl-[5px]">
+                                <button
+                                    onClick={() => router.back()}
+                                    className="p-1 -ml-2 text-[#42120F]"
+                                    aria-label="Go back"
+                                >
+                                    <ArrowLeft className="w-6 h-6" />
+                                </button>
+                                <Link
+                                    href="/"
+                                    className="w-[32px] h-[32px] rounded-full bg-[#42120F] text-white flex items-center justify-center shadow-sm shrink-0"
+                                    aria-label="Home"
+                                >
+                                    <Home className="w-[16px] h-[16px]" strokeWidth={2} />
+                                </Link>
+                                <h1 className="text-[18px] font-medium text-[#42120F] truncate w-full flex-1 ml-2 text-center mr-auto mr-1" style={{ fontFamily: '"Playfair Display", serif', letterSpacing: '0.05em' }}>
+                                    {productName}
+                                </h1>
+                            </div>
+                        ) : (
+                            <div className="xl:hidden relative md:absolute md:left-0 flex items-center z-10 shrink-0">
+                                <button
+                                    className="navTrigger-root cursor-pointer inline-flex items-center justify-center leading-none pointer-events-auto text-center h-[40px] md:h-[4rem] w-[40px] md:w-[4rem] flex-col"
+                                    onClick={() => setIsMobileMenuOpen(true)}
+                                    aria-label="Toggle navigation panel"
+                                >
+                                    <span className="w-[24px] md:w-[30px] h-[2px] md:h-[3px] my-[3px] md:my-[5px] bg-primary"></span>
+                                    <span className="w-[24px] md:w-[30px] h-[2px] md:h-[3px] my-[3px] md:my-[5px] bg-primary"></span>
+                                    <span className="w-[24px] md:w-[30px] h-[2px] md:h-[3px] my-[3px] md:my-[5px] bg-primary"></span>
                                 </button>
                             </div>
                         )}
 
-                        {/* Wishlist Icon */}
-                        <Link href="/wishlist">
-                            <div className="w-auto ml-0 md:ml-[0.6rem]">
-                                <button className="p-[6px] md:p-[8px] flex items-center relative">
-                                    <Icons.Heart width="20" height="19" className="md:w-[24px] md:h-[23px]" />
-                                    {mounted && wishlistCount() > 0 && (
+                        {/* Logo — Centered on mobile, left aligned on desktop */}
+                        <div className={cn(
+                            "flex items-center shrink-0 h-[45px] md:h-[65px]",
+                            isProductPage
+                                ? "hidden md:flex ml-auto md:ml-[30px] xl:ml-[50px]"
+                                : "absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 md:ml-[30px] xl:ml-[50px]"
+                        )}>
+                            <Link href="/" className="w-[120px] md:w-[180px] h-full flex items-center justify-center md:justify-center pr-[10px]" aria-label="Vastraa Verse">
+                                <Image
+                                    src={logo || "/logo.png"}
+                                    alt="Vastraa Verse Logo"
+                                    width={180}
+                                    height={65}
+                                    className={cn(
+                                        "object-contain max-h-full w-auto h-auto transition-transform duration-300 origin-center md:origin-left",
+                                        isScrolled ? "scale-[1.3] md:scale-[1.6] -translate-y-[6px] md:-translate-y-[16px]" : "scale-[1.5] md:scale-[2.2]"
+                                    )}
+                                    priority
+                                    unoptimized
+                                />
+                            </Link>
+                        </div>
+
+                        {/* Search Bar (Middle - Light Grey BG) - Hidden on mobile */}
+                        <button
+                            type="button"
+                            onClick={() => setIsSearchOpen(true)}
+                            className="searchTrigger-root hidden md:flex h-[48px] items-center ml-0 md:ml-[8px] lg:ml-[16px] w-full md:w-[320px] lg:w-[420px] xl:w-[550px] bg-[#F3F3F3] border border-gray-200 mt-[12px] md:mt-0 px-[16px] md:px-[24px] rounded-[6px] overflow-hidden hover:bg-[#e8e8e8] duration-[300ms] transition-colors cursor-text shrink-0 text-left"
+                            aria-label="Open search"
+                        >
+                            <Icons.Search />
+                            <span className="searchTrigger-label sm:ml-2 pl-[16px] text-[14px] font-[400] text-text-muted">
+                                Search for products and more
+                            </span>
+                        </button>
+
+                        {/* Right Actions Container */}
+                        <div className="flex items-center ml-auto shrink-0 gap-[2px] md:gap-0">
+
+                            {/* Search Icon (Mobile Only) */}
+                            <div className="w-auto md:hidden block ml-[5px]">
+                                <button className="p-[6px] flex items-center relative" onClick={(e) => { e.preventDefault(); setIsSearchOpen(true); }}>
+                                    <Icons.Search width="20" height="20" />
+                                </button>
+                            </div>
+
+
+
+                            {status !== "authenticated" && (
+                                <div className="w-auto ml-0 md:ml-[0.8rem]">
+                                    <button className="p-[6px] md:p-[8px] flex items-center relative" onClick={() => setIsTrackOrderOpen(true)}>
+                                        <Icons.Truck width="20" height="20" className="md:w-[24px] md:h-[24px]" />
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Wishlist Icon */}
+                            <Link href="/wishlist">
+                                <div className="w-auto ml-0 md:ml-[0.6rem]">
+                                    <button className="p-[6px] md:p-[8px] flex items-center relative">
+                                        <Icons.Heart width="20" height="19" className="md:w-[24px] md:h-[23px]" />
+                                        {mounted && wishlistCount() > 0 && (
+                                            <span className="absolute top-0 right-0 flex items-center justify-center rounded-full font-bold bg-[#1a1a1a] text-white text-[10px] md:text-[12px] min-w-[18px] h-[18px] md:min-w-[22px] md:h-[22px] px-[4px] md:px-[5px] leading-none shadow-sm">
+                                                {wishlistCount()}
+                                            </span>
+                                        )}
+                                    </button>
+                                </div>
+                            </Link>
+
+                            {/* Cart Icon */}
+                            <div className="cartTrigger-triggerContainer items-center lg:grid ml-0 md:ml-[0.6rem]">
+                                <button
+                                    onClick={openCart}
+                                    className="p-[6px] md:p-[8px] flex items-center relative"
+                                    aria-label="Toggle mini cart"
+                                >
+                                    <Icons.Cart width="18" height="20" className="md:w-[22px] md:h-[24px]" />
+                                    {mounted && totalItems() > 0 && (
                                         <span className="absolute top-0 right-0 flex items-center justify-center rounded-full font-bold bg-[#1a1a1a] text-white text-[10px] md:text-[12px] min-w-[18px] h-[18px] md:min-w-[22px] md:h-[22px] px-[4px] md:px-[5px] leading-none shadow-sm">
-                                            {wishlistCount()}
+                                            {totalItems()}
                                         </span>
                                     )}
                                 </button>
                             </div>
-                        </Link>
 
-                        {/* Cart Icon */}
-                        <div className="cartTrigger-triggerContainer items-center lg:grid ml-0 md:ml-[0.6rem]">
-                            <button
-                                onClick={openCart}
-                                className="p-[6px] md:p-[8px] flex items-center relative"
-                                aria-label="Toggle mini cart"
-                            >
-                                <Icons.Cart width="18" height="20" className="md:w-[22px] md:h-[24px]" />
-                                {mounted && totalItems() > 0 && (
-                                    <span className="absolute top-0 right-0 flex items-center justify-center rounded-full font-bold bg-[#1a1a1a] text-white text-[10px] md:text-[12px] min-w-[18px] h-[18px] md:min-w-[22px] md:h-[22px] px-[4px] md:px-[5px] leading-none shadow-sm">
-                                        {totalItems()}
-                                    </span>
-                                )}
-                            </button>
-                        </div>
+                            {/* Profile Area (Avatar when logged in, or Login Text when logged out) */}
+                            {status === "authenticated" && session?.user ? (
+                                <div className={cn("hidden md:flex w-auto ml-0 md:ml-[0.6rem] relative", isProductPage && "hidden md:block")} ref={profileRef}>
+                                    <button
+                                        className="p-[6px] md:p-[8px] flex items-center"
+                                        onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                        aria-label="Your account"
+                                    >
+                                        <Icons.User width="20" height="20" className="md:w-[24px] md:h-[24px]" />
+                                    </button>
 
-                        {/* Profile Area (Avatar when logged in, or Login Text when logged out) */}
-                        {status === "authenticated" && session?.user ? (
-                            <div className={cn("hidden md:flex w-auto ml-0 md:ml-[0.6rem] relative", isProductPage && "hidden md:block")} ref={profileRef}>
-                                <button
-                                    className="p-[6px] md:p-[8px] flex items-center"
-                                    onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                    aria-label="Your account"
-                                >
-                                    <Icons.User width="20" height="20" className="md:w-[24px] md:h-[24px]" />
-                                </button>
-
-                                {/* Profile Dropdown */}
-                                {isProfileOpen && (
-                                    <div className="absolute top-[calc(100%+8px)] right-0 w-[310px] z-[100] bg-white shadow-[0_12px_48px_rgba(0,0,0,0.08)] border border-[#EBEBEB] rounded-[8px] p-[20px] pt-[24px] transform origin-top-right transition-all duration-300 ease-out animate-in fade-in zoom-in-95">
-                                        <div className="mb-[16px] pb-[20px] border-b border-[#EBEBEB] flex items-center gap-[16px]">
-                                            <div className="flex items-center justify-center w-[54px] h-[54px] rounded-full bg-[#f4eade] shrink-0 border border-[#eddccc] shadow-sm">
-                                                <span className="text-[22px] text-[#172026] font-normal font-sans uppercase">{session.user.name?.charAt(0) ?? session.user.email?.charAt(0)}</span>
+                                    {/* Profile Dropdown */}
+                                    {isProfileOpen && (
+                                        <div className="absolute top-[calc(100%+8px)] right-0 w-[310px] z-[100] bg-white shadow-[0_12px_48px_rgba(0,0,0,0.08)] border border-[#EBEBEB] rounded-[8px] p-[20px] pt-[24px] transform origin-top-right transition-all duration-300 ease-out animate-in fade-in zoom-in-95">
+                                            <div className="mb-[16px] pb-[20px] border-b border-[#EBEBEB] flex items-center gap-[16px]">
+                                                <div className="flex items-center justify-center w-[54px] h-[54px] rounded-full bg-[#f4eade] shrink-0 border border-[#eddccc] shadow-sm">
+                                                    <span className="text-[22px] text-[#172026] font-normal font-sans uppercase">{session.user.name?.charAt(0) ?? session.user.email?.charAt(0)}</span>
+                                                </div>
+                                                <div className="overflow-hidden flex flex-col justify-center">
+                                                    <p className="font-semibold text-[#172026] text-[17px] leading-[22px] tracking-tight truncate" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>{session.user.name}</p>
+                                                    <p className="text-[14px] text-[#717171] mt-[3px] leading-tight truncate font-light tracking-wide">{(session.user as any)?.phone || session.user.email}</p>
+                                                </div>
                                             </div>
-                                            <div className="overflow-hidden flex flex-col justify-center">
-                                                <p className="font-semibold text-[#172026] text-[17px] leading-[22px] tracking-tight truncate" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>{session.user.name}</p>
-                                                <p className="text-[14px] text-[#717171] mt-[3px] leading-tight truncate font-light tracking-wide">{(session.user as any)?.phone || session.user.email}</p>
-                                            </div>
+                                            <nav className="flex flex-col gap-[4px] mt-[4px]">
+                                                {[
+                                                    { href: "/profile", label: "Account" },
+                                                    { href: "/orders", label: "Orders" },
+                                                    { href: "/profile/addresses", label: "Addresses" },
+                                                    { href: "/wishlist", label: "Wishlist" },
+                                                ].map(link => (
+                                                    <Link key={link.href} href={link.href} className="group relative flex items-center w-full px-[12px] py-[10px] rounded-[6px] text-[15px] font-medium text-[#2c3338] leading-[19px] overflow-hidden transition-all duration-300 hover:text-[#42120F]" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
+                                                        <div className="absolute inset-0 bg-[#fbf5ee] translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-in-out"></div>
+                                                        <span className="relative transform transition-transform duration-300 group-hover:translate-x-[4px]">{link.label}</span>
+                                                    </Link>
+                                                ))}
+                                            </nav>
+                                            <div className="h-[1px] w-full bg-[#EBEBEB] my-[10px]"></div>
+                                            <button onClick={() => { clearUserCart(); clearWishlist(); signOut(); }} className="group relative flex items-center w-full px-[12px] py-[10px] rounded-[6px] text-[15px] font-medium text-[#2c3338] leading-[19px] overflow-hidden transition-all duration-300 hover:text-[#d32f2f]" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
+                                                <div className="absolute inset-0 bg-[#fdf2f2] translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-in-out"></div>
+                                                <span className="relative transform transition-transform duration-300 group-hover:translate-x-[4px]">Sign Out</span>
+                                            </button>
                                         </div>
-                                        <nav className="flex flex-col gap-[4px] mt-[4px]">
-                                            {[
-                                                { href: "/profile", label: "Account" },
-                                                { href: "/orders", label: "Orders" },
-                                                { href: "/profile/addresses", label: "Addresses" },
-                                                { href: "/wishlist", label: "Wishlist" },
-                                            ].map(link => (
-                                                <Link key={link.href} href={link.href} className="group relative flex items-center w-full px-[12px] py-[10px] rounded-[6px] text-[15px] font-medium text-[#2c3338] leading-[19px] overflow-hidden transition-all duration-300 hover:text-[#42120F]" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
-                                                    <div className="absolute inset-0 bg-[#fbf5ee] translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-in-out"></div>
-                                                    <span className="relative transform transition-transform duration-300 group-hover:translate-x-[4px]">{link.label}</span>
-                                                </Link>
-                                            ))}
-                                        </nav>
-                                        <div className="h-[1px] w-full bg-[#EBEBEB] my-[10px]"></div>
-                                        <button onClick={() => { clearUserCart(); clearWishlist(); signOut(); }} className="group relative flex items-center w-full px-[12px] py-[10px] rounded-[6px] text-[15px] font-medium text-[#2c3338] leading-[19px] overflow-hidden transition-all duration-300 hover:text-[#d32f2f]" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>
-                                            <div className="absolute inset-0 bg-[#fdf2f2] translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300 ease-in-out"></div>
-                                            <span className="relative transform transition-transform duration-300 group-hover:translate-x-[4px]">Sign Out</span>
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        ) : null}
+                                    )}
+                                </div>
+                            ) : null}
 
-                        {/* Desktop Login Button */}
-                        {status !== "authenticated" && (
-                            <div className="w-auto hidden md:flex z-[20] ml-[1.5rem]">
-                                <button
-                                    onClick={() => setIsLoginModalOpen(true)}
-                                    className="w-auto flex items-center justify-center bg-primary text-[#FFFFFF] leading-[1.2] font-semibold text-[16px] px-[32px] py-[16px] tracking-[0.05rem] hover:opacity-90 transition-opacity rounded-[6px]"
-                                >
-                                    Login
-                                </button>
-                            </div>
-                        )}
+                            {/* Desktop Login Button */}
+                            {status !== "authenticated" && (
+                                <div className="w-auto hidden md:flex z-[20] ml-[1.5rem]">
+                                    <button
+                                        onClick={() => setIsLoginModalOpen(true)}
+                                        className="w-auto flex items-center justify-center bg-primary text-[#FFFFFF] leading-[1.2] font-semibold text-[16px] px-[32px] py-[16px] tracking-[0.05rem] hover:opacity-90 transition-opacity rounded-[6px]"
+                                    >
+                                        Login
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
-        </header>
+            </header>
 
 
             {/* Desktop Category Image Slider (hidden on mobile) */}

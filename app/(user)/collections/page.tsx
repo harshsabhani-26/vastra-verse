@@ -22,6 +22,7 @@ async function getProducts() {
             select: {
                 id: true,
                 name: true,
+                slug: true,
                 price: true,
                 finalPrice: true,
                 discount: true,
@@ -30,7 +31,8 @@ async function getProducts() {
                 createdAt: true,
                 category: {
                     select: {
-                        name: true
+                        name: true,
+                        slug: true,
                     }
                 },
                 images: {
@@ -85,6 +87,8 @@ export default async function CollectionsPage() {
                             <ProductCard
                                 key={product.id}
                                 id={product.id}
+                                slug={product.slug ?? undefined}
+                                categorySlug={product.category?.slug ?? undefined}
                                 name={product.name}
                                 price={product.finalPrice ? parseFloat(product.finalPrice.toString()) : parseFloat(product.price.toString())}
                                 originalPrice={product.finalPrice ? parseFloat(product.price.toString()) : undefined}

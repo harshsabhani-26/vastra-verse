@@ -64,6 +64,7 @@ export function ProductCard({
                     <ShareButton
                         productName={name}
                         productId={id}
+                        productUrl={`${typeof window !== "undefined" ? window.location.origin : "https://vastraverse.in"}${href}`}
                         iconOnly
                     />
                 </div>

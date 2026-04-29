@@ -6,6 +6,8 @@ import { Share2 } from "lucide-react";
 interface ShareButtonProps {
     productName: string;
     productId: string;
+    /** Canonical URL to share. If provided, overrides the auto-built /shop/[id] URL */
+    productUrl?: string;
     /** Optional extra CSS classes applied to the trigger button */
     className?: string;
     /** Icon-only circular style (used on cards). Default: false = text+icon style */
@@ -76,6 +78,7 @@ const platforms = [
 export function ShareButton({
     productName,
     productId,
+    productUrl: productUrlProp,
     className = "",
     iconOnly = false,
 }: ShareButtonProps) {
@@ -94,7 +97,7 @@ export function ShareButton({
         return () => document.removeEventListener("mousedown", handle);
     }, []);
 
-    const productUrl = buildUrl(productId);
+    const productUrl = productUrlProp ?? buildUrl(productId);
 
     const handlePlatform = (platform: (typeof platforms)[0]) => {
         if (platform.isInstagram) {

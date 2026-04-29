@@ -2,6 +2,7 @@
 
 import { useCartStore } from "@/lib/store";
 import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 interface AddToCartButtonProps {
     productId: string;
@@ -12,6 +13,7 @@ interface AddToCartButtonProps {
 
 export function AddToCartButton({ productId, productName, productPrice, productImage }: AddToCartButtonProps) {
     const { addItem, closeCart, openCart, items } = useCartStore();
+    const router = useRouter();
 
     const isInCart = items.some((item) => item.id === productId);
 
@@ -20,16 +22,7 @@ export function AddToCartButton({ productId, productName, productPrice, productI
         e.stopPropagation();
 
         if (isInCart) {
-            addItem({
-                id: productId,
-                name: productName,
-                price: productPrice,
-                image: productImage,
-                quantity: 1,
-            }).catch((error: any) => {
-                toast.error(error?.message || "Failed to add to cart");
-            });
-            toast.success("Increased quantity +1");
+            router.push('/cart');
             return;
         }
 

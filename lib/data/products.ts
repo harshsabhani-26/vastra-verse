@@ -24,6 +24,7 @@ export const getNewArrivals = unstable_cache(
                 select: {
                     id: true,
                     name: true,
+                    slug: true,
                     price: true,
                     discount: true,
                     finalPrice: true,
@@ -39,6 +40,7 @@ export const getNewArrivals = unstable_cache(
                     category: {
                         select: {
                             name: true,
+                            slug: true,
                         }
                     }
                 },
@@ -71,6 +73,7 @@ export const getBestSellers = unstable_cache(
                 select: {
                     id: true,
                     name: true,
+                    slug: true,
                     price: true,
                     discount: true,
                     finalPrice: true,
@@ -86,6 +89,7 @@ export const getBestSellers = unstable_cache(
                     category: {
                         select: {
                             name: true,
+                            slug: true,
                         }
                     }
                 },
