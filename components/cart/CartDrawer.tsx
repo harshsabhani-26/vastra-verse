@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-
 import { useSession } from "next-auth/react";
 import { toast } from "react-hot-toast";
+import { pixelInitiateCheckout } from "@/lib/fbq";
 
 export function CartDrawer() {
     const { items, isOpen, closeCart, removeItem, updateQuantity, totalPrice } = useCartStore();
@@ -33,6 +33,11 @@ export function CartDrawer() {
             router.push("/login?callbackUrl=/checkout");
             return;
         }
+        // Meta Pixel: InitiateCheckout
+        pixelInitiateCheckout({
+            items: items.map((item) => ({ id: item.id, price: item.price, quantity: item.quantity })),
+            total: totalPrice(),
+        });
         router.push("/checkout");
     };
 

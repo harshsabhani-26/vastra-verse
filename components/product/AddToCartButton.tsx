@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useCartStore, CartItem } from "@/lib/store";
 import toast from "react-hot-toast";
+import { pixelAddToCart } from "@/lib/fbq";
 
 interface AddToCartButtonProps {
     product: {
@@ -26,6 +27,13 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
                 quantity: 1
             });
             toast.success("Added to bag");
+            // Meta Pixel: AddToCart
+            pixelAddToCart({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                quantity: 1,
+            });
         } catch (error: any) {
             toast.error(error?.message || "Failed to add to cart");
         }

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useTaxSettings } from "@/hooks/use-tax-settings"
+import { pixelInitiateCheckout } from "@/lib/fbq"
 
 export function CartSummary() {
     const { items, totalItems, totalPrice, appliedCoupon, setCoupon, removeCoupon } = useCartStore();
@@ -114,6 +115,11 @@ export function CartSummary() {
             router.push("/login?callbackUrl=/checkout");
             return;
         }
+        // Meta Pixel: InitiateCheckout
+        pixelInitiateCheckout({
+            items: items.map((item) => ({ id: item.id, price: item.price, quantity: item.quantity })),
+            total: total,
+        });
         // Coupon is now persisted in Zustand store, no need for sessionStorage
         router.push("/checkout");
     };

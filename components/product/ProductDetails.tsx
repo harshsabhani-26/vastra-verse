@@ -9,6 +9,7 @@ import { Heart, ChevronDown, ChevronUp } from "lucide-react";
 import { ShareButton } from "@/components/product/ShareButton";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
+import { pixelViewContent, pixelAddToCart, pixelAddToWishlist } from "@/lib/fbq";
 
 // Color mapping
 const COLOR_MAP: Record<string, string> = {
@@ -64,6 +65,13 @@ export function ProductDetails({
     useEffect(() => {
         if (product?.name) {
             setProductName(product.name);
+            // Meta Pixel: ViewContent — fires once per product page load
+            pixelViewContent({
+                id: product.id,
+                name: product.name,
+                price: Number(product.finalPrice || product.price),
+                category: product.category?.name,
+            });
         }
     }, [product?.name, setProductName]);
 
@@ -120,6 +128,13 @@ export function ProductDetails({
         })
             .then(() => {
                 toast.success("Added to Bag!");
+                // Meta Pixel: AddToCart
+                pixelAddToCart({
+                    id: product.id,
+                    name: product.name,
+                    price: Number(product.finalPrice || product.price),
+                    quantity: 1,
+                });
             })
             .catch((err: any) => {
                 toast.error(err?.message || "Failed to add to cart");
@@ -142,6 +157,12 @@ export function ProductDetails({
         if (nowWishlisted) {
             addToWishlistStore(product.id);
             toast.success("Added to wishlist");
+            // Meta Pixel: AddToWishlist
+            pixelAddToWishlist({
+                id: product.id,
+                name: product.name,
+                price: Number(product.finalPrice || product.price),
+            });
         } else {
             removeFromWishlistStore(product.id);
             toast.success("Removed from wishlist");
@@ -620,6 +641,10 @@ export function ProductDetails({
                     <ShareButton
                         productName={product.name}
                         productId={product.id}
+                        productUrl={product.slug && product.category?.slug
+                            ? `https://vastraverse.in/shop/${product.category.slug}/${product.slug}`
+                            : `https://vastraverse.in/shop/${product.id}`
+                        }
                         iconOnly
                     />
                 </div>
@@ -654,6 +679,10 @@ export function ProductDetails({
                     <ShareButton
                         productName={product.name}
                         productId={product.id}
+                        productUrl={product.slug && product.category?.slug
+                            ? `https://vastraverse.in/shop/${product.category.slug}/${product.slug}`
+                            : `https://vastraverse.in/shop/${product.id}`
+                        }
                         iconOnly
                     />
                 </div>

@@ -14,6 +14,7 @@ import { Tag, X, Loader2, Check, Gift, ChevronDown, Phone, MapPin, Plus } from "
 import { cn } from "@/lib/utils";
 import Script from "next/script";
 import Image from "next/image";
+import { pixelAddPaymentInfo, pixelPurchase } from "@/lib/fbq";
 
 interface CartItem {
     id: string;
@@ -134,6 +135,18 @@ export default function CheckoutPage() {
         }, 500);
         return () => clearTimeout(timer);
     }, [formData.phone, mounted, checkPhoneVerification]);
+
+    // Auto-fill recipient phone when phone is verified
+    useEffect(() => {
+        if (isPhoneVerified && formData.phone) {
+            setFormData(prev => {
+                if (!prev.recipientPhone) {
+                    return { ...prev, recipientPhone: prev.phone };
+                }
+                return prev;
+            });
+        }
+    }, [isPhoneVerified, formData.phone]);
 
     // Poll the DB to confirm verification status after MSG91 widget interaction.
     // MSG91 fires 'failure' even for internal hCaptcha network errors — so we always
@@ -485,6 +498,8 @@ export default function CheckoutPage() {
                 }
 
                 setStep('payment');
+                // Meta Pixel: AddPaymentInfo — user reached payment step
+                pixelAddPaymentInfo();
                 window.scrollTo(0, 0);
             }
         } else {
@@ -596,6 +611,12 @@ export default function CheckoutPage() {
 
                                     const verifyData = await verifyRes.json();
                                     if (verifyData.success) {
+                                        // Meta Pixel: Purchase (prepaid)
+                                        pixelPurchase({
+                                            orderId: verifyData.orderId,
+                                            total: finalTotal,
+                                            items: cartItems.map(i => ({ id: i.id, price: i.price, quantity: i.quantity })),
+                                        });
                                         // CRITICAL: Clear client-side cart before redirect
                                         useCartStore.getState().clearCart();
                                         console.log("[CART_CLEARED]", { orderId: verifyData.orderId, paymentMethod: "Prepaid" });
@@ -646,6 +667,12 @@ export default function CheckoutPage() {
 
                             rzp1.open();
                         } else if (result.isCOD && result.orderId) {
+                            // Meta Pixel: Purchase (COD)
+                            pixelPurchase({
+                                orderId: result.orderId,
+                                total: finalTotal,
+                                items: cartItems.map(i => ({ id: i.id, price: i.price, quantity: i.quantity })),
+                            });
                             // COD: Order already created, clear cart and redirect to success
                             useCartStore.getState().clearCart();
                             console.log("[CART_CLEARED]", { orderId: result.orderId, paymentMethod: "COD" });

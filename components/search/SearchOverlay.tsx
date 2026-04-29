@@ -5,6 +5,7 @@ import Link from "next/link";
 import { X, Search, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { pixelSearch } from "@/lib/fbq";
 
 // Mock data for "New Arrivals" - in a real app this would be fetched
 // Mock data removed
@@ -19,9 +20,11 @@ interface SearchOverlayProps {
 interface Product {
     id: string;
     name: string;
+    slug?: string | null;
     price: string | number;
     finalPrice?: string | number;
     images: { url: string }[];
+    category?: { slug?: string | null; } | null;
 }
 
 export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
@@ -94,15 +97,19 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
         e.preventDefault();
         if (query.trim()) {
             recordSearch(query.trim());
+            // Meta Pixel: Search
+            pixelSearch(query.trim());
             router.push(`/shop?q=${encodeURIComponent(query)}`);
             onClose();
         }
     };
 
-    const handleSuggestionClick = (productId: string) => {
-        // Optional: modify record API to handle product clicks if needed, or just track the query
+    const handleSuggestionClick = (product: Product) => {
         if (query.trim()) recordSearch(query.trim());
-        router.push(`/shop/${productId}`);
+        const url = product.slug && product.category?.slug
+            ? `/shop/${product.category.slug}/${product.slug}`
+            : `/shop/${product.id}`;
+        router.push(url);
         onClose();
     };
 
@@ -168,7 +175,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                                 {suggestions.map((product) => (
                                     <div
                                         key={product.id}
-                                        onClick={() => handleSuggestionClick(product.id)}
+                                    onClick={() => handleSuggestionClick(product)}
                                         className="group cursor-pointer"
                                     >
                                         <div className="aspect-[3/4] overflow-hidden bg-stone-100 mb-4 relative">
@@ -240,7 +247,10 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                                             {newArrivals.map((item) => (
                                                 <Link
                                                     key={item.id}
-                                                    href={`/shop/${item.id}`}
+                                                    href={item.slug && item.category?.slug
+                                                        ? `/shop/${item.category.slug}/${item.slug}`
+                                                        : `/shop/${item.id}`
+                                                    }
                                                     onClick={onClose}
                                                     className="group"
                                                 >
