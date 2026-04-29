@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingBag, Heart } from "lucide-react";
 import { useCartStore } from "@/lib/store";
 import { toast } from "react-hot-toast";
+import { pixelAddToCart } from "@/lib/fbq";
 
 interface AddToCartProps {
     product: {
@@ -44,6 +45,13 @@ export function AddToCartSection({ product }: AddToCartProps) {
                 color: selectedColor
             });
             toast.success("Added to Bag!");
+            // Meta Pixel: AddToCart
+            pixelAddToCart({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                quantity: 1,
+            });
         } catch (error: any) {
             toast.error(error?.message || "Failed to add to cart");
         } finally {

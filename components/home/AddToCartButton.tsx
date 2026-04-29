@@ -3,6 +3,7 @@
 import { useCartStore } from "@/lib/store";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { pixelAddToCart } from "@/lib/fbq";
 
 interface AddToCartButtonProps {
     productId: string;
@@ -32,12 +33,20 @@ export function AddToCartButton({ productId, productName, productPrice, productI
             price: productPrice,
             image: productImage,
             quantity: 1,
+        }).then(() => {
+            toast.success("Added to cart!");
+            // Meta Pixel: AddToCart
+            pixelAddToCart({
+                id: productId,
+                name: productName,
+                price: productPrice,
+                quantity: 1,
+            });
         }).catch((error: any) => {
             toast.error(error?.message || "Failed to add to cart");
         });
 
         closeCart(); // prevent cart drawer from opening
-        toast.success("Added to cart!");
     };
 
     return (
