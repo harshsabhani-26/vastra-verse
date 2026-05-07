@@ -1,17 +1,22 @@
-[deploy]
-startCommand = "npx prisma migrate deploy && npm start"
-healthcheckPath = "/api/health"
-healthcheckTimeout = 60          # Reduced from 120s — faster failure detection
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 15     # Increased from 10 for higher resilience
-numReplicas = 2                  # Audit: horizontal scaling (was 1)
-
-# Zero-downtime deployment — old replicas stay alive until new ones pass healthcheck
-[deploy.overlap]
-enable = true
-
-[build]
-buildCommand = "npx prisma generate && npm run build"
-
-[environment]
-NODE_ENV = "production"
+# ============================================================
+# RAILWAY CONFIG — COMMENTED OUT (Switched to Vercel)
+# ============================================================
+# Uncomment below if you want to re-deploy on Railway.
+#
+# [deploy]
+# startCommand = "npx prisma migrate deploy && npm start"
+# healthcheckPath = "/api/health"
+# healthcheckTimeout = 60          # Reduced from 120s — faster failure detection
+# restartPolicyType = "ON_FAILURE"
+# restartPolicyMaxRetries = 15     # Increased from 10 for higher resilience
+# numReplicas = 2                  # Audit: horizontal scaling (was 1)
+#
+# # Zero-downtime deployment — old replicas stay alive until new ones pass healthcheck
+# [deploy.overlap]
+# enable = true
+#
+# [build]
+# buildCommand = "npx prisma generate && npm run build"
+#
+# [environment]
+# NODE_ENV = "production"

@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Deploy to Production (Vercel)
 
 on:
   push:
@@ -10,9 +10,9 @@ env:
 
 jobs:
   build-and-deploy:
-    name: Build, Verify & Deploy
+    name: Build, Verify & Deploy to Vercel
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout Code
@@ -42,12 +42,7 @@ jobs:
         run: npx prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Run Database Seeds
-        run: node prisma/seed.js
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          NODE_ENV: production
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
       - name: Build Application
         run: npm run build
@@ -63,6 +58,26 @@ jobs:
           echo "📦 Build output:"
           ls -la .next/ | head -20
 
+      # ── Vercel Deployment ─────────────────────────────────────────────────────
+      # Requires three Repository Secrets to be set in GitHub:
+      #   VERCEL_TOKEN      → Personal Access Token from vercel.com/account/tokens
+      #   VERCEL_ORG_ID     → Found in Project Settings → General (team/org scope ID)
+      #   VERCEL_PROJECT_ID → Found in Project Settings → General
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Info
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy to Vercel (Production)
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
       - name: Deploy Notification
         if: success()
-        run: echo "🚀 Deployment pipeline completed successfully at $(date -u)"
+        run: echo "🚀 Vercel deployment completed successfully at $(date -u)"

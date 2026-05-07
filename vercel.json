@@ -1,0 +1,47 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+
+  "buildCommand": "npx prisma generate && npm run build",
+  "installCommand": "npm ci",
+  "framework": "nextjs",
+
+  "env": {
+    "NODE_ENV": "production"
+  },
+
+  "functions": {
+    "app/api/**": {
+      "maxDuration": 60
+    }
+  },
+
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-DNS-Prefetch-Control", "value": "on" },
+        { "key": "X-Content-Type-Options",  "value": "nosniff" },
+        { "key": "X-Frame-Options",          "value": "SAMEORIGIN" },
+        { "key": "Referrer-Policy",          "value": "strict-origin-when-cross-origin" }
+      ]
+    },
+    {
+      "source": "/api/products(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=300, stale-while-revalidate=600"
+        }
+      ]
+    },
+    {
+      "source": "/api/categories",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=300, stale-while-revalidate=600"
+        }
+      ]
+    }
+  ]
+}
