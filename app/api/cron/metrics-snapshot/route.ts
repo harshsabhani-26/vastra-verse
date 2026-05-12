@@ -7,7 +7,7 @@ import { recordMetric } from '@/lib/metrics';
  * Cron Job: Daily Metrics Snapshot + Automated Alert Checks
  *
  * Endpoint: GET /api/cron/metrics-snapshot
- * Schedule: Daily (recommended via Railway / Vercel cron)
+ * Schedule: Daily (e.g. trigger via a cron job or external scheduler)
  *
  * What it does:
  *   1. Captures a daily snapshot of key business metrics from live DB

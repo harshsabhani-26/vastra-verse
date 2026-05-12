@@ -4,7 +4,7 @@
  * Starts all background workers.
  * Run with: npm run worker
  * 
- * In production, deploy as a separate Railway service.
+ * In production, deployed as a separate Render worker service (render.yaml).
  */
 
 import { startEmailWorker } from './email.worker';

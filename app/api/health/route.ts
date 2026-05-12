@@ -9,7 +9,7 @@
  * - Shipping provider
  * 
  * Access: GET /api/health
- * Quick check: GET /api/health?quick=true  (bypasses cache — used by Railway load balancer)
+ * Quick check: GET /api/health?quick=true  (bypasses cache — used by Render health checks)
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
         const isQuick = req.nextUrl.searchParams.get('quick') === 'true';
 
         if (isQuick) {
-            // Quick path: no cache — Railway load balancer needs real-time status
+            // Quick path: no cache — Render health checker needs real-time status
             const health = await getQuickHealth();
             return NextResponse.json(health, {
                 status: health.status === 'healthy' ? 200 : 503,
