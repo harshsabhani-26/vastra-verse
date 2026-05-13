@@ -13,8 +13,10 @@ import { DynamicSocialWall } from "@/components/home/DynamicSocialWall";
 import { preload } from "react-dom";
 import { getHeroBannerUrl } from "@/lib/cloudinary-client";
 
-// force-dynamic prevents Turbopack SSR chunk caching across routes (fixes module-factory-not-available error)
-export const dynamic = 'force-dynamic';
+// ISR: rebuild homepage every 60 seconds in the background.
+// Serves pre-built HTML instantly — no DB hit per visitor.
+// Admin writes invalidate via revalidateTag('products'/'banners') immediately.
+export const revalidate = 60;
 
 export default async function Home() {
     const [mainCategories, subCategories, heroBanners, webHeroBanners, mobileHeroBanners, midPageBanners, bottomPageBanners, activeStories, socialImages, socialVideos, storeSettings] = await Promise.all([

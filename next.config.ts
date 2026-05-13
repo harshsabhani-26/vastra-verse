@@ -80,7 +80,21 @@ const nextConfig: NextConfig = {
     // Requires: npm install critters --save-dev
     // Rollback: remove this line if CSS rendering issues appear after build.
     optimizeCss: true,
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+    // Expanded: covers all heavy UI and utility libraries to reduce initial JS bundle
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-select',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-toast',
+      '@radix-ui/react-slider',
+      '@radix-ui/react-checkbox',
+      'framer-motion',   // was loading ALL animation variants — now tree-shaken
+      'date-fns',        // massive reduction: only imports used functions
+      'recharts',        // only imports used chart components
+    ],
     serverActions: {
       bodySizeLimit: '50mb',
     },

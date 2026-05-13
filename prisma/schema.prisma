@@ -227,6 +227,10 @@ model Product {
   @@index([price])
   @@index([status, createdAt])
   @@index([categoryId, status])
+  // ✅ Added: covers the primary product listing query (status + category + sort)
+  @@index([status, categoryId, createdAt])
+  // ✅ Added: fast slug-based product page lookup (used on every product page)
+  @@index([slug])
 }
 
 model Category {
@@ -242,6 +246,9 @@ model Category {
   slug         String    @unique
   updatedAt    DateTime  @updatedAt
   products     Product[]
+  // ✅ Added: fast category slug lookup (used on every category/product page)
+  @@index([slug])
+  @@index([isActive, displayOrder])
 }
 
 model MainCategory {

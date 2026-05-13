@@ -176,29 +176,10 @@ export async function generateMetadata({
         const categorySlug = slug.slice(0, -1).join("/");
         const canonicalUrl = `${BASE_URL}/shop/${categorySlug}/${productSlug}`;
 
-        const product = await prisma.product.findFirst({
-            where: {
-                slug: productSlug,
-                category: { slug: { equals: categorySlug, mode: "insensitive" } },
-            },
-            select: {
-                name: true,
-                shortDescription: true,
-                description: true,
-                fabricType: true,
-                occasions: true,
-                images: {
-                    where: { type: "MAIN" },
-                    take: 1,
-                    select: { url: true },
-                },
-                category: { select: { name: true } },
-            },
-        });
+        // ✅ Reuse the cached fetcher — no duplicate DB query
+        const product = await getCachedProductDetails(productSlug, categorySlug);
 
         if (product) {
-            if (!product) return { title: "Product Not Found | Vastraa Verse" };
-
             const desc = buildProductDescription(product);
             const imageUrl = product.images[0]?.url ?? null;
 
@@ -339,40 +320,39 @@ export default async function ShopSlugPage({
             },
         };
 
-        // 1️⃣ Try exact slug match
-        let product = await prisma.product.findFirst({
-            where: {
-                slug: productSlug,
-                category: { slug: { equals: categorySlug, mode: "insensitive" } },
-            },
-            select: productSelect,
-        });
+        // 1️⃣ Try cached exact slug match first
+        let product = await getCachedProductDetails(productSlug, categorySlug);
 
-        // 2️⃣ Fallback: find by name-derived slug (for products without a slug in DB)
+        // 2️⃣ Fallback: find by name-derived slug (for legacy products without a slug in DB)
+        // Uses a targeted query — NOT a full category scan
         if (!product) {
-            const allInCategory = await prisma.product.findMany({
+            const fallback = await prisma.product.findFirst({
                 where: {
                     category: { slug: { equals: categorySlug, mode: "insensitive" } },
+                    slug: null, // only products without a slug need this fallback
                 },
                 select: productSelect,
             });
-            product = allInCategory.find((p) => slugify(p.name) === productSlug) ?? null;
+            if (fallback && slugify(fallback.name) === productSlug) {
+                product = fallback;
+            }
         }
 
         if (product) {
-            // Wishlist status
-        let isWishlisted = false;
-        if (session?.user?.id) {
-            const wl = await prisma.wishlist.findUnique({
-                where: {
-                    userId_productId: {
-                        userId: session.user.id,
-                        productId: product.id,
-                    },
-                },
-            });
-            isWishlisted = !!wl;
-        }
+            // ✅ Parallelise: wishlist check fires simultaneously with product data
+            const [isWishlistedResult] = await Promise.all([
+                session?.user?.id
+                    ? prisma.wishlist.findUnique({
+                          where: {
+                              userId_productId: {
+                                  userId: session.user.id,
+                                  productId: product.id,
+                              },
+                          },
+                      })
+                    : Promise.resolve(null),
+            ]);
+            const isWishlisted = !!isWishlistedResult;
 
         const displayPrice = product.finalPrice
             ? parseFloat(product.finalPrice.toString())

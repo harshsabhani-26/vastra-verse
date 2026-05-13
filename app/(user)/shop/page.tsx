@@ -13,7 +13,9 @@ interface ShopPageProps {
 
 import { auth } from "@/auth";
 
-export const dynamic = 'force-dynamic';
+// ISR: product list is shared/public data — rebuild every 2 minutes.
+// User-specific wishlist is fetched client-side after hydration.
+export const revalidate = 120;
 
 // FIX 5 — Canonical tag for the shop listing page
 export const metadata: Metadata = {
