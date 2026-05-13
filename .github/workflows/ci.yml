@@ -1,28 +1,52 @@
-name: VastraVerse CI
+name: CI — Build & Type Check
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
 jobs:
   build:
+    name: Build & Verify
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
+          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: Prisma generate
+      - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Type check
+      - name: TypeScript Type Check
+        run: npx tsc --noEmit --pretty
+        continue-on-error: false
+
+      - name: Lint Check
+        run: npx next lint
+        continue-on-error: true
+
+      - name: Build Application
         run: npm run build
+        env:
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+
+      - name: Build Success
+        if: success()
+        run: echo "✅ Build verified — EC2 deploy workflow will handle production deployment."
