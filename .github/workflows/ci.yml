@@ -1,4 +1,7 @@
-name: CI — Build & Type Check
+name: CI — Build, Type Check & Deploy (Render)
+
+# Render auto-deploys on every push to main via GitHub integration.
+# This workflow only validates the build — Render handles the actual deployment.
 
 on:
   push:
@@ -49,4 +52,8 @@ jobs:
 
       - name: Build Success
         if: success()
-        run: echo "✅ Build verified — EC2 deploy workflow will handle production deployment."
+        run: echo "✅ Build verified — Render will auto-deploy from GitHub on push to main."
+
+  # ── Render Deploy Notification ────────────────────────────────────────────
+  # Render deploys automatically via GitHub webhook — no SSH/secrets needed.
+  # Monitor your deploy at: https://dashboard.render.com

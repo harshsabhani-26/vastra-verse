@@ -1,0 +1,153 @@
+# render.yaml — Render.com Blueprint for Vastra-Verse
+# Docs: https://render.com/docs/blueprint-spec
+#
+# HOW TO USE:
+# 1. Push this file to GitHub (main branch)
+# 2. Go to https://dashboard.render.com → New → Blueprint
+# 3. Connect your GitHub repo — Render reads this file automatically
+# 4. Set the sensitive env vars in Render Dashboard → Environment
+# 5. Every git push to main = automatic deploy
+
+services:
+  # ── Next.js Web Application ────────────────────────────────────────────────
+  - type: web
+    name: vastra-verse
+    runtime: node
+    region: singapore        # Closest region to India (ap-southeast-1)
+    plan: standard           # 2GB RAM — required for Next.js build + runtime
+                             # starter (512MB) will OOM during build
+
+    # Build: install deps + generate Prisma client + build Next.js
+    buildCommand: npm ci && npx prisma generate && npm run build
+
+    # Start: Next.js production server on PORT env var (Render sets this)
+    startCommand: npm start
+
+    # Health check — Render uses this to confirm deployment succeeded
+    healthCheckPath: /api/health
+
+    # Auto-deploy on every push to main branch
+    autoDeploy: true
+
+    # Environment variables
+    # IMPORTANT: Variables marked sync:false must be set manually in
+    # Render Dashboard → Your Service → Environment → Add Environment Variable
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # Memory for Next.js runtime (standard plan = 2GB)
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=1536
+
+      # ── Database (Supabase) — set in Render Dashboard ──────────────────
+      - key: DATABASE_URL
+        sync: false          # Set in Render Dashboard — never commit secrets!
+      - key: DIRECT_URL
+        sync: false
+
+      # ── Auth ────────────────────────────────────────────────────────────
+      - key: AUTH_SECRET
+        sync: false
+      - key: NEXTAUTH_URL
+        value: https://vastraaverse.in   # Your production domain
+      - key: NEXTAUTH_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+
+      # ── Razorpay ────────────────────────────────────────────────────────
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_RAZORPAY_KEY_ID
+        sync: false
+
+      # ── Cloudinary ──────────────────────────────────────────────────────
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+        sync: false
+
+      # ── Supabase ────────────────────────────────────────────────────────
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+
+      # ── Upstash Redis (for rate limiting) ───────────────────────────────
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
+
+      # ── Redis (for BullMQ worker) ────────────────────────────────────────
+      - key: REDIS_URL
+        sync: false
+
+      # ── Sentry ──────────────────────────────────────────────────────────
+      - key: NEXT_PUBLIC_SENTRY_DSN
+        sync: false
+      - key: SENTRY_AUTH_TOKEN
+        sync: false
+      - key: SENTRY_ORG
+        value: harsh-pz
+      - key: SENTRY_PROJECT
+        value: javascript-nextjs-02
+
+      # ── MSG91 ───────────────────────────────────────────────────────────
+      - key: MSG91_AUTH_KEY
+        sync: false
+      - key: MSG91_TEMPLATE_ID
+        sync: false
+      - key: NEXT_PUBLIC_MSG91_WIDGET_ID
+        sync: false
+      - key: NEXT_PUBLIC_MSG91_TOKEN_AUTH
+        sync: false
+
+      # ── Email (Resend/Nodemailer) ────────────────────────────────────────
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+
+      # ── hCaptcha ────────────────────────────────────────────────────────
+      - key: HCAPTCHA_SECRET
+        sync: false
+      - key: NEXT_PUBLIC_HCAPTCHA_SITE_KEY
+        sync: false
+
+  # ── BullMQ Background Worker ───────────────────────────────────────────────
+  - type: worker
+    name: vastra-worker
+    runtime: node
+    region: singapore
+    plan: starter            # 512MB is enough for the worker process
+
+    buildCommand: npm ci && npx prisma generate
+    startCommand: npx tsx workers/index.ts
+
+    autoDeploy: true
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
